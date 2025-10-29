@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean King 3 - Multiplayer Fishing Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #001f3f 0%, #003d7a 100%);
+            color: white;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loginScreen {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+        }
+
+        #loginScreen h1 {
+            font-size: 48px;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            margin-bottom: 20px;
+        }
+
+        #loginScreen input {
+            padding: 15px;
+            font-size: 20px;
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            width: 300px;
+            margin-bottom: 20px;
+        }
+
+        #loginScreen button {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #00ffff, #00cc99);
+            border: none;
+            border-radius: 5px;
+            color: #001f3f;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #loginScreen button:hover {
+            transform: scale(1.05);
+        }
+
+        #gameScreen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #004d7a 0%, #002147 100%);
+            cursor: crosshair;
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+            pointer-events: none;
+        }
+
+        .player-info {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid #00ffff;
+            pointer-events: all;
+        }
+
+        .player-info h2 {
+            font-size: 24px;
+            color: #00ffff;
+            margin-bottom: 5px;
+        }
+
+        .player-info .credits {
+            font-size: 32px;
+            color: #ffcc00;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ffcc00;
+        }
+
+        .player-info .stats {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        #playersList {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00ffff;
+            max-width: 300px;
+            pointer-events: all;
+        }
+
+        #playersList h3 {
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+
+        .player-slot {
+            padding: 5px;
+            margin: 3px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .player-slot.active {
+            background: rgba(0, 255, 255, 0.2);
+            border-left: 3px solid #00ffff;
+        }
+
+        #weaponControls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: all;
+        }
+
+        .weapon-btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .weapon-btn:hover {
+            background: rgba(0, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .weapon-btn.active {
+            background: linear-gradient(45deg, #00ffff, #00cc99);
+            color: #001f3f;
+            font-weight: bold;
+        }
+
+        #connectionStatus {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .status-connected {
+            color: #00ff00;
+        }
+
+        .status-disconnected {
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="loginScreen">
+            <h1>🌊 Ocean King 3 🐟</h1>
+            <p style="margin-bottom: 20px; font-size: 18px;">Multiplayer Fishing Arena</p>
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+            <br>
+            <button onclick="joinGame()">Join Game</button>
+            <p style="margin-top: 20px; font-size: 14px; color: #aaa;">Up to 8 players can play together!</p>
+        </div>
+
+        <div id="gameScreen">
+            <div id="connectionStatus">
+                <span class="status-disconnected">Connecting...</span>
+            </div>
+            
+            <canvas id="gameCanvas" width="1600" height="900"></canvas>
+            
+            <div id="hud">
+                <div class="player-info">
+                    <h2 id="playerDisplayName">Player</h2>
+                    <div class="credits">💰 <span id="playerCredits">0</span></div>
+                    <div class="stats">
+                        Kills: <span id="playerKills">0</span> | 
+                        Slot: <span id="playerSlot">-</span>
+                    </div>
+                </div>
+                
+                <div id="playersList">
+                    <h3>Players (0/8)</h3>
+                    <div id="playersListContent"></div>
+                </div>
+            </div>
+
+            <div id="weaponControls">
+                <button class="weapon-btn active" onclick="changeWeapon(0)">
+                    🎯 Normal (1 💰)
+                </button>
+                <button class="weapon-btn" onclick="changeWeapon(1)">
+                    ⚡ Lightning (50 💰)
+                </button>
+                <button class="weapon-btn" onclick="changeWeapon(2)">
+                    💣 Bomb (100 💰)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
