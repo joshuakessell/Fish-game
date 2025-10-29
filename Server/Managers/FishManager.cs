@@ -26,10 +26,9 @@ public class FishManager
         {
             fish.UpdatePosition(deltaTime, currentTick);
 
-            // Remove fish that went off screen or expired (with larger buffer for natural exit)
+            // Remove fish only when they swim off screen (never despawn mid-screen)
             if (fish.X < -200 || fish.X > ARENA_WIDTH + 200 ||
-                fish.Y < -200 || fish.Y > ARENA_HEIGHT + 200 ||
-                fish.DespawnTick <= currentTick)
+                fish.Y < -200 || fish.Y > ARENA_HEIGHT + 200)
             {
                 fishToRemove.Add(fish.FishId);
             }

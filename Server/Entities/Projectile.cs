@@ -12,6 +12,7 @@ public class Projectile
     public float DirectionY { get; set; }
     public float Speed { get; set; } = 300f; // pixels per second
     public float Damage { get; set; }
+    public decimal BetValue { get; set; } // Shot value (10-200 credits)
     
     public int TtlTicks { get; set; } = 90; // 3 seconds at 30 TPS
     public bool IsSpent { get; set; } = false;

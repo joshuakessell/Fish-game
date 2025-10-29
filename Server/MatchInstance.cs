@@ -218,7 +218,8 @@ public class MatchInstance
             Y = command.Y,
             DirectionX = command.DirectionX,
             DirectionY = command.DirectionY,
-            Damage = 10f * player.CannonLevel
+            Damage = 10f * player.CannonLevel,
+            BetValue = cost // Snapshot bet value at fire time (immutable)
         };
 
         _projectileManager.AddProjectile(projectile);
@@ -261,14 +262,14 @@ public class MatchInstance
             }
         }
 
-        var payout = fish.BaseValue * multiplier;
+        var payout = fish.BaseValue * multiplier * projectile.BetValue;
         player.Credits += payout;
         player.TotalEarned += payout;
         player.TotalKills++;
 
         _fishManager.RemoveFish(kill.FishId);
 
-        Console.WriteLine($"Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits (x{multiplier})");
+        Console.WriteLine($"Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits (bet: {projectile.BetValue}, x{multiplier})");
     }
 
     private void ProcessBossKillResult(BossKillResult result)
