@@ -4,6 +4,14 @@
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
 ## Recent Changes (October 29, 2025)
+- **Natural Fish Swimming**: Fish now swim continuously from off-screen to off-screen
+  - Fish only despawn when they exit the play area (never mid-screen)
+  - Removed arbitrary lifetime limits causing mid-journey disappearances
+  - Only exception: fish destroyed by shots show death animation
+- **Bet-Scaled Rewards**: Payouts now multiply by bet value for proper casino mechanics
+  - Formula: `fishValue × randomMultiplier × betValue`
+  - Example: $100 bet on 5× fish with 2× multiplier = 1,000 credits
+  - Projectiles snapshot bet value at fire time (immutable across flight)
 - **Turret-Centric UI**: All information displayed directly at each turret on canvas
   - Player credits shown beneath turret with glowing gold display
   - Bet value ($10-$200) displayed above turret with clickable +/- buttons
