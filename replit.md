@@ -4,13 +4,15 @@
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
 ## Recent Changes (October 29, 2025)
-- **Round System**: 10-minute rounds with inter-round transitions (3s logo fade), boss rotations each round
-- **11 Ultra-Rare Jackpot Bosses**: Types 9-19 with elaborate death sequences and massive payouts (2000-7000 credits)
+- **Seamless Continuous Play**: Removed round transitions, players can join/quit anytime without interruptions
+- **Boss Rotation System**: Every 10 minutes, eligible bosses rotate (4 ultra-rare + 5 rare mid-bosses) seamlessly in background
+- **Bet Value System**: Replaced weapon selection with bet value controls (10-200 credits per shot) using +/- buttons
+- **Compact UI**: Side panels reduced to 20% of original size for better view of game area
+- **11 Ultra-Rare Jackpot Bosses**: Types 9-19 with elaborate death sequences and massive payouts (2500-7000 credits)
   - Kaiju Megalodon: Interactive QTE (5 teeth targets), dual sector clear
   - Emperor Kraken: Interactive chest choice (3 options), 8-vortex pull
   - Cosmic Leviathan, Samurai Swordfish, Carnival King Crab, Wizard Octopus, Rocket Hammerhead, Pirate Captain Whale, and more
 - **Interactive Kill Sequences**: 2 bosses (Megalodon, Kraken) have player interactions with ±30% hidden payout modifiers
-- **Boss Rotation**: Each round randomly selects 4 ultra-rare + 5 rare mid-bosses from pools
 - **Simplified Deaths**: Non-boss fish (types 0-8) have 0.5-1s fadeout with no special effects
 - **5 Special Creatures**: Sea Turtle, Manta Ray, Giant Jellyfish, Hammerhead Shark, Nautilus (25-40 credits)
 - **Development credits**: Players start with 10,000 credits for testing
@@ -47,9 +49,10 @@ A casino-style betting table game where 8 players shoot at exotic fish swimming 
 ## How to Play
 1. Enter your name on the login screen
 2. Click "Join Game" to enter a match
-3. Click anywhere on the canvas to shoot in that direction
-4. Hit fish to damage them and earn credits when they die
-5. Switch weapons using the buttons at the bottom (Normal, Lightning, Bomb)
+3. Adjust your bet value (10-200 credits) using the +/- buttons on the side
+4. Click anywhere on the canvas to shoot in that direction
+5. Hit fish to damage them and earn credits when they die
+6. Higher bet values = higher costs per shot, same destruction odds
 
 ## Casino Mechanics
 
@@ -66,7 +69,7 @@ A casino-style betting table game where 8 players shoot at exotic fish swimming 
 ### Network Protocol
 - **JoinMatch**: Player joins match and gets assigned turret slot (0-7)
 - **Fire**: Send shooting commands from turret position
-- **ChangeWeapon**: Switch between weapon types
+- **SetBetValue**: Update bet value for shots (10-200 credits)
 - **StateDelta**: Server broadcasts game state every tick (30 times/sec)
 
 ### Performance Optimizations
