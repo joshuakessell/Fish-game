@@ -5,9 +5,18 @@ namespace OceanKing.Server.Managers;
 public class FishManager
 {
     private readonly Dictionary<string, Fish> _activeFish = new();
-    private const int TARGET_FISH_COUNT = 20;
+    private const int MIN_FISH_COUNT = 30;
+    private const int MAX_FISH_COUNT = 50;
     private const int ARENA_WIDTH = 1600;
     private const int ARENA_HEIGHT = 900;
+    
+    // Spawn rate control
+    private long _lastSpawnTick = 0;
+    private const int MIN_TICKS_BETWEEN_SPAWNS = 5; // Spawn every ~0.16 seconds
+    
+    // Limit rare fish
+    private const int MAX_LARGE_FISH = 3;
+    private const int MAX_BOSS_FISH = 1;
 
     public void UpdateFish(float deltaTime, long currentTick)
     {
@@ -34,61 +43,141 @@ public class FishManager
 
     public void SpawnFishIfNeeded(long currentTick)
     {
-        while (_activeFish.Count < TARGET_FISH_COUNT)
+        // Maintain 30-50 fish on screen
+        if (_activeFish.Count >= MAX_FISH_COUNT)
+            return;
+            
+        // Aggressively spawn when below minimum to maintain constant action
+        if (_activeFish.Count < MIN_FISH_COUNT)
         {
-            SpawnRandomFish(currentTick);
+            // Keep spawning until we hit minimum (no throttle)
+            while (_activeFish.Count < MIN_FISH_COUNT)
+            {
+                SpawnRandomFish(currentTick);
+            }
+            _lastSpawnTick = currentTick;
+        }
+        else
+        {
+            // Normal spawn rate - throttled to prevent overwhelming
+            if (currentTick - _lastSpawnTick >= MIN_TICKS_BETWEEN_SPAWNS)
+            {
+                if (Random.Shared.Next(10) < 4) // 40% chance
+                {
+                    SpawnRandomFish(currentTick);
+                    _lastSpawnTick = currentTick;
+                }
+            }
         }
     }
 
     private void SpawnRandomFish(long currentTick)
     {
-        // Weighted spawn: more small fish, fewer bosses
+        // Count current rare fish
+        int largeFishCount = _activeFish.Values.Count(f => f.TypeId == 2);
+        int bossFishCount = _activeFish.Values.Count(f => f.TypeId == 3);
+        
+        // Weighted spawn with limits on rare fish
         var rand = Random.Shared.Next(100);
         int typeId;
-        if (rand < 50) typeId = 0; // 50% small
-        else if (rand < 80) typeId = 1; // 30% medium
-        else if (rand < 95) typeId = 2; // 15% large
-        else typeId = 3; // 5% boss
-
-        // Spawn from random edge
-        float x, y;
-        var side = Random.Shared.Next(4);
-        switch (side)
-        {
-            case 0: // Left
-                x = -50;
-                y = Random.Shared.Next(ARENA_HEIGHT);
-                break;
-            case 1: // Right
-                x = ARENA_WIDTH + 50;
-                y = Random.Shared.Next(ARENA_HEIGHT);
-                break;
-            case 2: // Top
-                x = Random.Shared.Next(ARENA_WIDTH);
-                y = -50;
-                break;
-            default: // Bottom
-                x = Random.Shared.Next(ARENA_WIDTH);
-                y = ARENA_HEIGHT + 50;
-                break;
-        }
-
-        var fish = Fish.CreateFish(typeId, x, y, currentTick);
         
-        // Adjust velocity to swim toward center
-        var centerX = ARENA_WIDTH / 2f;
-        var centerY = ARENA_HEIGHT / 2f;
-        var dx = centerX - x;
-        var dy = centerY - y;
-        var length = MathF.Sqrt(dx * dx + dy * dy);
-        
-        if (length > 0)
+        if (rand < 65) // 65% small fish
         {
-            fish.VelocityX = (dx / length) * fish.VelocityX;
-            fish.VelocityY = (dy / length) * MathF.Abs(fish.VelocityX) * 0.3f;
+            typeId = 0;
+            // Spawn small fish in groups
+            SpawnFishGroup(typeId, currentTick);
+            return;
         }
+        else if (rand < 90) // 25% medium fish
+        {
+            typeId = 1;
+            // Medium fish spawn in pairs sometimes
+            if (Random.Shared.Next(10) < 4) // 40% chance of pair
+            {
+                SpawnFishGroup(typeId, currentTick, 2, 2);
+                return;
+            }
+        }
+        else if (rand < 97) // 7% large fish
+        {
+            if (largeFishCount >= MAX_LARGE_FISH)
+            {
+                typeId = 1; // Spawn medium instead
+            }
+            else
+            {
+                typeId = 2;
+            }
+        }
+        else // 3% boss fish
+        {
+            if (bossFishCount >= MAX_BOSS_FISH)
+            {
+                typeId = 2; // Spawn large instead
+            }
+            else
+            {
+                typeId = 3;
+            }
+        }
+        
+        // Spawn single fish
+        SpawnFishGroup(typeId, currentTick, 1, 1);
+    }
 
-        _activeFish[fish.FishId] = fish;
+    private void SpawnFishGroup(int typeId, long currentTick, int minCount = -1, int maxCount = -1)
+    {
+        // Determine group size based on fish type
+        int groupSize;
+        if (minCount > 0 && maxCount > 0)
+        {
+            groupSize = Random.Shared.Next(minCount, maxCount + 1);
+        }
+        else if (typeId == 0) // Small fish in groups of 4-7
+        {
+            groupSize = Random.Shared.Next(4, 8);
+        }
+        else if (typeId == 1) // Medium fish usually solo, sometimes pairs
+        {
+            groupSize = 1;
+        }
+        else // Large and boss always solo
+        {
+            groupSize = 1;
+        }
+        
+        // Choose spawn side (left or right for horizontal swimming)
+        bool fromLeft = Random.Shared.Next(2) == 0;
+        float baseX = fromLeft ? -50 : ARENA_WIDTH + 50;
+        
+        // Direction: if spawning from left, move right; if from right, move left
+        bool movingRight = fromLeft;
+        
+        // Choose a lane (Y position) with some variation
+        float baseLaneY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
+        
+        // Formation offset for groups
+        float spacing = typeId == 0 ? 40f : 60f;
+        
+        for (int i = 0; i < groupSize; i++)
+        {
+            // Don't exceed maximum fish count
+            if (_activeFish.Count >= MAX_FISH_COUNT)
+                break;
+                
+            // Vary position slightly for natural formation
+            float offsetX = (i % 2) * spacing - spacing / 2;
+            float offsetY = (i / 2) * spacing;
+            
+            float spawnX = baseX;
+            float spawnY = baseLaneY + offsetY + Random.Shared.NextSingle() * 20 - 10;
+            
+            // Keep within bounds
+            spawnY = Math.Clamp(spawnY, 50, ARENA_HEIGHT - 50);
+            
+            var fish = Fish.CreateFish(typeId, spawnX, spawnY, currentTick, movingRight);
+            _activeFish[fish.FishId] = fish;
+        }
     }
 
     public Fish? GetFish(string fishId)
