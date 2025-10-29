@@ -280,19 +280,6 @@ function drawFish(fish) {
     ctx.lineWidth = 2;
     ctx.stroke();
     
-    // HP bar if damaged
-    if (fish.hp < fish.maxHp) {
-        const barWidth = size * 2;
-        const barHeight = 4;
-        const hpPercent = fish.hp / fish.maxHp;
-        
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(fish.x - barWidth / 2, fish.y - size - 10, barWidth, barHeight);
-        
-        ctx.fillStyle = hpPercent > 0.5 ? '#00ff00' : hpPercent > 0.25 ? '#ffcc00' : '#ff0000';
-        ctx.fillRect(fish.x - barWidth / 2, fish.y - size - 10, barWidth * hpPercent, barHeight);
-    }
-    
     // Simple tail
     ctx.fillStyle = color;
     ctx.beginPath();

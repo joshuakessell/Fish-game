@@ -14,8 +14,6 @@ public class CollisionResolver
 
             foreach (var f in fish)
             {
-                if (f.IsDead()) continue;
-
                 // Simple circle collision
                 var dx = projectile.X - f.X;
                 var dy = projectile.Y - f.Y;
@@ -24,19 +22,27 @@ public class CollisionResolver
 
                 if (distanceSquared <= radiusSum * radiusSum)
                 {
-                    // Hit!
-                    f.Hp -= projectile.Damage;
+                    // Hit! Mark projectile as spent
                     projectile.IsSpent = true;
 
-                    if (f.IsDead())
+                    // Casino-style: Each hit has a random chance to destroy the fish
+                    // The odds are based on fish type (smaller = higher odds)
+                    float roll = Random.Shared.NextSingle(); // 0.0 to 1.0
+                    
+                    if (roll < f.DestructionOdds)
                     {
+                        // Lucky shot! This bullet destroys the fish
                         kills.Add(new KillEvent
                         {
                             FishId = f.FishId,
                             ProjectileId = projectile.ProjectileId
                         });
+                        
+                        // Fish is destroyed, no other bullets can hit it this tick
+                        break;
                     }
-
+                    
+                    // Bullet hit but didn't destroy - just wasted the shot
                     break; // Projectile can only hit one fish
                 }
             }

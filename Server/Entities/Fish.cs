@@ -4,9 +4,8 @@ public class Fish
 {
     public string FishId { get; set; } = Guid.NewGuid().ToString();
     public int TypeId { get; set; } // 0=small, 1=medium, 2=large, 3=boss
-    public float Hp { get; set; }
-    public float MaxHp { get; set; }
     public decimal BaseValue { get; set; }
+    public float DestructionOdds { get; set; } // Probability (0-1) that a bullet destroys this fish
     
     // Position and movement
     public float X { get; set; }
@@ -38,37 +37,38 @@ public class Fish
         // Direction multiplier (1 for right, -1 for left)
         float direction = movingRight ? 1f : -1f;
         
-        // Configure based on type with proper crossing speeds
+        // Configure based on type with proper crossing speeds and destruction odds
         // Screen is 1600px wide, velocities in pixels/second
+        // Destruction odds: higher value = easier to destroy = lower payout
         switch (typeId)
         {
-            case 0: // Small fish - crosses in ~15 seconds
-                fish.MaxHp = fish.Hp = 10f;
+            case 0: // Small fish - crosses in ~15 seconds, 8% chance per bullet
                 fish.BaseValue = 5m;
+                fish.DestructionOdds = 0.08f; // 8% chance per hit
                 fish.HitboxRadius = 20f;
                 fish.VelocityX = direction * (100f + Random.Shared.NextSingle() * 20f); // 100-120 px/s
                 fish.DespawnTick = currentTick + 600; // 20 seconds max lifetime
                 break;
                 
-            case 1: // Medium fish - crosses in ~25 seconds
-                fish.MaxHp = fish.Hp = 30f;
+            case 1: // Medium fish - crosses in ~25 seconds, 3% chance per bullet
                 fish.BaseValue = 15m;
+                fish.DestructionOdds = 0.03f; // 3% chance per hit
                 fish.HitboxRadius = 30f;
                 fish.VelocityX = direction * (60f + Random.Shared.NextSingle() * 10f); // 60-70 px/s
                 fish.DespawnTick = currentTick + 900; // 30 seconds max lifetime
                 break;
                 
-            case 2: // Large fish - crosses in ~35 seconds
-                fish.MaxHp = fish.Hp = 100f;
+            case 2: // Large fish - crosses in ~35 seconds, 1% chance per bullet
                 fish.BaseValue = 50m;
+                fish.DestructionOdds = 0.01f; // 1% chance per hit
                 fish.HitboxRadius = 50f;
                 fish.VelocityX = direction * (45f + Random.Shared.NextSingle() * 10f); // 45-55 px/s
                 fish.DespawnTick = currentTick + 1200; // 40 seconds max lifetime
                 break;
                 
-            case 3: // Boss fish - crosses in ~50 seconds
-                fish.MaxHp = fish.Hp = 500f;
+            case 3: // Boss fish - crosses in ~50 seconds, 0.3% chance per bullet
                 fish.BaseValue = 500m;
+                fish.DestructionOdds = 0.003f; // 0.3% chance per hit
                 fish.HitboxRadius = 80f;
                 fish.VelocityX = direction * (30f + Random.Shared.NextSingle() * 8f); // 30-38 px/s
                 fish.DespawnTick = currentTick + 1800; // 60 seconds max lifetime
@@ -116,6 +116,4 @@ public class Fish
         if (Y < 50) VelocityY = MathF.Abs(VelocityY);
         if (Y > 850) VelocityY = -MathF.Abs(VelocityY);
     }
-
-    public bool IsDead() => Hp <= 0;
 }
