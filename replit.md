@@ -4,6 +4,19 @@
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
 ## Recent Changes (October 29, 2025)
+- **Turret-Centric UI**: All information displayed directly at each turret on canvas
+  - Player credits shown beneath turret with glowing gold display
+  - Bet value ($10-$200) displayed above turret with clickable +/- buttons
+  - Player name positioned above turret
+  - All floating windows removed (no HUD clutter)
+- **Fish Death Animation**: 0.25 second spinning, shrinking, fading animation when fish are destroyed
+  - 2 full rotations while dying
+  - Shrinks to 30% of original size
+  - Fades to transparent
+- **Credit Popup Animation**: 2 second floating credit display when earning kills
+  - Font size scales with payout (16px to 48px for jackpots)
+  - Floats upward 50 pixels while fading
+  - Gold color with black outline and glow effect
 - **Ocean King 3 Fish Types**: 28 total fish types matching arcade standard (Flying Fish through Golden Dragon King)
 - **97% RTP**: Increased return-to-player from 90% to 97% for competitive casino gameplay
 - **Turret Selection System**: Players choose their turret position from 8 available slots on join
@@ -18,7 +31,6 @@ A casino-style betting table game where 8 players shoot at exotic fish swimming 
 - **Seamless Continuous Play**: Removed round transitions, players can join/quit anytime without interruptions
 - **Boss Rotation System**: Every 10 minutes, eligible bosses rotate (4 ultra-rare + 5 rare mid-bosses) seamlessly in background
 - **Bet Value System**: Replaced weapon selection with bet value controls (10-200 credits per shot) using +/- buttons
-- **Compact UI**: Side panels reduced to 20% of original size and repositioned to avoid blocking turrets
 - **11 Ultra-Rare Jackpot Bosses**: Types 9-19 with elaborate death sequences and massive payouts (2500-7000 credits)
   - Kaiju Megalodon: Interactive QTE (5 teeth targets), dual sector clear
   - Emperor Kraken: Interactive chest choice (3 options), 8-vortex pull
