@@ -38,10 +38,40 @@ const fishTypes = {
         colors: ['#FFD700', '#FFA500', '#FF6B00'],
         pattern: 'dragon',
         tailType: 'dragon'
+    },
+    4: { // Special - Sea Turtle
+        name: 'Sea Turtle',
+        colors: ['#2E8B57', '#3CB371', '#228B22'],
+        pattern: 'turtle',
+        tailType: 'flippers'
+    },
+    5: { // Special - Manta Ray
+        name: 'Manta Ray',
+        colors: ['#1E3A5F', '#2E5090', '#4169E1'],
+        pattern: 'manta',
+        tailType: 'wings'
+    },
+    6: { // Special - Giant Jellyfish
+        name: 'Giant Jellyfish',
+        colors: ['#FF69B4', '#FF1493', '#C71585'],
+        pattern: 'jellyfish',
+        tailType: 'tentacles'
+    },
+    7: { // Special - Hammerhead Shark
+        name: 'Hammerhead Shark',
+        colors: ['#708090', '#778899', '#696969'],
+        pattern: 'hammerhead',
+        tailType: 'shark'
+    },
+    8: { // Special - Nautilus
+        name: 'Nautilus',
+        colors: ['#DEB887', '#D2691E', '#CD853F'],
+        pattern: 'nautilus',
+        tailType: 'shell'
     }
 };
 
-const fishSizes = [15, 25, 40, 70]; // Small, Medium, Large, Boss
+const fishSizes = [15, 25, 40, 70, 38, 45, 40, 43, 35]; // Regular 0-3, Special 4-8
 
 // Cannon positions for each player slot (0-7) - positioned like billiards table pockets
 const cannonPositions = [
@@ -376,6 +406,21 @@ function drawFish(fish) {
         case 'dragon': // Golden Dragon
             drawDragon(size, type.colors, swimming);
             break;
+        case 'turtle': // Sea Turtle
+            drawSeaTurtle(size, type.colors, swimming);
+            break;
+        case 'manta': // Manta Ray
+            drawMantaRay(size, type.colors, swimming);
+            break;
+        case 'jellyfish': // Giant Jellyfish
+            drawGiantJellyfish(size, type.colors, swimming);
+            break;
+        case 'hammerhead': // Hammerhead Shark
+            drawHammerheadShark(size, type.colors, swimming);
+            break;
+        case 'nautilus': // Nautilus
+            drawNautilus(size, type.colors, swimming);
+            break;
     }
     
     ctx.restore();
@@ -564,6 +609,347 @@ function drawDragon(size, colors, swimming) {
         ctx.closePath();
         ctx.fill();
     }
+}
+
+function drawSeaTurtle(size, colors, swimming) {
+    // Sea turtle with shell and flippers
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+    gradient.addColorStop(0, colors[1]);
+    gradient.addColorStop(0.7, colors[0]);
+    gradient.addColorStop(1, colors[2]);
+    
+    // Shell (oval)
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.1, size * 0.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Shell pattern (hexagons)
+    ctx.strokeStyle = colors[2];
+    ctx.lineWidth = 2;
+    for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+            ctx.beginPath();
+            ctx.arc(i * size * 0.5, j * size * 0.4, size * 0.2, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+    
+    // Head
+    ctx.fillStyle = colors[1];
+    ctx.beginPath();
+    ctx.ellipse(size * 1.3, 0, size * 0.4, size * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Eye
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(size * 1.4, -size * 0.1, size * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Flippers (animated)
+    ctx.fillStyle = colors[0];
+    const flapAngle = Math.sin(animationTime * 4) * 0.3;
+    
+    // Front flippers
+    ctx.save();
+    ctx.translate(size * 0.6, size * 0.6);
+    ctx.rotate(flapAngle);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.6, size * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    ctx.save();
+    ctx.translate(size * 0.6, -size * 0.6);
+    ctx.rotate(-flapAngle);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.6, size * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    // Back flippers
+    ctx.save();
+    ctx.translate(-size * 0.5, size * 0.5);
+    ctx.rotate(flapAngle * 0.7);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.4, size * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    
+    ctx.save();
+    ctx.translate(-size * 0.5, -size * 0.5);
+    ctx.rotate(-flapAngle * 0.7);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.4, size * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawMantaRay(size, colors, swimming) {
+    // Graceful manta ray with wide wings
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.5);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    // Body (diamond shape)
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.moveTo(size * 1.2, 0); // Front point
+    ctx.quadraticCurveTo(0, -size * 1.2, -size * 0.8, 0); // Top wing
+    ctx.quadraticCurveTo(0, size * 1.2, size * 1.2, 0); // Bottom wing
+    ctx.closePath();
+    ctx.fill();
+    
+    // Wing flapping animation
+    const wingFlap = Math.sin(animationTime * 2) * size * 0.2;
+    
+    // Wing details (lines)
+    ctx.strokeStyle = colors[2];
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(size * 0.8 - i * size * 0.3, 0);
+        ctx.lineTo(size * 0.3 - i * size * 0.4, -size * 0.9 + wingFlap);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(size * 0.8 - i * size * 0.3, 0);
+        ctx.lineTo(size * 0.3 - i * size * 0.4, size * 0.9 - wingFlap);
+        ctx.stroke();
+    }
+    
+    // Tail
+    ctx.fillStyle = colors[1];
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.8, 0);
+    ctx.lineTo(-size * 1.8, -size * 0.15);
+    ctx.lineTo(-size * 1.8, size * 0.15);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(size * 0.5, -size * 0.3, size * 0.15, 0, Math.PI * 2);
+    ctx.arc(size * 0.5, size * 0.3, size * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(size * 0.5, -size * 0.3, size * 0.08, 0, Math.PI * 2);
+    ctx.arc(size * 0.5, size * 0.3, size * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawGiantJellyfish(size, colors, swimming) {
+    // Translucent jellyfish with pulsing bell
+    const pulse = Math.sin(animationTime * 3) * 0.15 + 1;
+    
+    // Bell (translucent dome)
+    const gradient = ctx.createRadialGradient(0, -size * 0.3, 0, 0, -size * 0.3, size);
+    gradient.addColorStop(0, colors[0] + '88'); // Add transparency
+    gradient.addColorStop(0.6, colors[1] + '66');
+    gradient.addColorStop(1, colors[2] + '44');
+    
+    ctx.save();
+    ctx.scale(pulse, pulse);
+    
+    // Bell dome
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 0.3, size * 0.9, size * 0.7, 0, 0, Math.PI);
+    ctx.fill();
+    
+    // Bell rim glow
+    ctx.strokeStyle = colors[1];
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 0.3, size * 0.9, size * 0.7, 0, 0, Math.PI);
+    ctx.stroke();
+    
+    ctx.restore();
+    
+    // Oral arms (4 thick arms)
+    ctx.strokeStyle = colors[1] + 'AA';
+    ctx.lineWidth = size * 0.15;
+    ctx.lineCap = 'round';
+    
+    for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI - Math.PI / 2;
+        const wave = Math.sin(animationTime * 4 + i) * size * 0.2;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, size * 0.2);
+        ctx.quadraticCurveTo(
+            Math.cos(angle) * size * 0.3 + wave,
+            size * 0.6,
+            Math.cos(angle) * size * 0.4 + wave,
+            size * 1.3
+        );
+        ctx.stroke();
+    }
+    
+    // Tentacles (many thin ones)
+    ctx.strokeStyle = colors[0] + '77';
+    ctx.lineWidth = size * 0.08;
+    
+    for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const length = size * (1.2 + (i % 3) * 0.3);
+        const wave = Math.sin(animationTime * 5 + i * 0.5) * size * 0.15;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, size * 0.2);
+        ctx.quadraticCurveTo(
+            Math.cos(angle) * size * 0.2 + wave,
+            size * 0.8,
+            Math.cos(angle) * size * 0.3 + wave,
+            length
+        );
+        ctx.stroke();
+    }
+}
+
+function drawHammerheadShark(size, colors, swimming) {
+    // Hammerhead shark with distinctive head
+    const gradient = ctx.createLinearGradient(-size, 0, size, 0);
+    gradient.addColorStop(0, colors[2]);
+    gradient.addColorStop(0.5, colors[0]);
+    gradient.addColorStop(1, colors[1]);
+    
+    // Body
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.2, size * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Hammerhead (distinctive T-shape)
+    ctx.fillStyle = colors[1];
+    ctx.beginPath();
+    // Horizontal bar of hammer
+    ctx.rect(size * 0.8, -size * 0.7, size * 0.4, size * 1.4);
+    ctx.fill();
+    
+    // Head connection
+    ctx.beginPath();
+    ctx.rect(size * 0.5, -size * 0.25, size * 0.35, size * 0.5);
+    ctx.fill();
+    
+    // Eyes on ends of hammer
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(size * 1.0, -size * 0.6, size * 0.12, 0, Math.PI * 2);
+    ctx.arc(size * 1.0, size * 0.6, size * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Dorsal fin
+    ctx.fillStyle = colors[0];
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.2, -size * 0.5);
+    ctx.lineTo(size * 0.1, -size * 1.2);
+    ctx.lineTo(size * 0.3, -size * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Pectoral fins
+    const finSwim = Math.sin(animationTime * 3) * 0.1;
+    ctx.save();
+    ctx.rotate(finSwim);
+    ctx.beginPath();
+    ctx.moveTo(0, size * 0.5);
+    ctx.lineTo(-size * 0.6, size * 1.0);
+    ctx.lineTo(size * 0.2, size * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    
+    ctx.save();
+    ctx.rotate(-finSwim);
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.5);
+    ctx.lineTo(-size * 0.6, -size * 1.0);
+    ctx.lineTo(size * 0.2, -size * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    
+    // Tail
+    ctx.fillStyle = colors[1];
+    ctx.beginPath();
+    ctx.moveTo(-size * 1.2, 0);
+    ctx.lineTo(-size * 1.8, -size * 0.6);
+    ctx.lineTo(-size * 1.5, 0);
+    ctx.lineTo(-size * 1.8, size * 0.4);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawNautilus(size, colors, swimming) {
+    // Spiral shell nautilus
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    // Shell spiral
+    ctx.fillStyle = gradient;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = colors[2];
+    
+    // Draw spiral shell
+    const spirals = 3;
+    for (let s = 0; s < spirals; s++) {
+        const radius = size * (0.3 + s * 0.25);
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+    }
+    
+    // Spiral chamber lines
+    ctx.strokeStyle = colors[1];
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(angle) * size * 0.8, Math.sin(angle) * size * 0.8);
+        ctx.stroke();
+    }
+    
+    // Opening for head/tentacles
+    ctx.fillStyle = colors[0];
+    ctx.beginPath();
+    ctx.arc(size * 0.9, 0, size * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Tentacles (many small ones)
+    ctx.strokeStyle = colors[1];
+    ctx.lineWidth = size * 0.08;
+    ctx.lineCap = 'round';
+    
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI - Math.PI / 2;
+        const tentacleWave = Math.sin(animationTime * 4 + i) * size * 0.1;
+        
+        ctx.beginPath();
+        ctx.moveTo(size * 0.9, 0);
+        ctx.quadraticCurveTo(
+            size * 1.1 + tentacleWave,
+            Math.sin(angle) * size * 0.3,
+            size * 1.4,
+            Math.sin(angle) * size * 0.5 + tentacleWave
+        );
+        ctx.stroke();
+    }
+    
+    // Eye
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(size * 1.0, -size * 0.15, size * 0.1, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 function drawProjectile(proj) {

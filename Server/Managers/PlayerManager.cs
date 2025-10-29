@@ -23,7 +23,7 @@ public class PlayerManager
                 DisplayName = displayName,
                 ConnectionId = connectionId,
                 PlayerSlot = _players.Count,
-                Credits = 1000m
+                Credits = 10000m // Development: generous starting credits
             };
 
             _players[playerId] = player;

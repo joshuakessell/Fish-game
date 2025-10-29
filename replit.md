@@ -4,13 +4,19 @@
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
 ## Recent Changes (October 29, 2025)
-- **Transformed to casino betting table**: Changed from damage-based to probability-based fish destruction system
-- **90% RTP target**: Implemented precise destruction odds for consistent return-to-player across fish types
-- **High-volatility multipliers**: Added 1x-20x payout system with rare jackpots for player excitement
-- **Billiards table layout**: Changed to 2:1 aspect ratio (1600x800) with 8 turret positions matching pocket locations
-- **Exotic aquarium graphics**: Enhanced visuals with clownfish, angelfish, octopus, and golden dragon creatures
-- **Hot seat system**: Visual player excitement indicator that rotates randomly without affecting RTP
-- **Unbounded fish movement**: Fish swim naturally across screen and exit freely like in an aquarium
+- **Development credits**: Players start with 10,000 credits for testing
+- **5 New Special Creatures**: Added rare medium-high value fish with curved movement patterns:
+  - Sea Turtle (25 credits) - slow gentle curves with animated flippers
+  - Manta Ray (35 credits) - graceful swooping with wing flaps
+  - Giant Jellyfish (30 credits) - pulsing vertical curves with flowing tentacles
+  - Hammerhead Shark (40 credits) - predatory curves with distinctive hammer-shaped head
+  - Nautilus (28 credits) - spiral movements with chambered shell
+- **Varied fish movement**: Fish spawn from 8 directions (horizontal, vertical, diagonal, complex curves)
+- **Group patterns**: Small fish travel in synchronized groups with blooming, symmetrical, or circular formations
+- **Curved paths**: Special fish change direction smoothly up to 100 degrees across their journey
+- **Billiards table layout**: 2:1 aspect ratio (1600x800) with 8 turret positions at pocket locations
+- **90% RTP casino mechanics**: Probability-based destruction with high-volatility multipliers (1x-20x)
+- **Unbounded fish movement**: Fish swim naturally and exit screen freely like in a real aquarium
 
 ## Project Architecture
 
@@ -28,14 +34,15 @@ A casino-style betting table game where 8 players shoot at exotic fish swimming 
 - **wwwroot/game.js**: Exotic aquarium rendering with animated fish, turret positions, underwater effects
 
 ### Key Features
-- **Casino Betting Mechanics**: Probability-based destruction system (no HP bars)
-- **90% RTP**: Precise odds calculated for consistent long-term return to player
-- **High Volatility**: Multipliers range from 1x to 20x with rare jackpots
-- **Billiards Table Layout**: 2:1 aspect ratio with 8 turret positions at pocket locations
-- **Exotic Creatures**: Clownfish, angelfish, octopus, and golden dragon fish with unique animations
-- **30-50 Fish On-Screen**: Constant action with fish spawning in groups (small) or solo (large/boss)
-- **Natural Movement**: Fish swim across and exit screen freely - no bounding box
-- **Hot Seat System**: Random luck indicator for visual excitement without breaking RTP
+- **9 Exotic Creatures**:
+  - Regular: Clownfish, Angelfish, Octopus, Golden Dragon
+  - Special: Sea Turtle, Manta Ray, Giant Jellyfish, Hammerhead Shark, Nautilus
+- **Casino Mechanics**: 90% RTP with probability-based destruction, 1x-20x multipliers
+- **Billiards Table**: 2:1 aspect ratio, 8 turret positions at pocket locations like pool table
+- **Natural Movement**: Fish spawn from 8 directions, move in curved paths, exit freely
+- **Group Patterns**: Small fish swim in synchronized formations (blooming, symmetrical, circular)
+- **30-50 Fish On-Screen**: Constant action with varied spawn rates by rarity
+- **Curved Paths**: Special creatures change direction smoothly (max ~100°) throughout journey
 - **Authoritative Server**: All game logic and RNG server-side at 30 TPS
 
 ## How to Play
