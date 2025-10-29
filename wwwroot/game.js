@@ -506,9 +506,6 @@ function handleStateDelta(delta) {
     gameState.activeBossSequences = delta.activeBossSequences || [];
     gameState.pendingInteractions = delta.pendingInteractions || [];
     
-    updatePlayersList();
-    updateRoundDisplay();
-    
     if (gameState.pendingInteractions.length > 0) {
         const myInteraction = gameState.pendingInteractions.find(i => i.playerId === gameState.myPlayerId);
         if (myInteraction) {
@@ -517,27 +514,6 @@ function handleStateDelta(delta) {
     }
 }
 
-function updatePlayersList() {
-    const listContent = document.getElementById('playersListContent');
-    const playerCount = gameState.players.length;
-    
-    document.querySelector('#playersList h3').textContent = `Players (${playerCount}/8)`;
-    
-    let html = '';
-    for (let i = 0; i < 8; i++) {
-        const player = gameState.players.find(p => p.playerSlot === i);
-        if (player) {
-            const isMe = player.playerId === gameState.myPlayerId;
-            html += `<div class="player-slot active">
-                ${i + 1}. ${player.displayName} ${isMe ? '(You)' : ''} - 💰${Math.floor(player.credits)}
-            </div>`;
-        } else {
-            html += `<div class="player-slot">${i + 1}. <em>Empty</em></div>`;
-        }
-    }
-    
-    listContent.innerHTML = html;
-}
 
 function render() {
     animationTime += 0.016;
@@ -1373,23 +1349,6 @@ function drawPlayerCannon(player) {
     ctx.fillText(player.displayName, pos.x, pos.y + nameOffset);
 }
 
-function updateRoundDisplay() {
-    const roundIndicator = document.getElementById('roundIndicator');
-    if (!roundIndicator) return;
-    
-    const minutes = Math.floor(gameState.timeRemainingTicks / 1800);
-    const seconds = Math.floor((gameState.timeRemainingTicks % 1800) / 30);
-    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    
-    roundIndicator.innerHTML = `
-        <div style="font-size: 10px; font-weight: bold; color: #00ffff;">
-            Round ${gameState.roundNumber}
-        </div>
-        <div style="font-size: 8px; color: #ffcc00;">
-            ${timeStr}
-        </div>
-    `;
-}
 
 function showInteractionUI(interaction) {
     const overlay = document.getElementById('interactionOverlay');

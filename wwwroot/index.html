@@ -123,85 +123,6 @@
             margin-top: 2px;
         }
 
-        #playersList {
-            position: absolute;
-            top: 120px;
-            right: 120px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px;
-            border-radius: 5px;
-            border: 1px solid #00ffff;
-            max-width: 180px;
-            pointer-events: all;
-        }
-
-        #playersList h3 {
-            color: #00ffff;
-            margin-bottom: 2px;
-            font-size: 10px;
-        }
-
-        .player-slot {
-            padding: 2px;
-            margin: 1px 0;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            font-size: 8px;
-        }
-
-        .player-slot.active {
-            background: rgba(0, 255, 255, 0.2);
-            border-left: 2px solid #00ffff;
-        }
-
-        #betControls {
-            position: absolute;
-            right: 150px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #00ffff;
-            text-align: center;
-            pointer-events: all;
-        }
-
-        #betControls h3 {
-            font-size: 12px;
-            color: #00ffff;
-            margin-bottom: 5px;
-        }
-
-        #betControls .bet-display {
-            font-size: 20px;
-            color: #ffcc00;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-
-        #betControls button {
-            padding: 8px 15px;
-            margin: 3px;
-            font-size: 16px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #00ffff;
-            border-radius: 5px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        #betControls button:hover {
-            background: rgba(0, 255, 255, 0.3);
-            transform: scale(1.05);
-        }
-
-        #betControls button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         #connectionStatus {
             position: absolute;
             top: 10px;
@@ -219,19 +140,6 @@
 
         .status-disconnected {
             color: #ff0000;
-        }
-
-        #roundIndicator {
-            position: absolute;
-            top: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px 10px;
-            border-radius: 5px;
-            border: 1px solid #00ffff;
-            text-align: center;
-            pointer-events: all;
         }
 
         #interactionOverlay {
@@ -362,30 +270,9 @@
                         Slot: <span id="playerSlot">-</span>
                     </div>
                 </div>
-                
-                <div id="roundIndicator">
-                    <div style="font-size: 10px; font-weight: bold; color: #00ffff;">
-                        Round 1
-                    </div>
-                    <div style="font-size: 8px; color: #ffcc00;">
-                        10:00
-                    </div>
-                </div>
-                
-                <div id="playersList">
-                    <h3>Players (0/8)</h3>
-                    <div id="playersListContent"></div>
-                </div>
             </div>
             
             <div id="interactionOverlay"></div>
-
-            <div id="betControls">
-                <h3>Bet Value</h3>
-                <button onclick="decreaseBet()">-</button>
-                <div class="bet-display">💰 <span id="betValue">10</span></div>
-                <button onclick="increaseBet()">+</button>
-            </div>
         </div>
 
         <div id="turretSelectionOverlay">
