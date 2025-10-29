@@ -38,46 +38,47 @@ public class Fish
         float direction = movingRight ? 1f : -1f;
         
         // Configure based on type with proper crossing speeds and destruction odds
-        // Screen is 1600px wide, velocities in pixels/second
-        // Destruction odds: higher value = easier to destroy = lower payout
+        // Destruction odds calculated for 95% RTP with high-volatility multipliers
+        // Formula: P = 0.95 / (BaseValue × AvgMultiplier)
+        // AvgMultiplier ≈ 1.74 (1x=70%, 2x=15%, 3x=8%, 5x=5%, 10x=1.5%, 20x=0.5%)
         switch (typeId)
         {
-            case 0: // Small fish - crosses in ~15 seconds, 8% chance per bullet
+            case 0: // Small fish - 10.9% destruction chance per hit
                 fish.BaseValue = 5m;
-                fish.DestructionOdds = 0.08f; // 8% chance per hit
+                fish.DestructionOdds = 0.109f;
                 fish.HitboxRadius = 20f;
-                fish.VelocityX = direction * (100f + Random.Shared.NextSingle() * 20f); // 100-120 px/s
+                fish.VelocityX = direction * (100f + Random.Shared.NextSingle() * 20f);
                 fish.DespawnTick = currentTick + 600; // 20 seconds max lifetime
                 break;
                 
-            case 1: // Medium fish - crosses in ~25 seconds, 3% chance per bullet
+            case 1: // Medium fish - 3.6% destruction chance per hit
                 fish.BaseValue = 15m;
-                fish.DestructionOdds = 0.03f; // 3% chance per hit
+                fish.DestructionOdds = 0.036f;
                 fish.HitboxRadius = 30f;
-                fish.VelocityX = direction * (60f + Random.Shared.NextSingle() * 10f); // 60-70 px/s
+                fish.VelocityX = direction * (60f + Random.Shared.NextSingle() * 10f);
                 fish.DespawnTick = currentTick + 900; // 30 seconds max lifetime
                 break;
                 
-            case 2: // Large fish - crosses in ~35 seconds, 1% chance per bullet
+            case 2: // Large fish - 1.1% destruction chance per hit
                 fish.BaseValue = 50m;
-                fish.DestructionOdds = 0.01f; // 1% chance per hit
+                fish.DestructionOdds = 0.011f;
                 fish.HitboxRadius = 50f;
-                fish.VelocityX = direction * (45f + Random.Shared.NextSingle() * 10f); // 45-55 px/s
+                fish.VelocityX = direction * (45f + Random.Shared.NextSingle() * 10f);
                 fish.DespawnTick = currentTick + 1200; // 40 seconds max lifetime
                 break;
                 
-            case 3: // Boss fish - crosses in ~50 seconds, 0.3% chance per bullet
+            case 3: // Boss fish - 0.11% destruction chance per hit (very rare!)
                 fish.BaseValue = 500m;
-                fish.DestructionOdds = 0.003f; // 0.3% chance per hit
+                fish.DestructionOdds = 0.0011f;
                 fish.HitboxRadius = 80f;
-                fish.VelocityX = direction * (30f + Random.Shared.NextSingle() * 8f); // 30-38 px/s
+                fish.VelocityX = direction * (30f + Random.Shared.NextSingle() * 8f);
                 fish.DespawnTick = currentTick + 1800; // 60 seconds max lifetime
                 fish.IsExplosive = true;
                 break;
         }
 
         // Add some vertical variation for movement patterns
-        fish.VelocityY = (Random.Shared.NextSingle() - 0.5f) * 15f; // Gentle vertical drift
+        fish.VelocityY = (Random.Shared.NextSingle() - 0.5f) * 15f;
 
         return fish;
     }
@@ -87,32 +88,28 @@ public class Fish
         X += VelocityX * deltaTime;
         Y += VelocityY * deltaTime;
 
-        // Apply movement pattern based on time since spawn
-        float timeSinceSpawn = (currentTick - SpawnTick) / 30f; // Convert ticks to seconds
+        float timeSinceSpawn = (currentTick - SpawnTick) / 30f;
         
         switch (MovementPatternId)
         {
-            case 1: // Sine wave (gentle undulation)
+            case 1: // Sine wave
                 Y += MathF.Sin(timeSinceSpawn * 1.5f) * 2.5f;
                 break;
                 
-            case 2: // Circular motion (more dramatic for larger fish)
-                if (TypeId >= 2) // Only large and boss fish
+            case 2: // Circular motion
+                if (TypeId >= 2)
                 {
                     float angle = timeSinceSpawn * 0.8f;
-                    float radius = 15f;
-                    Y += MathF.Sin(angle) * radius * 0.15f;
+                    Y += MathF.Sin(angle) * 2.25f;
                 }
-                else // Subtle wave for smaller fish
+                else
                 {
                     Y += MathF.Sin(timeSinceSpawn * 2f) * 1.5f;
                 }
                 break;
-                
-            // case 0 is straight line (default)
         }
         
-        // Gentle vertical bounds - keep fish mostly on screen
+        // Keep fish on screen
         if (Y < 50) VelocityY = MathF.Abs(VelocityY);
         if (Y > 850) VelocityY = -MathF.Abs(VelocityY);
     }

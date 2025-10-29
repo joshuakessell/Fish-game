@@ -4,6 +4,13 @@ namespace OceanKing.Server.Managers;
 
 public class CollisionResolver
 {
+    private readonly PlayerManager _playerManager;
+    
+    public CollisionResolver(PlayerManager playerManager)
+    {
+        _playerManager = playerManager;
+    }
+    
     public List<KillEvent> ResolveCollisions(List<Projectile> projectiles, List<Fish> fish)
     {
         var kills = new List<KillEvent>();
@@ -25,11 +32,16 @@ public class CollisionResolver
                     // Hit! Mark projectile as spent
                     projectile.IsSpent = true;
 
+                    // Get player for hot seat bonus
+                    var player = _playerManager.GetPlayer(projectile.OwnerPlayerId);
+                    float luckMultiplier = player?.LuckMultiplier ?? 1.0f;
+                    
                     // Casino-style: Each hit has a random chance to destroy the fish
-                    // The odds are based on fish type (smaller = higher odds)
+                    // Apply hot seat bonus if player is lucky
+                    float adjustedOdds = f.DestructionOdds * luckMultiplier;
                     float roll = Random.Shared.NextSingle(); // 0.0 to 1.0
                     
-                    if (roll < f.DestructionOdds)
+                    if (roll < adjustedOdds)
                     {
                         // Lucky shot! This bullet destroys the fish
                         kills.Add(new KillEvent

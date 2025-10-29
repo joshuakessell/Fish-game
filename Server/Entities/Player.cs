@@ -18,6 +18,11 @@ public class Player
     public int TotalKills { get; set; } = 0;
     public decimal TotalEarned { get; set; } = 0m;
     public decimal TotalSpent { get; set; } = 0m;
+    
+    // Hot seat system - temporary luck boost
+    public bool IsHotSeat { get; set; } = false;
+    public long HotSeatExpiryTick { get; set; } = 0;
+    public float LuckMultiplier { get; set; } = 1.0f; // 1.0 = normal, 1.3 = 30% better odds
 
     public bool CanFire()
     {
