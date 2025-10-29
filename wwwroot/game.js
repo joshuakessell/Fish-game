@@ -5,7 +5,12 @@ const gameState = {
     projectiles: [],
     tickId: 0,
     myPlayerId: null,
-    myPlayerSlot: null
+    myPlayerSlot: null,
+    roundNumber: 1,
+    timeRemainingTicks: 18000,
+    isRoundTransitioning: false,
+    activeBossSequences: [],
+    pendingInteractions: []
 };
 
 let canvas, ctx;
@@ -68,10 +73,76 @@ const fishTypes = {
         colors: ['#DEB887', '#D2691E', '#CD853F'],
         pattern: 'nautilus',
         tailType: 'shell'
+    },
+    9: { // Ultra-Rare - Kaiju Megalodon
+        name: 'Kaiju Megalodon',
+        colors: ['#1C1C1C', '#8B0000', '#FF0000'],
+        pattern: 'megalodon',
+        tailType: 'massive'
+    },
+    10: { // Ultra-Rare - Emperor Kraken
+        name: 'Emperor Kraken',
+        colors: ['#4B0082', '#8B008B', '#FF00FF'],
+        pattern: 'kraken',
+        tailType: 'tentacles'
+    },
+    11: { // Ultra-Rare - Cosmic Leviathan
+        name: 'Cosmic Leviathan',
+        colors: ['#000033', '#6A0DAD', '#00FFFF'],
+        pattern: 'leviathan',
+        tailType: 'cosmic'
+    },
+    12: { // Ultra-Rare - Samurai Swordfish
+        name: 'Samurai Swordfish',
+        colors: ['#C0C0C0', '#FF0000', '#FFD700'],
+        pattern: 'samurai',
+        tailType: 'blade'
+    },
+    13: { // Ultra-Rare - Carnival King Crab
+        name: 'Carnival King Crab',
+        colors: ['#FF1493', '#FFD700', '#00CED1'],
+        pattern: 'carnival',
+        tailType: 'claws'
+    },
+    14: { // Ultra-Rare - Wizard Octopus
+        name: 'Wizard Octopus',
+        colors: ['#4B0082', '#9370DB', '#FFD700'],
+        pattern: 'wizard',
+        tailType: 'magic'
+    },
+    15: { // Ultra-Rare - Rocket Hammerhead
+        name: 'Rocket Hammerhead',
+        colors: ['#FF4500', '#1E90FF', '#FFFFFF'],
+        pattern: 'rocket',
+        tailType: 'boosters'
+    },
+    16: { // Ultra-Rare - Pirate Captain Whale
+        name: 'Pirate Captain Whale',
+        colors: ['#2F4F4F', '#8B4513', '#FFD700'],
+        pattern: 'pirate',
+        tailType: 'whale'
+    },
+    17: { // Ultra-Rare - Frozen Narwhal King
+        name: 'Frozen Narwhal King',
+        colors: ['#B0E0E6', '#4682B4', '#FFFFFF'],
+        pattern: 'narwhal',
+        tailType: 'frozen'
+    },
+    18: { // Ultra-Rare - Phoenix Ray
+        name: 'Phoenix Ray',
+        colors: ['#FF4500', '#FFD700', '#FF6347'],
+        pattern: 'phoenix',
+        tailType: 'flames'
+    },
+    19: { // Ultra-Rare - Steampunk Turtle Fortress
+        name: 'Steampunk Turtle',
+        colors: ['#8B4513', '#C0C0C0', '#FFD700'],
+        pattern: 'steampunk',
+        tailType: 'fortress'
     }
 };
 
-const fishSizes = [15, 25, 40, 70, 38, 45, 40, 43, 35]; // Regular 0-3, Special 4-8
+const fishSizes = [15, 25, 40, 70, 38, 45, 40, 43, 35, 120, 130, 140, 110, 115, 105, 125, 135, 100, 128, 118]; // Regular 0-8, Ultra-rare 9-19
 
 // Cannon positions for each player slot (0-7) - positioned like billiards table pockets
 const cannonPositions = [
@@ -236,9 +307,21 @@ function handleStateDelta(delta) {
     gameState.players = delta.players;
     gameState.fish = delta.fish;
     gameState.projectiles = delta.projectiles;
+    gameState.roundNumber = delta.roundNumber || 1;
+    gameState.timeRemainingTicks = delta.timeRemainingTicks || 18000;
+    gameState.isRoundTransitioning = delta.isRoundTransitioning || false;
+    gameState.activeBossSequences = delta.activeBossSequences || [];
+    gameState.pendingInteractions = delta.pendingInteractions || [];
     
-    // Update players list
     updatePlayersList();
+    updateRoundDisplay();
+    
+    if (gameState.pendingInteractions.length > 0) {
+        const myInteraction = gameState.pendingInteractions.find(i => i.playerId === gameState.myPlayerId);
+        if (myInteraction) {
+            showInteractionUI(myInteraction);
+        }
+    }
 }
 
 function updatePlayersList() {
@@ -394,32 +477,65 @@ function drawFish(fish) {
     
     // Draw based on type
     switch (type.pattern) {
-        case 'stripes': // Clownfish
+        case 'stripes':
             drawClownfish(size, type.colors, swimming);
             break;
-        case 'gradient': // Angelfish
+        case 'gradient':
             drawAngelfish(size, type.colors, swimming);
             break;
-        case 'spots': // Octopus
+        case 'spots':
             drawOctopus(size, type.colors, swimming);
             break;
-        case 'dragon': // Golden Dragon
+        case 'dragon':
             drawDragon(size, type.colors, swimming);
             break;
-        case 'turtle': // Sea Turtle
+        case 'turtle':
             drawSeaTurtle(size, type.colors, swimming);
             break;
-        case 'manta': // Manta Ray
+        case 'manta':
             drawMantaRay(size, type.colors, swimming);
             break;
-        case 'jellyfish': // Giant Jellyfish
+        case 'jellyfish':
             drawGiantJellyfish(size, type.colors, swimming);
             break;
-        case 'hammerhead': // Hammerhead Shark
+        case 'hammerhead':
             drawHammerheadShark(size, type.colors, swimming);
             break;
-        case 'nautilus': // Nautilus
+        case 'nautilus':
             drawNautilus(size, type.colors, swimming);
+            break;
+        case 'megalodon':
+            drawBoss_Megalodon(size, type.colors, swimming);
+            break;
+        case 'kraken':
+            drawBoss_Kraken(size, type.colors, swimming);
+            break;
+        case 'leviathan':
+            drawBoss_CosmicLeviathan(size, type.colors, swimming);
+            break;
+        case 'samurai':
+            drawBoss_SamuraiSwordfish(size, type.colors, swimming);
+            break;
+        case 'carnival':
+            drawBoss_CarnivalCrab(size, type.colors, swimming);
+            break;
+        case 'wizard':
+            drawBoss_WizardOctopus(size, type.colors, swimming);
+            break;
+        case 'rocket':
+            drawBoss_RocketHammerhead(size, type.colors, swimming);
+            break;
+        case 'pirate':
+            drawBoss_PirateWhale(size, type.colors, swimming);
+            break;
+        case 'narwhal':
+            drawBoss_NarwhalKing(size, type.colors, swimming);
+            break;
+        case 'phoenix':
+            drawBoss_PhoenixRay(size, type.colors, swimming);
+            break;
+        case 'steampunk':
+            drawBoss_SteampunkTurtle(size, type.colors, swimming);
             break;
     }
     
@@ -1048,4 +1164,494 @@ function drawPlayerCannon(player) {
     ctx.font = 'bold 13px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(player.displayName, pos.x, pos.y + nameOffset);
+}
+
+function updateRoundDisplay() {
+    const roundIndicator = document.getElementById('roundIndicator');
+    if (!roundIndicator) return;
+    
+    const minutes = Math.floor(gameState.timeRemainingTicks / 1800);
+    const seconds = Math.floor((gameState.timeRemainingTicks % 1800) / 30);
+    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    roundIndicator.innerHTML = `
+        <div style="font-size: 20px; font-weight: bold; color: #00ffff;">
+            Round ${gameState.roundNumber}
+        </div>
+        <div style="font-size: 16px; color: #ffcc00;">
+            ${timeStr}
+        </div>
+    `;
+    
+    if (gameState.isRoundTransitioning) {
+        roundIndicator.innerHTML += `
+            <div style="font-size: 18px; color: #ff00ff; margin-top: 10px;">
+                NEW ROUND STARTING...
+            </div>
+        `;
+    }
+}
+
+function showInteractionUI(interaction) {
+    const overlay = document.getElementById('interactionOverlay');
+    if (!overlay) return;
+    
+    overlay.style.display = 'flex';
+    
+    if (interaction.interactionType === 'Megalodon_QTE') {
+        const targets = interaction.interactionData.targets || [];
+        let html = '<div class="interaction-container">';
+        html += '<h2 style="color: #ff0000;">MEGALODON KILL!</h2>';
+        html += '<p style="color: #ffcc00;">Click the teeth targets!</p>';
+        html += '<div class="teeth-targets">';
+        
+        targets.forEach((target, idx) => {
+            html += `<button class="tooth-target" onclick="clickTooth('${interaction.interactionId}', ${idx})" data-tooth="${idx}">
+                <span style="font-size: 40px;">🦷</span>
+            </button>`;
+        });
+        
+        html += '</div></div>';
+        overlay.innerHTML = html;
+        
+    } else if (interaction.interactionType === 'Kraken_Choice') {
+        const chests = interaction.interactionData.chests || [1, 2, 3];
+        let html = '<div class="interaction-container">';
+        html += '<h2 style="color: #8b00ff;">KRAKEN TREASURE!</h2>';
+        html += '<p style="color: #ffcc00;">Choose a treasure chest!</p>';
+        html += '<div class="chest-choices">';
+        
+        chests.forEach((chest, idx) => {
+            html += `<button class="chest-btn" onclick="chooseChest('${interaction.interactionId}', ${idx})">
+                <span style="font-size: 60px;">📦</span>
+                <div>Chest ${idx + 1}</div>
+            </button>`;
+        });
+        
+        html += '</div></div>';
+        overlay.innerHTML = html;
+    }
+}
+
+function clickTooth(interactionId, toothIndex) {
+    const teethHit = window.teethHit || new Set();
+    teethHit.add(toothIndex);
+    window.teethHit = teethHit;
+    
+    const toothBtn = document.querySelector(`[data-tooth="${toothIndex}"]`);
+    if (toothBtn) {
+        toothBtn.style.background = '#00ff00';
+        toothBtn.disabled = true;
+    }
+    
+    if (teethHit.size >= 5) {
+        submitInteraction(interactionId, { teethHit: Array.from(teethHit) });
+    }
+}
+
+function chooseChest(interactionId, chestIndex) {
+    submitInteraction(interactionId, { chestChoice: chestIndex });
+}
+
+function submitInteraction(interactionId, data) {
+    if (connection) {
+        connection.invoke("SubmitInteraction", interactionId, data)
+            .catch(err => console.error('Interaction error:', err));
+    }
+    
+    const overlay = document.getElementById('interactionOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+    
+    window.teethHit = new Set();
+}
+
+function drawBoss_Megalodon(size, colors, swimming) {
+    const gradient = ctx.createLinearGradient(-size, -size * 0.6, size, size * 0.6);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = colors[2];
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.5, size * 0.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    for (let i = 0; i < 20; i++) {
+        const angle = (i / 20) * Math.PI - Math.PI / 2;
+        const toothX = size * 0.8 + Math.cos(angle) * size * 0.6;
+        const toothY = Math.sin(angle) * size * 0.4;
+        ctx.moveTo(toothX, toothY);
+        ctx.lineTo(toothX + size * 0.15, toothY);
+        ctx.lineTo(toothX + size * 0.075, toothY + size * 0.2);
+    }
+    ctx.fill();
+    
+    ctx.fillStyle = '#ff0000';
+    ctx.beginPath();
+    ctx.arc(size * 0.6, -size * 0.4, size * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+}
+
+function drawBoss_Kraken(size, colors, swimming) {
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.5);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.6, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = colors[2];
+    ctx.lineWidth = size * 0.15;
+    ctx.lineCap = 'round';
+    
+    for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const wave = Math.sin(animationTime * 3 + i) * size * 0.4;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        const endX = Math.cos(angle) * size * 2 + wave;
+        const endY = Math.sin(angle) * size * 2 + wave;
+        ctx.quadraticCurveTo(endX * 0.5, endY * 0.5, endX, endY);
+        ctx.stroke();
+        
+        ctx.fillStyle = colors[1];
+        ctx.beginPath();
+        ctx.arc(endX, endY, size * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function drawBoss_CosmicLeviathan(size, colors, swimming) {
+    ctx.save();
+    
+    ctx.shadowBlur = 40;
+    ctx.shadowColor = colors[2];
+    
+    const gradient = ctx.createLinearGradient(-size * 1.5, 0, size * 1.5, 0);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    
+    for (let i = 0; i < 5; i++) {
+        ctx.globalAlpha = 0.3 + i * 0.15;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, size * (1.6 - i * 0.1), size * (0.7 - i * 0.05), 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.globalAlpha = 1.0;
+    
+    for (let i = 0; i < 20; i++) {
+        const x = (Math.random() - 0.5) * size * 2;
+        const y = (Math.random() - 0.5) * size * 1.2;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.05, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.restore();
+}
+
+function drawBoss_SamuraiSwordfish(size, colors, swimming) {
+    const gradient = ctx.createLinearGradient(-size, 0, size, 0);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.2, size * 0.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = colors[2];
+    ctx.strokeStyle = colors[0];
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(size * 1.2, 0);
+    ctx.lineTo(size * 2.2, -size * 0.1);
+    ctx.lineTo(size * 2.2, size * 0.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.fillStyle = colors[1];
+    for (let i = 0; i < 3; i++) {
+        const y = (i - 1) * size * 0.3;
+        ctx.fillRect(-size * 0.5 + i * size * 0.2, y - size * 0.05, size * 0.4, size * 0.1);
+    }
+}
+
+function drawBoss_CarnivalCrab(size, colors, swimming) {
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.3, size * 0.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = colors[2];
+    ctx.lineWidth = size * 0.12;
+    ctx.lineCap = 'round';
+    
+    [-1, 1].forEach(side => {
+        ctx.beginPath();
+        ctx.moveTo(side * size * 0.8, 0);
+        ctx.lineTo(side * size * 1.5, -size * 0.6);
+        ctx.stroke();
+        
+        ctx.fillStyle = colors[1];
+        ctx.beginPath();
+        ctx.moveTo(side * size * 1.5, -size * 0.6);
+        ctx.lineTo(side * size * 1.7, -size * 0.4);
+        ctx.lineTo(side * size * 1.7, -size * 0.8);
+        ctx.closePath();
+        ctx.fill();
+    });
+    
+    for (let i = 0; i < 6; i++) {
+        const x = (i - 2.5) * size * 0.3;
+        const y = size * 0.7 + Math.sin(animationTime * 5 + i) * size * 0.1;
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.15, 0, Math.PI * 2);
+        ctx.fillStyle = colors[0];
+        ctx.fill();
+    }
+}
+
+function drawBoss_WizardOctopus(size, colors, swimming) {
+    const gradient = ctx.createRadialGradient(0, -size * 0.3, 0, 0, -size * 0.3, size * 1.5);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.6, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, -size * 0.3, size * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = colors[2];
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.4, -size * 1.2);
+    ctx.lineTo(0, -size * 1.8);
+    ctx.lineTo(size * 0.4, -size * 1.2);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.strokeStyle = colors[2];
+    ctx.lineWidth = size * 0.15;
+    ctx.lineCap = 'round';
+    
+    for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI / 4) * i - Math.PI / 2;
+        const wave = Math.sin(animationTime * 4 + i) * size * 0.3;
+        const sparkle = Math.sin(animationTime * 8 + i) > 0.5;
+        
+        ctx.strokeStyle = sparkle ? colors[2] : colors[1];
+        ctx.beginPath();
+        ctx.moveTo(0, size * 0.5);
+        const endX = Math.cos(angle) * size * 1.8 + wave;
+        const endY = size * 1.5 + Math.sin(angle) * size;
+        ctx.quadraticCurveTo(endX * 0.5, size + wave * 0.5, endX, endY);
+        ctx.stroke();
+        
+        if (sparkle) {
+            ctx.fillStyle = colors[2];
+            ctx.beginPath();
+            ctx.arc(endX, endY, size * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+function drawBoss_RocketHammerhead(size, colors, swimming) {
+    const gradient = ctx.createLinearGradient(-size, 0, size, 0);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.3, size * 0.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = colors[0];
+    ctx.fillRect(size * 0.4, -size * 0.9, size * 0.8, size * 0.25);
+    ctx.fillRect(size * 0.4, size * 0.65, size * 0.8, size * 0.25);
+    
+    ctx.fillStyle = colors[1];
+    ctx.beginPath();
+    ctx.arc(size * 0.8, -size * 0.8, size * 0.15, 0, Math.PI * 2);
+    ctx.arc(size * 0.8, size * 0.8, size * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    
+    if (Math.sin(animationTime * 10) > 0) {
+        ctx.fillStyle = 'rgba(255, 165, 0, 0.8)';
+        ctx.beginPath();
+        ctx.moveTo(-size * 1.2, -size * 0.2);
+        ctx.lineTo(-size * 1.8, -size * 0.4);
+        ctx.lineTo(-size * 1.8, 0);
+        ctx.lineTo(-size * 1.2, size * 0.2);
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+function drawBoss_PirateWhale(size, colors, swimming) {
+    const gradient = ctx.createLinearGradient(-size * 1.5, 0, size * 1.5, 0);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[0]);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.6, size * 0.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = colors[2];
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.8, -size * 0.7);
+    ctx.lineTo(-size * 0.4, -size * 1.2);
+    ctx.lineTo(0, -size * 0.7);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.strokeStyle = colors[2];
+    ctx.lineWidth = size * 0.08;
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.6, -size * 0.7);
+    ctx.lineTo(-size * 0.6, -size * 1.5);
+    ctx.stroke();
+    
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(size * 0.6, -size * 0.3, size * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(size * 0.65, -size * 0.35, size * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawBoss_NarwhalKing(size, colors, swimming) {
+    const gradient = ctx.createLinearGradient(-size, 0, size, 0);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = colors[2];
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 1.4, size * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = colors[2];
+    ctx.lineWidth = size * 0.08;
+    ctx.beginPath();
+    ctx.moveTo(size * 1.4, 0);
+    ctx.lineTo(size * 2.5, -size * 0.3);
+    ctx.stroke();
+    
+    for (let i = 0; i < 10; i++) {
+        const t = i / 10;
+        const x = size * 1.4 + (size * 1.1 * t);
+        const y = -(size * 0.3 * t);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillRect(x, y - size * 0.05, size * 0.1, size * 0.1);
+    }
+    
+    ctx.shadowBlur = 0;
+}
+
+function drawBoss_PhoenixRay(size, colors, swimming) {
+    ctx.save();
+    
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.5);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(-size * 1.5, -size * 0.8, -size * 1.8, size * 0.8, 0, 0);
+    ctx.bezierCurveTo(size * 1.5, -size * 0.8, size * 1.8, size * 0.8, 0, 0);
+    ctx.fill();
+    
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 + animationTime * 2;
+        const dist = size * 1.2;
+        const x = Math.cos(angle) * dist;
+        const y = Math.sin(angle) * dist;
+        
+        ctx.fillStyle = 'rgba(255, 165, 0, 0.6)';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x * 0.9, y * 0.9);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    ctx.restore();
+}
+
+function drawBoss_SteampunkTurtle(size, colors, swimming) {
+    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.6, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = colors[2];
+    ctx.lineWidth = size * 0.08;
+    for (let ring = 0; ring < 3; ring++) {
+        ctx.beginPath();
+        ctx.arc(0, 0, size * (0.4 + ring * 0.3), 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const x = Math.cos(angle) * size * 0.9;
+        const y = Math.sin(angle) * size * 0.9;
+        
+        ctx.fillStyle = colors[1];
+        ctx.fillRect(x - size * 0.08, y - size * 0.08, size * 0.16, size * 0.16);
+    }
+    
+    const gearAngle = animationTime * 2;
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 + gearAngle;
+        const x = Math.cos(angle) * size * 0.5;
+        const y = Math.sin(angle) * size * 0.5;
+        
+        ctx.fillStyle = colors[2];
+        ctx.fillRect(x - size * 0.05, y - size * 0.1, size * 0.1, size * 0.2);
+    }
 }

@@ -101,6 +101,24 @@ public class GameHub : Hub
         });
     }
 
+    public void SubmitInteraction(string interactionId, Dictionary<string, object> submissionData)
+    {
+        if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
+            return;
+
+        if (!_connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerId))
+            return;
+
+        var matchManager = _gameServer.GetMatchManager();
+        var match = matchManager.GetMatch(matchId);
+        
+        if (match == null) return;
+
+        match.HandleInteractionSubmission(playerId, interactionId, submissionData);
+        
+        Console.WriteLine($"Player {playerId} submitted interaction {interactionId}");
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         if (_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))

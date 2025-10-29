@@ -19,6 +19,11 @@ public class MatchInstance
     private readonly ProjectileManager _projectileManager;
     private readonly CollisionResolver _collisionResolver;
     
+    // Boss system managers
+    private readonly RoundManager _roundManager;
+    private readonly KillSequenceHandler _killSequenceHandler;
+    private readonly InteractionManager _interactionManager;
+    
     // Game loop
     private Thread? _gameLoopThread;
     private bool _isRunning;
@@ -47,6 +52,10 @@ public class MatchInstance
         _fishManager = new FishManager();
         _projectileManager = new ProjectileManager();
         _collisionResolver = new CollisionResolver(_playerManager);
+        
+        _roundManager = new RoundManager();
+        _killSequenceHandler = new KillSequenceHandler(_fishManager);
+        _interactionManager = new InteractionManager();
     }
 
     public bool CanJoin() => _playerManager.GetPlayerCount() < MatchManager.MAX_PLAYERS_PER_MATCH;
@@ -56,6 +65,8 @@ public class MatchInstance
         if (_isRunning) return;
         
         _isRunning = true;
+        _roundManager.Initialize(_currentTick);
+        
         _gameLoopThread = new Thread(GameLoop)
         {
             IsBackground = true,
@@ -116,7 +127,7 @@ public class MatchInstance
             ProcessCommand(command);
         }
 
-        // Step 2: Update fish positions
+        // Step 2: Update fish positions and remove despawned fish
         _fishManager.UpdateFish(deltaTime, _currentTick);
 
         // Step 3: Update projectiles
@@ -125,25 +136,49 @@ public class MatchInstance
         // Step 4: Collision detection
         var kills = _collisionResolver.ResolveCollisions(
             _projectileManager.GetActiveProjectiles(),
-            _fishManager.GetActiveFish()
+            _fishManager.GetActiveFish(),
+            _killSequenceHandler,
+            _interactionManager,
+            _currentTick
         );
 
-        // Step 5: Process kills and payouts
+        // Step 5: Process non-boss kills and payouts
         foreach (var kill in kills)
         {
             ProcessKill(kill);
         }
 
-        // Step 6: Spawn new fish if needed
-        _fishManager.SpawnFishIfNeeded(_currentTick);
+        // Step 6: Process boss kill sequences
+        var bossResults = _killSequenceHandler.ProcessSequences(_currentTick);
+        foreach (var result in bossResults)
+        {
+            ProcessBossKillResult(result);
+        }
+
+        // Step 7: Check for interaction timeouts
+        var timedOutInteractions = _interactionManager.CheckTimeouts(_currentTick);
+        foreach (var interaction in timedOutInteractions)
+        {
+            _killSequenceHandler.ApplyInteractionResult(interaction.SequenceId, 0.7m);
+        }
+
+        // Step 8: Update round manager (checks fish count AFTER all removals)
+        _roundManager.Update(_currentTick, _fishManager.GetActiveFish().Count);
+
+        // Step 9: Spawn new fish if needed (suppressed during/after round end)
+        if (!_roundManager.ShouldSuppressSpawns(_currentTick))
+        {
+            var eligibleBosses = _roundManager.GetEligibleBosses();
+            _fishManager.SpawnFishIfNeeded(_currentTick, eligibleBosses);
+        }
         
-        // Step 7: Manage hot seats (random luck boosts for excitement)
+        // Step 10: Manage hot seats (random luck boosts for excitement)
         ManageHotSeats(_currentTick);
 
-        // Step 8: Check for empty room timeout
+        // Step 11: Check for empty room timeout
         CheckEmptyRoomTimeout();
 
-        // Step 9: Broadcast state delta
+        // Step 12: Broadcast state delta
         BroadcastState();
     }
 
@@ -210,10 +245,9 @@ public class MatchInstance
         var player = _playerManager.GetPlayer(projectile.OwnerPlayerId);
         if (player == null) return;
 
-        // Calculate payout with high-volatility multiplier system
-        // Weighted for 95% RTP with exciting rare big wins
+        // Simple death for non-boss fish (types 0-8): just award credits
         var multipliers = new[] { 1m, 2m, 3m, 5m, 10m, 20m };
-        var weights = new[] { 70, 15, 8, 5, 1.5f, 0.5f }; // High volatility
+        var weights = new[] { 70, 15, 8, 5, 1.5f, 0.5f };
         var totalWeight = weights.Sum();
         var randomValue = Random.Shared.NextSingle() * totalWeight;
         
@@ -234,10 +268,32 @@ public class MatchInstance
         player.TotalEarned += payout;
         player.TotalKills++;
 
-        // Remove fish
         _fishManager.RemoveFish(kill.FishId);
 
         Console.WriteLine($"Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits (x{multiplier})");
+    }
+
+    private void ProcessBossKillResult(BossKillResult result)
+    {
+        var player = _playerManager.GetPlayer(result.KillerPlayerId);
+        if (player == null) return;
+
+        if (result.TotalPayout > 0)
+        {
+            player.Credits += result.TotalPayout;
+            player.TotalEarned += result.TotalPayout;
+            
+            Console.WriteLine($"Boss kill sequence payout: {player.DisplayName} earned {result.TotalPayout} credits from boss effect");
+        }
+    }
+
+    public void HandleInteractionSubmission(string playerId, string interactionId, Dictionary<string, object> submissionData)
+    {
+        var result = _interactionManager.ProcessInteractionSubmission(interactionId, submissionData);
+        if (result != null)
+        {
+            _killSequenceHandler.ApplyInteractionResult(result.SequenceId, result.PerformanceModifier);
+        }
     }
 
     private void ManageHotSeats(long currentTick)
@@ -299,9 +355,15 @@ public class MatchInstance
 
     private void BroadcastState()
     {
+        var roundState = _roundManager.GetRoundState();
+        var activeSequences = _killSequenceHandler.GetActiveSequences();
+        
         var delta = new StateDelta
         {
             TickId = _currentTick,
+            RoundNumber = roundState.RoundNumber,
+            TimeRemainingTicks = _roundManager.GetTimeRemainingTicks(_currentTick),
+            IsRoundTransitioning = roundState.IsTransitioning,
             Players = _playerManager.GetAllPlayers().Select(p => new PlayerState
             {
                 PlayerId = p.PlayerId,
@@ -325,10 +387,31 @@ public class MatchInstance
                 Y = p.Y,
                 DirectionX = p.DirectionX,
                 DirectionY = p.DirectionY
+            }).ToList(),
+            ActiveBossSequences = activeSequences.Select(s => new BossSequenceState
+            {
+                SequenceId = s.SequenceId,
+                BossTypeId = s.BossTypeId,
+                EffectType = s.EffectType.ToString(),
+                CurrentStep = s.CurrentStep
             }).ToList()
         };
 
-        // Broadcast to all clients in this match's group (fire and forget)
+        foreach (var player in _playerManager.GetAllPlayers())
+        {
+            var pendingInteraction = _interactionManager.GetPendingInteraction(player.PlayerId);
+            if (pendingInteraction != null)
+            {
+                delta.PendingInteractions.Add(new InteractionState
+                {
+                    InteractionId = pendingInteraction.InteractionId,
+                    PlayerId = pendingInteraction.PlayerId,
+                    InteractionType = pendingInteraction.InteractionType,
+                    InteractionData = pendingInteraction.InteractionData
+                });
+            }
+        }
+
         _ = _hubContext.Clients.Group(MatchId).SendAsync("StateDelta", delta);
     }
 
@@ -374,9 +457,30 @@ public enum CommandType
 public class StateDelta
 {
     public long TickId { get; set; }
+    public int RoundNumber { get; set; }
+    public long TimeRemainingTicks { get; set; }
+    public bool IsRoundTransitioning { get; set; }
     public List<PlayerState> Players { get; set; } = new();
     public List<FishState> Fish { get; set; } = new();
     public List<ProjectileState> Projectiles { get; set; } = new();
+    public List<BossSequenceState> ActiveBossSequences { get; set; } = new();
+    public List<InteractionState> PendingInteractions { get; set; } = new();
+}
+
+public class BossSequenceState
+{
+    public string SequenceId { get; set; } = string.Empty;
+    public int BossTypeId { get; set; }
+    public string EffectType { get; set; } = string.Empty;
+    public int CurrentStep { get; set; }
+}
+
+public class InteractionState
+{
+    public string InteractionId { get; set; } = string.Empty;
+    public string PlayerId { get; set; } = string.Empty;
+    public string InteractionType { get; set; } = string.Empty;
+    public Dictionary<string, object> InteractionData { get; set; } = new();
 }
 
 public class PlayerState

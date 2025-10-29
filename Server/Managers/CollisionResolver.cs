@@ -11,7 +11,12 @@ public class CollisionResolver
         _playerManager = playerManager;
     }
     
-    public List<KillEvent> ResolveCollisions(List<Projectile> projectiles, List<Fish> fish)
+    public List<KillEvent> ResolveCollisions(
+        List<Projectile> projectiles, 
+        List<Fish> fish,
+        KillSequenceHandler killSequenceHandler,
+        InteractionManager interactionManager,
+        long currentTick)
     {
         var kills = new List<KillEvent>();
 
@@ -21,41 +26,81 @@ public class CollisionResolver
 
             foreach (var f in fish)
             {
-                // Simple circle collision
                 var dx = projectile.X - f.X;
                 var dy = projectile.Y - f.Y;
                 var distanceSquared = dx * dx + dy * dy;
-                var radiusSum = f.HitboxRadius + 5f; // projectile is small point
+                var radiusSum = f.HitboxRadius + 5f;
 
                 if (distanceSquared <= radiusSum * radiusSum)
                 {
-                    // Hit! Mark projectile as spent
                     projectile.IsSpent = true;
 
-                    // Get player for hot seat bonus
                     var player = _playerManager.GetPlayer(projectile.OwnerPlayerId);
                     float luckMultiplier = player?.LuckMultiplier ?? 1.0f;
                     
-                    // Casino-style: Each hit has a random chance to destroy the fish
-                    // Apply hot seat bonus if player is lucky
                     float adjustedOdds = f.DestructionOdds * luckMultiplier;
-                    float roll = Random.Shared.NextSingle(); // 0.0 to 1.0
+                    float roll = Random.Shared.NextSingle();
                     
                     if (roll < adjustedOdds)
                     {
-                        // Lucky shot! This bullet destroys the fish
-                        kills.Add(new KillEvent
+                        if (BossCatalog.IsBoss(f.TypeId))
                         {
-                            FishId = f.FishId,
-                            ProjectileId = projectile.ProjectileId
-                        });
+                            var bossDef = BossCatalog.GetBoss(f.TypeId);
+                            if (bossDef != null)
+                            {
+                                var multipliers = new[] { 1m, 2m, 3m, 5m, 10m, 20m };
+                                var weights = new[] { 70, 15, 8, 5, 1.5f, 0.5f };
+                                var totalWeight = weights.Sum();
+                                var randomValue = Random.Shared.NextSingle() * totalWeight;
+                                
+                                decimal multiplier = 1m;
+                                float cumulativeWeight = 0f;
+                                for (int i = 0; i < weights.Length; i++)
+                                {
+                                    cumulativeWeight += weights[i];
+                                    if (randomValue < cumulativeWeight)
+                                    {
+                                        multiplier = multipliers[i];
+                                        break;
+                                    }
+                                }
+
+                                var basePayout = f.BaseValue * multiplier;
+                                
+                                killSequenceHandler.StartBossKillSequence(
+                                    f.TypeId, 
+                                    projectile.OwnerPlayerId, 
+                                    basePayout,
+                                    currentTick);
+
+                                if (bossDef.RequiresInteraction)
+                                {
+                                    var sequence = killSequenceHandler.GetPendingInteraction(projectile.OwnerPlayerId);
+                                    if (sequence != null)
+                                    {
+                                        interactionManager.CreateInteraction(
+                                            sequence.SequenceId,
+                                            projectile.OwnerPlayerId,
+                                            f.TypeId,
+                                            bossDef.InteractionType,
+                                            currentTick);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            kills.Add(new KillEvent
+                            {
+                                FishId = f.FishId,
+                                ProjectileId = projectile.ProjectileId
+                            });
+                        }
                         
-                        // Fish is destroyed, no other bullets can hit it this tick
                         break;
                     }
                     
-                    // Bullet hit but didn't destroy - just wasted the shot
-                    break; // Projectile can only hit one fish
+                    break;
                 }
             }
         }

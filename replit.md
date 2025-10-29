@@ -4,19 +4,18 @@
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
 ## Recent Changes (October 29, 2025)
+- **Round System**: 10-minute rounds with inter-round transitions (3s logo fade), boss rotations each round
+- **11 Ultra-Rare Jackpot Bosses**: Types 9-19 with elaborate death sequences and massive payouts (2000-7000 credits)
+  - Kaiju Megalodon: Interactive QTE (5 teeth targets), dual sector clear
+  - Emperor Kraken: Interactive chest choice (3 options), 8-vortex pull
+  - Cosmic Leviathan, Samurai Swordfish, Carnival King Crab, Wizard Octopus, Rocket Hammerhead, Pirate Captain Whale, and more
+- **Interactive Kill Sequences**: 2 bosses (Megalodon, Kraken) have player interactions with ±30% hidden payout modifiers
+- **Boss Rotation**: Each round randomly selects 4 ultra-rare + 5 rare mid-bosses from pools
+- **Simplified Deaths**: Non-boss fish (types 0-8) have 0.5-1s fadeout with no special effects
+- **5 Special Creatures**: Sea Turtle, Manta Ray, Giant Jellyfish, Hammerhead Shark, Nautilus (25-40 credits)
 - **Development credits**: Players start with 10,000 credits for testing
-- **5 New Special Creatures**: Added rare medium-high value fish with curved movement patterns:
-  - Sea Turtle (25 credits) - slow gentle curves with animated flippers
-  - Manta Ray (35 credits) - graceful swooping with wing flaps
-  - Giant Jellyfish (30 credits) - pulsing vertical curves with flowing tentacles
-  - Hammerhead Shark (40 credits) - predatory curves with distinctive hammer-shaped head
-  - Nautilus (28 credits) - spiral movements with chambered shell
-- **Varied fish movement**: Fish spawn from 8 directions (horizontal, vertical, diagonal, complex curves)
-- **Group patterns**: Small fish travel in synchronized groups with blooming, symmetrical, or circular formations
-- **Curved paths**: Special fish change direction smoothly up to 100 degrees across their journey
-- **Billiards table layout**: 2:1 aspect ratio (1600x800) with 8 turret positions at pocket locations
-- **90% RTP casino mechanics**: Probability-based destruction with high-volatility multipliers (1x-20x)
-- **Unbounded fish movement**: Fish swim naturally and exit screen freely like in a real aquarium
+- **Varied movement**: Fish spawn from 8 directions with curved paths and group patterns
+- **90% RTP casino mechanics**: Probability-based destruction with high-volatility multipliers
 
 ## Project Architecture
 

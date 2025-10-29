@@ -202,6 +202,84 @@
         .status-disconnected {
             color: #ff0000;
         }
+
+        #roundIndicator {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid #00ffff;
+            text-align: center;
+            pointer-events: all;
+        }
+
+        #interactionOverlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .interaction-container {
+            background: linear-gradient(135deg, rgba(0, 0, 50, 0.95), rgba(50, 0, 50, 0.95));
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        .interaction-container h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .interaction-container p {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+
+        .teeth-targets, .chest-choices {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .tooth-target, .chest-btn {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 18px;
+            color: white;
+        }
+
+        .tooth-target:hover, .chest-btn:hover {
+            background: rgba(0, 255, 255, 0.3);
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+        }
+
+        .tooth-target:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .chest-btn {
+            flex-direction: column;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -232,11 +310,22 @@
                     </div>
                 </div>
                 
+                <div id="roundIndicator">
+                    <div style="font-size: 20px; font-weight: bold; color: #00ffff;">
+                        Round 1
+                    </div>
+                    <div style="font-size: 16px; color: #ffcc00;">
+                        10:00
+                    </div>
+                </div>
+                
                 <div id="playersList">
                     <h3>Players (0/8)</h3>
                     <div id="playersListContent"></div>
                 </div>
             </div>
+            
+            <div id="interactionOverlay"></div>
 
             <div id="weaponControls">
                 <button class="weapon-btn active" onclick="changeWeapon(0)">

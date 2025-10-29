@@ -41,41 +41,98 @@ public class FishManager
         }
     }
 
-    public void SpawnFishIfNeeded(long currentTick)
+    private long _lastUltraRareBossSpawnTick = 0;
+    private const int MIN_TICKS_BETWEEN_ULTRA_RARE = 5400; // 3 minutes at 30 TPS
+
+    public void SpawnFishIfNeeded(long currentTick, List<int>? eligibleBosses = null)
     {
-        // Maintain 30-50 fish on screen
+        eligibleBosses ??= new List<int>();
+
         if (_activeFish.Count >= MAX_FISH_COUNT)
             return;
+        
+        if (currentTick - _lastUltraRareBossSpawnTick >= MIN_TICKS_BETWEEN_ULTRA_RARE && 
+            eligibleBosses.Count > 0)
+        {
+            var ultraRareBosses = eligibleBosses.Where(id => id >= 9).ToList();
+            if (ultraRareBosses.Count > 0 && Random.Shared.Next(100) < 3)
+            {
+                var bossTypeId = ultraRareBosses[Random.Shared.Next(ultraRareBosses.Count)];
+                SpawnBoss(bossTypeId, currentTick);
+                _lastUltraRareBossSpawnTick = currentTick;
+                return;
+            }
+        }
             
-        // Aggressively spawn when below minimum to maintain constant action
         if (_activeFish.Count < MIN_FISH_COUNT)
         {
-            // Keep spawning until we hit minimum (no throttle)
             while (_activeFish.Count < MIN_FISH_COUNT)
             {
-                SpawnRandomFish(currentTick);
+                SpawnRandomFish(currentTick, eligibleBosses);
             }
             _lastSpawnTick = currentTick;
         }
         else
         {
-            // Normal spawn rate - throttled to prevent overwhelming
             if (currentTick - _lastSpawnTick >= MIN_TICKS_BETWEEN_SPAWNS)
             {
-                if (Random.Shared.Next(10) < 4) // 40% chance
+                if (Random.Shared.Next(10) < 4)
                 {
-                    SpawnRandomFish(currentTick);
+                    SpawnRandomFish(currentTick, eligibleBosses);
                     _lastSpawnTick = currentTick;
                 }
             }
         }
     }
 
-    private void SpawnRandomFish(long currentTick)
+    private void SpawnBoss(int bossTypeId, long currentTick)
     {
-        // Count current rare fish
+        var bossDef = Entities.BossCatalog.GetBoss(bossTypeId);
+        if (bossDef == null) return;
+
+        var spawnDirection = Random.Shared.Next(4);
+        float x, y, velocityX, velocityY;
+        
+        switch (spawnDirection)
+        {
+            case 0:
+                x = -bossDef.HitboxRadius;
+                y = ARENA_HEIGHT / 2;
+                velocityX = bossDef.BaseSpeed;
+                velocityY = 0;
+                break;
+            case 1:
+                x = ARENA_WIDTH + bossDef.HitboxRadius;
+                y = ARENA_HEIGHT / 2;
+                velocityX = -bossDef.BaseSpeed;
+                velocityY = 0;
+                break;
+            case 2:
+                x = ARENA_WIDTH / 2;
+                y = -bossDef.HitboxRadius;
+                velocityX = 0;
+                velocityY = bossDef.BaseSpeed;
+                break;
+            default:
+                x = ARENA_WIDTH / 2;
+                y = ARENA_HEIGHT + bossDef.HitboxRadius;
+                velocityX = 0;
+                velocityY = -bossDef.BaseSpeed;
+                break;
+        }
+
+        var fish = Fish.CreateFish(bossTypeId, x, y, currentTick, velocityX, velocityY, bossDef.MovementPatternId);
+        _activeFish[fish.FishId] = fish;
+        
+        Console.WriteLine($"Ultra-rare boss spawned: {bossDef.Name} (type {bossTypeId})");
+    }
+
+    private void SpawnRandomFish(long currentTick, List<int>? eligibleBosses = null)
+    {
+        eligibleBosses ??= new List<int>();
+        
         int largeFishCount = _activeFish.Values.Count(f => f.TypeId == 2);
-        int bossFishCount = _activeFish.Values.Count(f => f.TypeId == 3);
+        int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 2 && f.TypeId <= 6);
         int specialFishCount = _activeFish.Values.Count(f => f.TypeId >= 4 && f.TypeId <= 8);
         
         // Weighted spawn with limits on rare fish
