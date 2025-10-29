@@ -139,22 +139,74 @@ const fishTypes = {
         colors: ['#8B4513', '#C0C0C0', '#FFD700'],
         pattern: 'steampunk',
         tailType: 'fortress'
+    },
+    20: { // Extended - Lantern Fish
+        name: 'Lantern Fish',
+        colors: ['#FFD700', '#FFA500', '#FFFF00'],
+        pattern: 'gradient',
+        tailType: 'fan'
+    },
+    21: { // Extended - Deep Sea Turtle
+        name: 'Deep Sea Turtle',
+        colors: ['#006400', '#228B22', '#32CD32'],
+        pattern: 'turtle',
+        tailType: 'flippers'
+    },
+    22: { // Extended - Saw Shark
+        name: 'Saw Shark',
+        colors: ['#4682B4', '#5F9EA0', '#87CEEB'],
+        pattern: 'hammerhead',
+        tailType: 'shark'
+    },
+    23: { // Extended - Devilfish (Manta)
+        name: 'Devilfish',
+        colors: ['#2F4F4F', '#000080', '#191970'],
+        pattern: 'manta',
+        tailType: 'wings'
+    },
+    24: { // Extended - Jumbo Fish
+        name: 'Jumbo Fish',
+        colors: ['#FF6347', '#FF4500', '#DC143C'],
+        pattern: 'spots',
+        tailType: 'tentacles'
+    },
+    25: { // Extended - Great White Shark
+        name: 'Great White Shark',
+        colors: ['#708090', '#DCDCDC', '#696969'],
+        pattern: 'hammerhead',
+        tailType: 'shark'
+    },
+    26: { // Extended - Killer Whale (Orca)
+        name: 'Killer Whale',
+        colors: ['#000000', '#FFFFFF', '#2F4F4F'],
+        pattern: 'pirate',
+        tailType: 'whale'
+    },
+    27: { // Extended - Golden Dragon King
+        name: 'Golden Dragon King',
+        colors: ['#FFD700', '#FFA500', '#FF8C00'],
+        pattern: 'dragon',
+        tailType: 'dragon'
     }
 };
 
-const fishSizes = [15, 25, 40, 70, 38, 45, 40, 43, 35, 120, 130, 140, 110, 115, 105, 125, 135, 100, 128, 118]; // Regular 0-8, Ultra-rare 9-19
+const fishSizes = [15, 25, 40, 70, 38, 45, 40, 43, 35, 120, 130, 140, 110, 115, 105, 125, 135, 100, 128, 118, 45, 50, 55, 60, 65, 85, 95, 150]; // Regular 0-8, Ultra-rare 9-19, Extended 20-27
 
-// Cannon positions for each player slot (0-7) - positioned like billiards table pockets
+// Turret positions for each player slot (0-7) - positioned at table corners and sides
 const cannonPositions = [
-    { x: 80, y: 80 },      // Slot 0: Top-left corner pocket
-    { x: 1520, y: 80 },    // Slot 1: Top-right corner pocket
-    { x: 80, y: 720 },     // Slot 2: Bottom-left corner pocket
-    { x: 1520, y: 720 },   // Slot 3: Bottom-right corner pocket
-    { x: 800, y: 80 },     // Slot 4: Top-middle pocket
-    { x: 800, y: 720 },    // Slot 5: Bottom-middle pocket
-    { x: 80, y: 400 },     // Slot 6: Left-middle pocket
-    { x: 1520, y: 400 }    // Slot 7: Right-middle pocket
+    { x: 50, y: 50, rotation: 135 },      // Slot 0: Top-left corner
+    { x: 533, y: 20, rotation: 180 },     // Slot 1: Top-left third
+    { x: 1067, y: 20, rotation: 180 },    // Slot 2: Top-right third  
+    { x: 1550, y: 50, rotation: 225 },    // Slot 3: Top-right corner
+    { x: 1550, y: 750, rotation: 315 },   // Slot 4: Bottom-right corner
+    { x: 1067, y: 780, rotation: 0 },     // Slot 5: Bottom-right third
+    { x: 533, y: 780, rotation: 0 },      // Slot 6: Bottom-left third
+    { x: 50, y: 750, rotation: 45 }       // Slot 7: Bottom-left corner
 ];
+
+// Track current turret rotation angles for smooth animation
+const turretRotations = [135, 180, 180, 225, 315, 0, 0, 45]; // Initialize with default rotations
+const turretTargetRotations = [135, 180, 180, 225, 315, 0, 0, 45]; // Target rotations for interpolation
 
 function getCannonPosition(slot) {
     return cannonPositions[slot] || cannonPositions[0];
@@ -217,25 +269,30 @@ async function joinGame() {
             gameState.myPlayerId = result.playerId;
             gameState.myPlayerSlot = result.playerSlot;
             
-            // Hide login, show game
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('gameScreen').style.display = 'flex';
             document.getElementById('connectionStatus').innerHTML = 
                 '<span class="status-connected">● Connected</span>';
             
-            // Initialize canvas
-            canvas = document.getElementById('gameCanvas');
-            ctx = canvas.getContext('2d');
-            
-            // Set canvas size
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            
-            // Set up click handler
-            canvas.addEventListener('click', handleClick);
-            
-            // Start rendering
-            requestAnimationFrame(render);
+            // Show turret selection if not assigned yet
+            if (result.playerSlot === -1 && result.availableSlots && result.availableSlots.length > 0) {
+                showTurretSelection(result.availableSlots);
+            } else {
+                // Start game directly if slot already assigned
+                startGame();
+                
+                // Initialize canvas
+                canvas = document.getElementById('gameCanvas');
+                ctx = canvas.getContext('2d');
+                
+                // Set canvas size
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                
+                // Set up click handler
+                canvas.addEventListener('click', handleClick);
+                
+                // Start rendering
+                requestAnimationFrame(render);
+            }
         } else {
             alert('Failed to join game: ' + result.message);
         }
@@ -257,6 +314,126 @@ function resizeCanvas() {
     canvas.style.height = height + 'px';
 }
 
+function startGame() {
+    // Hide login, show game
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'flex';
+}
+
+function showTurretSelection(availableSlots) {
+    // Hide login screen
+    document.getElementById('loginScreen').style.display = 'none';
+    
+    // Show turret selection overlay
+    const overlay = document.getElementById('turretSelectionOverlay');
+    overlay.style.display = 'flex';
+    
+    // Create selection canvas
+    const selectionCanvas = document.getElementById('turretSelectionCanvas');
+    const selCtx = selectionCanvas.getContext('2d');
+    selectionCanvas.width = 1600;
+    selectionCanvas.height = 800;
+    
+    // Draw turret positions
+    function drawSelectionScreen() {
+        // Ocean background
+        const gradient = selCtx.createLinearGradient(0, 0, 0, selectionCanvas.height);
+        gradient.addColorStop(0, '#001a33');
+        gradient.addColorStop(1, '#004d7a');
+        selCtx.fillStyle = gradient;
+        selCtx.fillRect(0, 0, selectionCanvas.width, selectionCanvas.height);
+        
+        // Draw all 8 turret positions
+        cannonPositions.forEach((pos, idx) => {
+            const isAvailable = availableSlots.includes(idx);
+            
+            // Pulsing glow effect for available slots
+            if (isAvailable) {
+                const pulseAlpha = 0.3 + 0.3 * Math.sin(Date.now() / 300);
+                selCtx.shadowBlur = 30;
+                selCtx.shadowColor = `rgba(255, 255, 0, ${pulseAlpha})`;
+            }
+            
+            // Turret housing
+            selCtx.fillStyle = isAvailable ? 'rgba(255, 255, 0, 0.3)' : 'rgba(100, 100, 100, 0.3)';
+            selCtx.beginPath();
+            selCtx.arc(pos.x, pos.y, 60, 0, Math.PI * 2);
+            selCtx.fill();
+            
+            // Turret base
+            selCtx.fillStyle = isAvailable ? '#ffcc00' : '#666';
+            selCtx.beginPath();
+            selCtx.arc(pos.x, pos.y, 50, 0, Math.PI * 2);
+            selCtx.fill();
+            
+            selCtx.shadowBlur = 0;
+            
+            // Slot number
+            selCtx.fillStyle = isAvailable ? '#000' : '#333';
+            selCtx.font = 'bold 30px Arial';
+            selCtx.textAlign = 'center';
+            selCtx.textBaseline = 'middle';
+            selCtx.fillText(idx + 1, pos.x, pos.y);
+            
+            // Status text
+            selCtx.font = 'bold 14px Arial';
+            selCtx.fillStyle = isAvailable ? '#ffff00' : '#888';
+            selCtx.fillText(isAvailable ? 'AVAILABLE' : 'OCCUPIED', pos.x, pos.y + 80);
+        });
+        
+        requestAnimationFrame(drawSelectionScreen);
+    }
+    
+    drawSelectionScreen();
+    
+    // Handle selection click
+    selectionCanvas.onclick = async (event) => {
+        const rect = selectionCanvas.getBoundingClientRect();
+        const scaleX = selectionCanvas.width / rect.width;
+        const scaleY = selectionCanvas.height / rect.height;
+        
+        const canvasX = (event.clientX - rect.left) * scaleX;
+        const canvasY = (event.clientY - rect.top) * scaleY;
+        
+        // Check which turret was clicked
+        for (let i = 0; i < cannonPositions.length; i++) {
+            const pos = cannonPositions[i];
+            const dist = Math.sqrt((canvasX - pos.x) ** 2 + (canvasY - pos.y) ** 2);
+            
+            if (dist < 60 && availableSlots.includes(i)) {
+                // Valid selection
+                try {
+                    const result = await connection.invoke("SelectTurretSlot", i);
+                    if (result.success) {
+                        gameState.myPlayerSlot = i;
+                        overlay.style.display = 'none';
+                        startGame();
+                        
+                        // Initialize canvas for game
+                        canvas = document.getElementById('gameCanvas');
+                        ctx = canvas.getContext('2d');
+                        resizeCanvas();
+                        window.addEventListener('resize', resizeCanvas);
+                        canvas.addEventListener('click', handleClick);
+                        requestAnimationFrame(render);
+                    } else {
+                        alert('Failed to select turret: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error selecting turret:', error);
+                    alert('Failed to select turret');
+                }
+                break;
+            }
+        }
+    };
+}
+
+// Listen for PlayerSlotSelected events
+connection?.on?.("PlayerSlotSelected", (data) => {
+    console.log(`Player ${data.displayName} selected slot ${data.playerSlot}`);
+});
+
 function handleClick(event) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -273,6 +450,12 @@ function handleClick(event) {
     const dx = canvasX - playerX;
     const dy = canvasY - playerY;
     const length = Math.sqrt(dx * dx + dy * dy);
+    
+    // Update turret target rotation for smooth animation
+    if (length > 0 && gameState.myPlayerSlot >= 0 && gameState.myPlayerSlot < 8) {
+        const targetAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+        turretTargetRotations[gameState.myPlayerSlot] = targetAngle;
+    }
     
     if (length > 0) {
         const dirX = dx / length;
@@ -358,6 +541,20 @@ function updatePlayersList() {
 
 function render() {
     animationTime += 0.016;
+    
+    // Smooth turret rotation interpolation
+    for (let i = 0; i < 8; i++) {
+        const current = turretRotations[i];
+        const target = turretTargetRotations[i];
+        
+        // Calculate shortest rotation path
+        let diff = target - current;
+        while (diff > 180) diff -= 360;
+        while (diff < -180) diff += 360;
+        
+        // Smooth lerp (10% per frame)
+        turretRotations[i] = current + diff * 0.15;
+    }
     
     // Draw deep ocean background with gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -1108,70 +1305,70 @@ function drawPlayerCannon(player) {
     const pos = getCannonPosition(player.playerSlot);
     const isMe = player.playerId === gameState.myPlayerId;
     
-    // Draw pocket/turret housing (darker circle showing the "pocket")
+    // Get current rotation angle for this turret (in degrees)
+    const angleInDegrees = turretRotations[player.playerSlot] || 0;
+    const angle = angleInDegrees * (Math.PI / 180);
+    
+    // Draw turret housing (2.5x larger - 80x80 pixels)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 35, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 80, 0, Math.PI * 2);
     ctx.fill();
     
-    // Pocket rim (brass/metal)
+    // Turret rim (brass/metal)
     ctx.strokeStyle = '#8B7355';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 6;
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 35, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 80, 0, Math.PI * 2);
     ctx.stroke();
     
-    // Cannon glow for active player
+    // Turret glow for active player
     if (isMe) {
-        ctx.shadowBlur = 25;
+        ctx.shadowBlur = 30;
         ctx.shadowColor = '#00ffff';
     }
     
-    // Cannon turret base (metallic look)
-    const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 28);
+    // Turret base (metallic look) - 2.5x larger
+    const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 70);
     gradient.addColorStop(0, isMe ? '#00ffff' : '#999');
     gradient.addColorStop(0.5, isMe ? '#0099cc' : '#666');
     gradient.addColorStop(1, isMe ? '#006699' : '#333');
     
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 28, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 70, 0, Math.PI * 2);
     ctx.fill();
     
-    // Turret barrel - points toward center
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const angle = Math.atan2(centerY - pos.y, centerX - pos.x);
-    
+    // Rotating turret barrel - smooth rotation animation
     ctx.save();
     ctx.translate(pos.x, pos.y);
     ctx.rotate(angle);
     
-    // Barrel with gradient
-    const barrelGrad = ctx.createLinearGradient(0, -6, 0, 6);
+    // Barrel with gradient (2.5x larger)
+    const barrelGrad = ctx.createLinearGradient(0, -15, 0, 15);
     barrelGrad.addColorStop(0, isMe ? '#004466' : '#444');
     barrelGrad.addColorStop(0.5, isMe ? '#0066aa' : '#666');
     barrelGrad.addColorStop(1, isMe ? '#004466' : '#444');
     
     ctx.fillStyle = barrelGrad;
-    ctx.fillRect(0, -6, 30, 12);
+    ctx.fillRect(0, -15, 70, 30);
     
-    // Barrel tip
+    // Barrel tip (2.5x larger)
     ctx.fillStyle = isMe ? '#00ffff' : '#888';
     ctx.beginPath();
-    ctx.arc(30, 0, 6, 0, Math.PI * 2);
+    ctx.arc(70, 0, 15, 0, Math.PI * 2);
     ctx.fill();
     
     ctx.restore();
     ctx.shadowBlur = 0;
     
     // Player name with background
-    const nameOffset = player.playerSlot < 2 || player.playerSlot === 4 ? 50 : -50;
+    const nameOffset = player.playerSlot < 4 ? 100 : -100;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(pos.x - 45, pos.y + nameOffset - 15, 90, 20);
+    ctx.fillRect(pos.x - 60, pos.y + nameOffset - 18, 120, 24);
     
     ctx.fillStyle = isMe ? '#00ffff' : '#ffffff';
-    ctx.font = 'bold 13px Arial';
+    ctx.font = 'bold 16px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(player.displayName, pos.x, pos.y + nameOffset);
 }

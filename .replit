@@ -13,6 +13,7 @@ requiredFiles = [".replit", "replit.nix"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["poppler_utils"]
 
 [deployment]
 run = ["dotnet", "run"]
@@ -56,6 +57,10 @@ externalPort = 3001
 [[ports]]
 localPort = 39045
 externalPort = 3000
+
+[[ports]]
+localPort = 40973
+externalPort = 3003
 
 [[ports]]
 localPort = 45337

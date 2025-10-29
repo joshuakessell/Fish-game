@@ -7,7 +7,8 @@ public class Player
     public decimal Credits { get; set; } = 1000m; // Starting credits
     public int CannonLevel { get; set; } = 1;
     public int BetValue { get; set; } = 10; // Bet value per shot (min 10, max 200)
-    public int PlayerSlot { get; set; } // 0-7 for positioning
+    public int PlayerSlot { get; set; } = -1; // -1 = not selected, 0-7 for positioning
+    public bool HasSelectedSlot { get; set; } = false;
     public string ConnectionId { get; set; } = string.Empty;
     
     // Fire rate limiting

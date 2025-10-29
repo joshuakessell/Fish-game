@@ -88,19 +88,17 @@
 
         #hud {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 20px;
+            top: 120px;
+            left: 120px;
+            padding: 10px;
             display: flex;
-            justify-content: space-between;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+            flex-direction: column;
             pointer-events: none;
         }
 
         .player-info {
             background: rgba(0, 0, 0, 0.7);
-            padding: 3px 5px;
+            padding: 5px 8px;
             border-radius: 5px;
             border: 1px solid #00ffff;
             pointer-events: all;
@@ -126,11 +124,14 @@
         }
 
         #playersList {
+            position: absolute;
+            top: 120px;
+            right: 120px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 3px;
+            padding: 5px;
             border-radius: 5px;
             border: 1px solid #00ffff;
-            max-width: 150px;
+            max-width: 180px;
             pointer-events: all;
         }
 
@@ -155,11 +156,11 @@
 
         #betControls {
             position: absolute;
-            left: 20px;
+            right: 150px;
             top: 50%;
             transform: translateY(-50%);
             background: rgba(0, 0, 0, 0.7);
-            padding: 8px;
+            padding: 10px;
             border-radius: 8px;
             border: 1px solid #00ffff;
             text-align: center;
@@ -221,8 +222,12 @@
         }
 
         #roundIndicator {
+            position: absolute;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.7);
-            padding: 3px 5px;
+            padding: 5px 10px;
             border-radius: 5px;
             border: 1px solid #00ffff;
             text-align: center;
@@ -297,6 +302,37 @@
             align-items: center;
             gap: 10px;
         }
+
+        #turretSelectionOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        #turretSelectionOverlay h2 {
+            font-size: 42px;
+            color: #ffff00;
+            text-shadow: 0 0 20px #ffff00;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        #turretSelectionCanvas {
+            display: block;
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+            cursor: pointer;
+            max-width: 90vw;
+            max-height: 70vh;
+        }
     </style>
 </head>
 <body>
@@ -350,6 +386,11 @@
                 <div class="bet-display">💰 <span id="betValue">10</span></div>
                 <button onclick="increaseBet()">+</button>
             </div>
+        </div>
+
+        <div id="turretSelectionOverlay">
+            <h2>Select Your Turret Position</h2>
+            <canvas id="turretSelectionCanvas"></canvas>
         </div>
     </div>
 

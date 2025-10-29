@@ -134,19 +134,20 @@ public class FishManager
         int largeFishCount = _activeFish.Values.Count(f => f.TypeId == 2);
         int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 2 && f.TypeId <= 6);
         int specialFishCount = _activeFish.Values.Count(f => f.TypeId >= 4 && f.TypeId <= 8);
+        int extendedFishCount = _activeFish.Values.Count(f => f.TypeId >= 20 && f.TypeId <= 27);
         
-        // Weighted spawn with limits on rare fish
-        var rand = Random.Shared.Next(100);
+        // Weighted spawn with limits on rare fish (now includes types 0-8 and 20-27)
+        var rand = Random.Shared.Next(1000);
         int typeId;
         
-        if (rand < 55) // 55% small fish
+        if (rand < 500) // 50% small fish (type 0)
         {
             typeId = 0;
             // Spawn small fish in groups with patterns
             SpawnFishGroup(typeId, currentTick);
             return;
         }
-        else if (rand < 75) // 20% medium fish
+        else if (rand < 700) // 20% medium fish (type 1)
         {
             typeId = 1;
             // Medium fish spawn in pairs sometimes
@@ -156,7 +157,7 @@ public class FishManager
                 return;
             }
         }
-        else if (rand < 85) // 10% special creatures (types 4-8)
+        else if (rand < 800) // 10% special creatures (types 4-8)
         {
             if (specialFishCount >= 4) // Limit special fish on screen
             {
@@ -168,7 +169,40 @@ public class FishManager
                 typeId = Random.Shared.Next(4, 9); // 4-8
             }
         }
-        else if (rand < 95) // 10% large fish
+        else if (rand < 880) // 8% extended fish types 20-23 (lower value extended fish)
+        {
+            if (extendedFishCount >= 3) // Limit extended fish on screen
+            {
+                typeId = 1; // Spawn medium instead
+            }
+            else
+            {
+                typeId = Random.Shared.Next(20, 24); // 20-23
+            }
+        }
+        else if (rand < 930) // 5% extended fish types 24-25 (medium value extended fish)
+        {
+            if (extendedFishCount >= 3)
+            {
+                typeId = 2; // Spawn large instead
+            }
+            else
+            {
+                typeId = Random.Shared.Next(24, 26); // 24-25
+            }
+        }
+        else if (rand < 960) // 3% extended fish types 26-27 (high value extended fish)
+        {
+            if (extendedFishCount >= 2)
+            {
+                typeId = 2; // Spawn large instead
+            }
+            else
+            {
+                typeId = Random.Shared.Next(26, 28); // 26-27
+            }
+        }
+        else if (rand < 980) // 2% large fish (type 2)
         {
             if (largeFishCount >= MAX_LARGE_FISH)
             {
@@ -179,7 +213,7 @@ public class FishManager
                 typeId = 2;
             }
         }
-        else // 5% boss fish
+        else // 2% boss fish (type 3)
         {
             if (bossFishCount >= MAX_BOSS_FISH)
             {
@@ -345,6 +379,14 @@ public class FishManager
             6 => 25f + Random.Shared.NextSingle() * 5f,    // Jellyfish: very slow drift
             7 => 55f + Random.Shared.NextSingle() * 10f,   // Hammerhead: moderate hunting
             8 => 40f + Random.Shared.NextSingle() * 8f,    // Nautilus: slow spiral
+            20 => 42f + Random.Shared.NextSingle() * 7f,   // Lantern Fish: moderate
+            21 => 38f + Random.Shared.NextSingle() * 6f,   // Sea Turtle: slow graceful
+            22 => 52f + Random.Shared.NextSingle() * 9f,   // Saw Shark: moderate-fast
+            23 => 48f + Random.Shared.NextSingle() * 8f,   // Devilfish: moderate
+            24 => 40f + Random.Shared.NextSingle() * 8f,   // Jumbo Fish: slow-moderate
+            25 => 58f + Random.Shared.NextSingle() * 10f,  // Shark: fast
+            26 => 50f + Random.Shared.NextSingle() * 8f,   // Killer Whale: moderate
+            27 => 35f + Random.Shared.NextSingle() * 7f,   // Golden Dragon: slow
             _ => 80f
         };
     }

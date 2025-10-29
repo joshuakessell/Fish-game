@@ -432,6 +432,16 @@ public class MatchInstance
     {
         return _playerManager.GetPlayer(playerId);
     }
+
+    public List<int> GetAvailableSlots()
+    {
+        return _playerManager.GetAvailableSlots();
+    }
+
+    public bool AssignPlayerSlot(string playerId, int slotIndex)
+    {
+        return _playerManager.AssignPlayerSlot(playerId, slotIndex);
+    }
 }
 
 // Command and state classes

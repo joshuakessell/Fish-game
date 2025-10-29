@@ -29,7 +29,7 @@ public class BossDefinition
 
 public static class BossCatalog
 {
-    private const float RTP = 0.90f;
+    private const float RTP = 0.97f;
     private const float AVG_MULTIPLIER = 1.74f;
 
     private static float CalculateDestructionOdds(decimal baseValue)

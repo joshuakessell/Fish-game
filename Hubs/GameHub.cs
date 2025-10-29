@@ -38,7 +38,9 @@ public class GameHub : Hub
 
             await Groups.AddToGroupAsync(Context.ConnectionId, match.MatchId);
 
-            Console.WriteLine($"Player {displayName} joined match {match.MatchId} in slot {player.PlayerSlot}");
+            var availableSlots = match.GetAvailableSlots();
+            
+            Console.WriteLine($"Player {displayName} joined match {match.MatchId} - awaiting turret selection");
 
             return new
             {
@@ -46,7 +48,8 @@ public class GameHub : Hub
                 matchId = match.MatchId,
                 playerId = player.PlayerId,
                 playerSlot = player.PlayerSlot,
-                credits = player.Credits
+                credits = player.Credits,
+                availableSlots = availableSlots
             };
         }
         catch (Exception ex)
@@ -99,6 +102,46 @@ public class GameHub : Hub
             PlayerId = playerId,
             BetValue = betValue
         });
+    }
+
+    public async Task<object> SelectTurretSlot(int slotIndex)
+    {
+        if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
+            return new { success = false, message = "Not in a match" };
+
+        if (!_connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerId))
+            return new { success = false, message = "Player not found" };
+
+        var matchManager = _gameServer.GetMatchManager();
+        var match = matchManager.GetMatch(matchId);
+        
+        if (match == null)
+            return new { success = false, message = "Match not found" };
+
+        if (slotIndex < 0 || slotIndex > 7)
+            return new { success = false, message = "Invalid slot index" };
+
+        var success = match.AssignPlayerSlot(playerId, slotIndex);
+        
+        if (success)
+        {
+            var player = match.GetPlayer(playerId);
+            if (player != null)
+            {
+                Console.WriteLine($"Player {player.DisplayName} selected turret slot {slotIndex}");
+                
+                await Clients.Group(matchId).SendAsync("PlayerSlotSelected", new
+                {
+                    playerId = playerId,
+                    playerSlot = slotIndex,
+                    displayName = player.DisplayName
+                });
+            }
+            
+            return new { success = true, slotIndex = slotIndex };
+        }
+        
+        return new { success = false, message = "Slot not available" };
     }
 
     public void SubmitInteraction(string interactionId, Dictionary<string, object> submissionData)
