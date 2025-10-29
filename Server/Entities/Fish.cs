@@ -109,8 +109,6 @@ public class Fish
                 break;
         }
         
-        // Keep fish on screen
-        if (Y < 50) VelocityY = MathF.Abs(VelocityY);
-        if (Y > 850) VelocityY = -MathF.Abs(VelocityY);
+        // No bounds - fish swim freely and exit screen naturally like in an aquarium
     }
 }

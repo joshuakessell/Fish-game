@@ -1,15 +1,16 @@
-# Ocean King 3 - Multiplayer Fishing Game
+# Ocean King 3 - Casino Betting Table Game
 
 ## Overview
-A real-time multiplayer fishing arcade game supporting up to 8 concurrent players. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering.
+A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
 ## Recent Changes (October 29, 2025)
-- **Fixed critical SignalR event handler leak**: Refactored to use IHub Context directly instead of per-join event subscriptions
-- **Fixed fish timing bug**: Fish movement patterns now use consistent tick-based timing (30 TPS)
-- Set up authoritative server architecture with 30 TPS game loop
-- Implemented core entity systems (Fish, Projectile, Player)
-- Built collision detection and payout system
-- Created HTML5 Canvas client with fish rendering
+- **Transformed to casino betting table**: Changed from damage-based to probability-based fish destruction system
+- **90% RTP target**: Implemented precise destruction odds for consistent return-to-player across fish types
+- **High-volatility multipliers**: Added 1x-20x payout system with rare jackpots for player excitement
+- **Billiards table layout**: Changed to 2:1 aspect ratio (1600x800) with 8 turret positions matching pocket locations
+- **Exotic aquarium graphics**: Enhanced visuals with clownfish, angelfish, octopus, and golden dragon creatures
+- **Hot seat system**: Visual player excitement indicator that rotates randomly without affecting RTP
+- **Unbounded fish movement**: Fish swim naturally across screen and exit freely like in an aquarium
 
 ## Project Architecture
 
@@ -24,17 +25,18 @@ A real-time multiplayer fishing arcade game supporting up to 8 concurrent player
 
 ### Client (HTML5 Canvas + JavaScript)
 - **wwwroot/index.html**: Game UI and login screen
-- **wwwroot/game.js**: Client-side rendering, SignalR connection, input handling
+- **wwwroot/game.js**: Exotic aquarium rendering with animated fish, turret positions, underwater effects
 
 ### Key Features
-- **Authoritative Server**: All game logic runs server-side at 30 TPS
-- **8-Player Support**: Up to 8 simultaneous players per match
-- **Real-time Sync**: SignalR broadcasts game state 30 times per second
-- **Fish Types**: Small (10 HP), Medium (30 HP), Large (100 HP), Boss (500 HP)
-- **Credit Economy**: Players spend credits to shoot, earn credits for kills
-- **Payout Multipliers**: Random 1x-10x multipliers on fish kills
-- **Movement Patterns**: Fish have different movement styles (straight, sine wave, spiral)
-- **Fire Rate Limiting**: Max 10 shots per second per player (server-enforced)
+- **Casino Betting Mechanics**: Probability-based destruction system (no HP bars)
+- **90% RTP**: Precise odds calculated for consistent long-term return to player
+- **High Volatility**: Multipliers range from 1x to 20x with rare jackpots
+- **Billiards Table Layout**: 2:1 aspect ratio with 8 turret positions at pocket locations
+- **Exotic Creatures**: Clownfish, angelfish, octopus, and golden dragon fish with unique animations
+- **30-50 Fish On-Screen**: Constant action with fish spawning in groups (small) or solo (large/boss)
+- **Natural Movement**: Fish swim across and exit screen freely - no bounding box
+- **Hot Seat System**: Random luck indicator for visual excitement without breaking RTP
+- **Authoritative Server**: All game logic and RNG server-side at 30 TPS
 
 ## How to Play
 1. Enter your name on the login screen
@@ -43,11 +45,21 @@ A real-time multiplayer fishing arcade game supporting up to 8 concurrent player
 4. Hit fish to damage them and earn credits when they die
 5. Switch weapons using the buttons at the bottom (Normal, Lightning, Bomb)
 
-## Technical Details
+## Casino Mechanics
+
+### RTP System
+- **Target RTP**: 90% over weekly/monthly periods
+- **Destruction Odds**: Calculated dynamically using formula `P = 0.90 / (BaseValue × AvgMultiplier)`
+  - Small fish (5 credits): ~10.9% destruction chance per hit
+  - Medium fish (15 credits): ~3.6% destruction chance per hit
+  - Large fish (50 credits): ~1.1% destruction chance per hit
+  - Boss fish (500 credits): ~0.11% destruction chance per hit
+- **Multipliers**: High-volatility system (1x=70%, 2x=15%, 3x=8%, 5x=5%, 10x=1.5%, 20x=0.5%)
+- **Hot Seat**: Purely visual excitement - rotates randomly but doesn't affect actual odds
 
 ### Network Protocol
-- **JoinMatch**: Player joins a match and gets assigned a slot (0-7)
-- **Fire**: Send shooting commands with position and direction
+- **JoinMatch**: Player joins match and gets assigned turret slot (0-7)
+- **Fire**: Send shooting commands from turret position
 - **ChangeWeapon**: Switch between weapon types
 - **StateDelta**: Server broadcasts game state every tick (30 times/sec)
 
