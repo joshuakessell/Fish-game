@@ -38,38 +38,38 @@ public class Fish
         float direction = movingRight ? 1f : -1f;
         
         // Configure based on type with proper crossing speeds and destruction odds
-        // Destruction odds calculated for 95% RTP with high-volatility multipliers
+        // Destruction odds calculated for exactly 95% RTP with high-volatility multipliers
         // Formula: P = 0.95 / (BaseValue × AvgMultiplier)
-        // AvgMultiplier ≈ 1.74 (1x=70%, 2x=15%, 3x=8%, 5x=5%, 10x=1.5%, 20x=0.5%)
+        // AvgMultiplier = 1.74 (1x×70% + 2x×15% + 3x×8% + 5x×5% + 10x×1.5% + 20x×0.5%)
         switch (typeId)
         {
-            case 0: // Small fish - 10.9% destruction chance per hit
+            case 0: // Small fish - precise odds for 95% RTP
                 fish.BaseValue = 5m;
-                fish.DestructionOdds = 0.109f;
+                fish.DestructionOdds = 0.95f / (5f * 1.74f); // 0.10919540...
                 fish.HitboxRadius = 20f;
                 fish.VelocityX = direction * (100f + Random.Shared.NextSingle() * 20f);
                 fish.DespawnTick = currentTick + 600; // 20 seconds max lifetime
                 break;
                 
-            case 1: // Medium fish - 3.6% destruction chance per hit
+            case 1: // Medium fish - precise odds for 95% RTP
                 fish.BaseValue = 15m;
-                fish.DestructionOdds = 0.036f;
+                fish.DestructionOdds = 0.95f / (15f * 1.74f); // 0.03639847...
                 fish.HitboxRadius = 30f;
                 fish.VelocityX = direction * (60f + Random.Shared.NextSingle() * 10f);
                 fish.DespawnTick = currentTick + 900; // 30 seconds max lifetime
                 break;
                 
-            case 2: // Large fish - 1.1% destruction chance per hit
+            case 2: // Large fish - precise odds for 95% RTP
                 fish.BaseValue = 50m;
-                fish.DestructionOdds = 0.011f;
+                fish.DestructionOdds = 0.95f / (50f * 1.74f); // 0.01091954...
                 fish.HitboxRadius = 50f;
                 fish.VelocityX = direction * (45f + Random.Shared.NextSingle() * 10f);
                 fish.DespawnTick = currentTick + 1200; // 40 seconds max lifetime
                 break;
                 
-            case 3: // Boss fish - 0.11% destruction chance per hit (very rare!)
+            case 3: // Boss fish - precise odds for 95% RTP
                 fish.BaseValue = 500m;
-                fish.DestructionOdds = 0.0011f;
+                fish.DestructionOdds = 0.95f / (500f * 1.74f); // 0.00109195...
                 fish.HitboxRadius = 80f;
                 fish.VelocityX = direction * (30f + Random.Shared.NextSingle() * 8f);
                 fish.DespawnTick = currentTick + 1800; // 60 seconds max lifetime

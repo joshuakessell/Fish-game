@@ -263,15 +263,17 @@ public class MatchInstance
             currentHotSeat = null;
         }
         
-        // If no active hot seat, randomly assign one (25% chance for proper RTP balance)
-        if (currentHotSeat == null && Random.Shared.Next(100) < 25)
+        // If no active hot seat, heavily rotate to random players for excitement
+        // Note: LuckMultiplier stays at 1.0 to maintain exactly 95% RTP
+        // The hot seat is purely visual/psychological - creates excitement without breaking RTP balance
+        if (currentHotSeat == null && Random.Shared.Next(100) < 70) // 70% chance - frequent rotation for excitement
         {
             var eligiblePlayers = players.Where(p => !p.IsHotSeat).ToList();
             if (eligiblePlayers.Count > 0)
             {
                 var luckyPlayer = eligiblePlayers[Random.Shared.Next(eligiblePlayers.Count)];
                 luckyPlayer.IsHotSeat = true;
-                luckyPlayer.LuckMultiplier = 1.05f; // 5% better destruction odds (carefully tuned for 95% RTP)
+                luckyPlayer.LuckMultiplier = 1.0f; // No actual odds boost - maintains 95% RTP exactly
                 luckyPlayer.HotSeatExpiryTick = currentTick + HOT_SEAT_DURATION_TICKS;
                 Console.WriteLine($"🔥 HOT SEAT activated for {luckyPlayer.DisplayName} for 30 seconds!");
             }
