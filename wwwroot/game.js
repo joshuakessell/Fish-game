@@ -9,13 +9,30 @@ let gameState = {
 
 let canvas, ctx;
 let currentWeapon = 0;
+let playerName = '';
 
 // Fish sprites (simple colored circles for now)
 const fishColors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#9B59B6'];
 const fishSizes = [15, 25, 40, 60]; // Small, Medium, Large, Boss
 
+// Cannon positions for each player slot (0-7)
+const cannonPositions = [
+    { x: 800, y: 870 }, // Slot 0: Bottom center (canvas.width/2 when 1600px)
+    { x: 100, y: 870 }, // Slot 1: Bottom left
+    { x: 1500, y: 870 }, // Slot 2: Bottom right
+    { x: 100, y: 100 }, // Slot 3: Top left
+    { x: 1500, y: 100 }, // Slot 4: Top right
+    { x: 800, y: 100 }, // Slot 5: Top center
+    { x: 50, y: 450 },  // Slot 6: Middle left (canvas.height/2 when 900px)
+    { x: 1550, y: 450 } // Slot 7: Middle right
+];
+
+function getCannonPosition(slot) {
+    return cannonPositions[slot] || cannonPositions[0];
+}
+
 async function joinGame() {
-    const playerName = document.getElementById('playerName').value.trim();
+    playerName = document.getElementById('playerName').value.trim();
     if (!playerName) {
         alert('Please enter your name');
         return;
@@ -36,9 +53,20 @@ async function joinGame() {
                 '<span class="status-disconnected">Reconnecting...</span>';
         });
 
-        connection.onreconnected(() => {
-            document.getElementById('connectionStatus').innerHTML = 
-                '<span class="status-connected">● Connected</span>';
+        connection.onreconnected(async () => {
+            // Rejoin the match after reconnection
+            try {
+                const result = await connection.invoke("JoinMatch", playerName);
+                if (result.success) {
+                    gameState.myPlayerId = result.playerId;
+                    gameState.myPlayerSlot = result.playerSlot;
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<span class="status-connected">● Connected</span>';
+                    console.log("Rejoined match after reconnection");
+                }
+            } catch (error) {
+                console.error("Failed to rejoin match:", error);
+            }
         });
 
         connection.onclose(() => {
@@ -117,9 +145,10 @@ function handleClick(event) {
     const canvasX = (event.clientX - rect.left) * scaleX;
     const canvasY = (event.clientY - rect.top) * scaleY;
     
-    // Calculate direction from center bottom (player position)
-    const playerX = canvas.width / 2;
-    const playerY = canvas.height - 50;
+    // Get the player's cannon position based on their slot
+    const cannonPos = getCannonPosition(gameState.myPlayerSlot);
+    const playerX = cannonPos.x;
+    const playerY = cannonPos.y;
     
     const dx = canvasX - playerX;
     const dy = canvasY - playerY;
@@ -294,19 +323,7 @@ function drawProjectile(proj) {
 }
 
 function drawPlayerCannon(player) {
-    // Position cannons around the edges based on player slot
-    const positions = [
-        { x: canvas.width / 2, y: canvas.height - 30 }, // Bottom center
-        { x: 100, y: canvas.height - 30 },              // Bottom left
-        { x: canvas.width - 100, y: canvas.height - 30 }, // Bottom right
-        { x: 100, y: 100 },                             // Top left
-        { x: canvas.width - 100, y: 100 },              // Top right
-        { x: canvas.width / 2, y: 100 },                // Top center
-        { x: 50, y: canvas.height / 2 },                // Middle left
-        { x: canvas.width - 50, y: canvas.height / 2 }  // Middle right
-    ];
-    
-    const pos = positions[player.playerSlot] || positions[0];
+    const pos = getCannonPosition(player.playerSlot);
     const isMe = player.playerId === gameState.myPlayerId;
     
     // Cannon base
