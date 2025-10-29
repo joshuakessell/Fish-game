@@ -100,88 +100,105 @@
 
         .player-info {
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
-            border-radius: 10px;
-            border: 2px solid #00ffff;
+            padding: 3px 5px;
+            border-radius: 5px;
+            border: 1px solid #00ffff;
             pointer-events: all;
         }
 
         .player-info h2 {
-            font-size: 24px;
+            font-size: 12px;
             color: #00ffff;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
 
         .player-info .credits {
-            font-size: 32px;
+            font-size: 16px;
             color: #ffcc00;
             font-weight: bold;
-            text-shadow: 0 0 10px #ffcc00;
+            text-shadow: 0 0 5px #ffcc00;
         }
 
         .player-info .stats {
-            font-size: 14px;
+            font-size: 8px;
             color: #aaa;
-            margin-top: 5px;
+            margin-top: 2px;
         }
 
         #playersList {
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #00ffff;
-            max-width: 300px;
+            padding: 3px;
+            border-radius: 5px;
+            border: 1px solid #00ffff;
+            max-width: 150px;
             pointer-events: all;
         }
 
         #playersList h3 {
             color: #00ffff;
-            margin-bottom: 10px;
+            margin-bottom: 2px;
+            font-size: 10px;
         }
 
         .player-slot {
-            padding: 5px;
-            margin: 3px 0;
+            padding: 2px;
+            margin: 1px 0;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
-            font-size: 14px;
+            border-radius: 3px;
+            font-size: 8px;
         }
 
         .player-slot.active {
             background: rgba(0, 255, 255, 0.2);
-            border-left: 3px solid #00ffff;
+            border-left: 2px solid #00ffff;
         }
 
-        #weaponControls {
+        #betControls {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #00ffff;
+            text-align: center;
             pointer-events: all;
         }
 
-        .weapon-btn {
-            padding: 15px 30px;
+        #betControls h3 {
+            font-size: 12px;
+            color: #00ffff;
+            margin-bottom: 5px;
+        }
+
+        #betControls .bet-display {
+            font-size: 20px;
+            color: #ffcc00;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        #betControls button {
+            padding: 8px 15px;
+            margin: 3px;
             font-size: 16px;
             background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #00ffff;
-            border-radius: 10px;
+            border: 1px solid #00ffff;
+            border-radius: 5px;
             color: white;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .weapon-btn:hover {
+        #betControls button:hover {
             background: rgba(0, 255, 255, 0.3);
             transform: scale(1.05);
         }
 
-        .weapon-btn.active {
-            background: linear-gradient(45deg, #00ffff, #00cc99);
-            color: #001f3f;
-            font-weight: bold;
+        #betControls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         #connectionStatus {
@@ -205,9 +222,9 @@
 
         #roundIndicator {
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
-            border-radius: 10px;
-            border: 2px solid #00ffff;
+            padding: 3px 5px;
+            border-radius: 5px;
+            border: 1px solid #00ffff;
             text-align: center;
             pointer-events: all;
         }
@@ -311,10 +328,10 @@
                 </div>
                 
                 <div id="roundIndicator">
-                    <div style="font-size: 20px; font-weight: bold; color: #00ffff;">
+                    <div style="font-size: 10px; font-weight: bold; color: #00ffff;">
                         Round 1
                     </div>
-                    <div style="font-size: 16px; color: #ffcc00;">
+                    <div style="font-size: 8px; color: #ffcc00;">
                         10:00
                     </div>
                 </div>
@@ -327,16 +344,11 @@
             
             <div id="interactionOverlay"></div>
 
-            <div id="weaponControls">
-                <button class="weapon-btn active" onclick="changeWeapon(0)">
-                    🎯 Normal (1 💰)
-                </button>
-                <button class="weapon-btn" onclick="changeWeapon(1)">
-                    ⚡ Lightning (50 💰)
-                </button>
-                <button class="weapon-btn" onclick="changeWeapon(2)">
-                    💣 Bomb (100 💰)
-                </button>
+            <div id="betControls">
+                <h3>Bet Value</h3>
+                <button onclick="decreaseBet()">-</button>
+                <div class="bet-display">💰 <span id="betValue">10</span></div>
+                <button onclick="increaseBet()">+</button>
             </div>
         </div>
     </div>

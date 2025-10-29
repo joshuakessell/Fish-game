@@ -80,7 +80,7 @@ public class GameHub : Hub
         });
     }
 
-    public void ChangeWeapon(int weaponType)
+    public void SetBetValue(int betValue)
     {
         if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
             return;
@@ -95,9 +95,9 @@ public class GameHub : Hub
 
         match.EnqueueCommand(new GameCommand
         {
-            Type = CommandType.ChangeWeapon,
+            Type = CommandType.SetBetValue,
             PlayerId = playerId,
-            WeaponType = weaponType
+            BetValue = betValue
         });
     }
 

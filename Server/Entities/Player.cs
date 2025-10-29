@@ -6,7 +6,7 @@ public class Player
     public string DisplayName { get; set; } = string.Empty;
     public decimal Credits { get; set; } = 1000m; // Starting credits
     public int CannonLevel { get; set; } = 1;
-    public int WeaponType { get; set; } = 0; // 0 = normal, 1 = lightning, 2 = bomb
+    public int BetValue { get; set; } = 10; // Bet value per shot (min 10, max 200)
     public int PlayerSlot { get; set; } // 0-7 for positioning
     public string ConnectionId { get; set; } = string.Empty;
     
@@ -28,15 +28,5 @@ public class Player
     {
         var timeSinceLastFire = (DateTime.UtcNow - LastFireTime).TotalMilliseconds;
         return timeSinceLastFire >= MIN_FIRE_INTERVAL_MS;
-    }
-
-    public decimal GetWeaponCost()
-    {
-        return WeaponType switch
-        {
-            1 => 50m, // Lightning chain - expensive
-            2 => 100m, // Bomb - very expensive
-            _ => 1m * CannonLevel // Normal shot scales with cannon level
-        };
     }
 }

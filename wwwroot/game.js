@@ -14,7 +14,7 @@ const gameState = {
 };
 
 let canvas, ctx;
-let currentWeapon = 0;
+let betValue = 10;
 let playerName = '';
 let animationTime = 0;
 
@@ -286,19 +286,29 @@ function handleClick(event) {
     }
 }
 
-function changeWeapon(weaponType) {
-    currentWeapon = weaponType;
-    
-    // Update UI
-    document.querySelectorAll('.weapon-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-    // Send to server
+function increaseBet() {
+    betValue = Math.min(200, betValue + 10);
+    updateBetDisplay();
+    sendBetValueToServer();
+}
+
+function decreaseBet() {
+    betValue = Math.max(10, betValue - 10);
+    updateBetDisplay();
+    sendBetValueToServer();
+}
+
+function updateBetDisplay() {
+    const betValueElement = document.getElementById('betValue');
+    if (betValueElement) {
+        betValueElement.textContent = betValue;
+    }
+}
+
+function sendBetValueToServer() {
     if (connection) {
-        connection.invoke("ChangeWeapon", weaponType)
-            .catch(err => console.error('Weapon change error:', err));
+        connection.invoke("SetBetValue", betValue)
+            .catch(err => console.error('Bet value error:', err));
     }
 }
 
@@ -1175,21 +1185,13 @@ function updateRoundDisplay() {
     const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     
     roundIndicator.innerHTML = `
-        <div style="font-size: 20px; font-weight: bold; color: #00ffff;">
+        <div style="font-size: 10px; font-weight: bold; color: #00ffff;">
             Round ${gameState.roundNumber}
         </div>
-        <div style="font-size: 16px; color: #ffcc00;">
+        <div style="font-size: 8px; color: #ffcc00;">
             ${timeStr}
         </div>
     `;
-    
-    if (gameState.isRoundTransitioning) {
-        roundIndicator.innerHTML += `
-            <div style="font-size: 18px; color: #ff00ff; margin-top: 10px;">
-                NEW ROUND STARTING...
-            </div>
-        `;
-    }
 }
 
 function showInteractionUI(interaction) {

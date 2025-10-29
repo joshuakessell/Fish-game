@@ -165,12 +165,9 @@ public class MatchInstance
         // Step 8: Update round manager (checks fish count AFTER all removals)
         _roundManager.Update(_currentTick, _fishManager.GetActiveFish().Count);
 
-        // Step 9: Spawn new fish if needed (suppressed during/after round end)
-        if (!_roundManager.ShouldSuppressSpawns(_currentTick))
-        {
-            var eligibleBosses = _roundManager.GetEligibleBosses();
-            _fishManager.SpawnFishIfNeeded(_currentTick, eligibleBosses);
-        }
+        // Step 9: Spawn new fish continuously - no suppression
+        var eligibleBosses = _roundManager.GetEligibleBosses();
+        _fishManager.SpawnFishIfNeeded(_currentTick, eligibleBosses);
         
         // Step 10: Manage hot seats (random luck boosts for excitement)
         ManageHotSeats(_currentTick);
@@ -189,8 +186,8 @@ public class MatchInstance
             case CommandType.Fire:
                 HandleFireCommand(command);
                 break;
-            case CommandType.ChangeWeapon:
-                HandleChangeWeapon(command);
+            case CommandType.SetBetValue:
+                HandleSetBetValue(command);
                 break;
         }
     }
@@ -204,7 +201,7 @@ public class MatchInstance
         if (!player.CanFire()) return;
 
         // Validate credits
-        var cost = player.GetWeaponCost();
+        var cost = player.BetValue;
         if (player.Credits < cost) return;
 
         // Deduct credits immediately (authoritative)
@@ -216,7 +213,7 @@ public class MatchInstance
         var projectile = new Projectile
         {
             OwnerPlayerId = player.PlayerId,
-            WeaponTypeId = player.WeaponType,
+            WeaponTypeId = 0,
             X = command.X,
             Y = command.Y,
             DirectionX = command.DirectionX,
@@ -227,12 +224,13 @@ public class MatchInstance
         _projectileManager.AddProjectile(projectile);
     }
 
-    private void HandleChangeWeapon(GameCommand command)
+    private void HandleSetBetValue(GameCommand command)
     {
         var player = _playerManager.GetPlayer(command.PlayerId);
         if (player == null) return;
 
-        player.WeaponType = command.WeaponType;
+        // Clamp bet value between 10 and 200
+        player.BetValue = Math.Clamp(command.BetValue, 10, 200);
     }
 
     private void ProcessKill(KillEvent kill)
@@ -363,7 +361,7 @@ public class MatchInstance
             TickId = _currentTick,
             RoundNumber = roundState.RoundNumber,
             TimeRemainingTicks = _roundManager.GetTimeRemainingTicks(_currentTick),
-            IsRoundTransitioning = roundState.IsTransitioning,
+            IsRoundTransitioning = false,
             Players = _playerManager.GetAllPlayers().Select(p => new PlayerState
             {
                 PlayerId = p.PlayerId,
@@ -445,13 +443,13 @@ public class GameCommand
     public float Y { get; set; }
     public float DirectionX { get; set; }
     public float DirectionY { get; set; }
-    public int WeaponType { get; set; }
+    public int BetValue { get; set; }
 }
 
 public enum CommandType
 {
     Fire,
-    ChangeWeapon
+    SetBetValue
 }
 
 public class StateDelta
