@@ -18,6 +18,11 @@ let betValue = 10;
 let playerName = '';
 let animationTime = 0;
 
+// Animation tracking
+let previousFish = [];
+let dyingFish = []; // { fish, progress (0-1), x, y, type }
+let creditPopups = []; // { x, y, amount, progress (0-1) }
+
 // Fish visual varieties - exotic aquarium creatures
 const fishTypes = {
     0: { // Small - Tropical Fish
@@ -442,6 +447,25 @@ function handleClick(event) {
     const canvasX = (event.clientX - rect.left) * scaleX;
     const canvasY = (event.clientY - rect.top) * scaleY;
     
+    // Check if clicking on +/- buttons for bet value
+    if (window.betButtonBounds && window.betButtonBounds[gameState.myPlayerSlot]) {
+        const bounds = window.betButtonBounds[gameState.myPlayerSlot];
+        
+        // Check minus button
+        if (canvasX >= bounds.minus.x && canvasX <= bounds.minus.x + bounds.minus.width &&
+            canvasY >= bounds.minus.y && canvasY <= bounds.minus.y + bounds.minus.height) {
+            decreaseBet();
+            return; // Don't fire
+        }
+        
+        // Check plus button
+        if (canvasX >= bounds.plus.x && canvasX <= bounds.plus.x + bounds.plus.width &&
+            canvasY >= bounds.plus.y && canvasY <= bounds.plus.y + bounds.plus.height) {
+            increaseBet();
+            return; // Don't fire
+        }
+    }
+    
     // Get the player's cannon position based on their slot
     const cannonPos = getCannonPosition(gameState.myPlayerSlot);
     const playerX = cannonPos.x;
@@ -471,21 +495,12 @@ function handleClick(event) {
 
 function increaseBet() {
     betValue = Math.min(200, betValue + 10);
-    updateBetDisplay();
     sendBetValueToServer();
 }
 
 function decreaseBet() {
     betValue = Math.max(10, betValue - 10);
-    updateBetDisplay();
     sendBetValueToServer();
-}
-
-function updateBetDisplay() {
-    const betValueElement = document.getElementById('betValue');
-    if (betValueElement) {
-        betValueElement.textContent = betValue;
-    }
 }
 
 function sendBetValueToServer() {
@@ -497,8 +512,43 @@ function sendBetValueToServer() {
 
 function handleStateDelta(delta) {
     gameState.tickId = delta.tickId;
+    
+    // Capture old player state BEFORE updating
+    const oldPlayer = gameState.players.find(p => p.playerId === gameState.myPlayerId);
+    const newPlayer = delta.players.find(p => p.playerId === gameState.myPlayerId);
+    
+    // Detect fish deaths for animations
+    const newFish = delta.fish || [];
+    const newFishIds = new Set(newFish.map(f => f.fishId));
+    
+    // Find fish that were in previous state but not in new state (they died)
+    previousFish.forEach(oldFish => {
+        if (!newFishIds.has(oldFish.fishId)) {
+            // Fish died - add to dying animation array (use typeId not fishType)
+            dyingFish.push({
+                fish: oldFish,
+                progress: 0,
+                x: oldFish.x,
+                y: oldFish.y,
+                type: oldFish.typeId
+            });
+            
+            // If this fish was killed by the current player, add credit popup
+            if (oldPlayer && newPlayer && newPlayer.credits > oldPlayer.credits) {
+                const creditsEarned = Math.floor(newPlayer.credits - oldPlayer.credits);
+                creditPopups.push({
+                    x: oldFish.x,
+                    y: oldFish.y,
+                    amount: creditsEarned,
+                    progress: 0
+                });
+            }
+        }
+    });
+    
+    previousFish = newFish;
     gameState.players = delta.players;
-    gameState.fish = delta.fish;
+    gameState.fish = newFish;
     gameState.projectiles = delta.projectiles;
     gameState.roundNumber = delta.roundNumber || 1;
     gameState.timeRemainingTicks = delta.timeRemainingTicks || 18000;
@@ -558,6 +608,139 @@ function render() {
     // Draw fish (behind bullets)
     gameState.fish.forEach(fish => {
         drawFish(fish);
+    });
+    
+    // Update and draw dying fish animations (0.25s duration)
+    dyingFish = dyingFish.filter(dying => {
+        dying.progress += 0.016 / 0.25; // Increment based on frame time / total duration
+        if (dying.progress >= 1) return false; // Remove completed animations
+        
+        // Draw dying fish with spin, shrink, and fade
+        const type = fishTypes[dying.type] || fishTypes[0];
+        const size = fishSizes[dying.type] || 20;
+        const swimming = Math.sin(animationTime * 3) * 0.2;
+        
+        ctx.save();
+        ctx.translate(dying.x, dying.y);
+        
+        // Spin effect (multiple rotations)
+        ctx.rotate(dying.progress * Math.PI * 4); // 2 full rotations
+        
+        // Shrink effect
+        const scale = 1 - dying.progress * 0.7; // Shrink to 30% of original size
+        ctx.scale(scale, scale);
+        
+        // Fade effect
+        ctx.globalAlpha = 1 - dying.progress;
+        
+        // Draw the fish based on pattern
+        switch (type.pattern) {
+            case 'stripes':
+                drawClownfish(size, type.colors, swimming);
+                break;
+            case 'gradient':
+                drawAngelfish(size, type.colors, swimming);
+                break;
+            case 'spots':
+                drawOctopus(size, type.colors, swimming);
+                break;
+            case 'dragon':
+                drawDragon(size, type.colors, swimming);
+                break;
+            case 'turtle':
+                drawSeaTurtle(size, type.colors, swimming);
+                break;
+            case 'manta':
+                drawMantaRay(size, type.colors, swimming);
+                break;
+            case 'jellyfish':
+                drawGiantJellyfish(size, type.colors, swimming);
+                break;
+            case 'hammerhead':
+                drawHammerheadShark(size, type.colors, swimming);
+                break;
+            case 'nautilus':
+                drawNautilus(size, type.colors, swimming);
+                break;
+            case 'megalodon':
+                drawBoss_Megalodon(size, type.colors, swimming);
+                break;
+            case 'kraken':
+                drawBoss_Kraken(size, type.colors, swimming);
+                break;
+            case 'leviathan':
+                drawBoss_CosmicLeviathan(size, type.colors, swimming);
+                break;
+            case 'samurai':
+                drawBoss_SamuraiSwordfish(size, type.colors, swimming);
+                break;
+            case 'carnival':
+                drawBoss_CarnivalCrab(size, type.colors, swimming);
+                break;
+            case 'wizard':
+                drawBoss_WizardOctopus(size, type.colors, swimming);
+                break;
+            case 'rocket':
+                drawBoss_RocketHammerhead(size, type.colors, swimming);
+                break;
+            case 'pirate':
+                drawBoss_PirateWhale(size, type.colors, swimming);
+                break;
+            case 'narwhal':
+                drawBoss_NarwhalKing(size, type.colors, swimming);
+                break;
+            case 'phoenix':
+                drawBoss_PhoenixRay(size, type.colors, swimming);
+                break;
+            case 'steampunk':
+                drawBoss_SteampunkTurtle(size, type.colors, swimming);
+                break;
+        }
+        
+        ctx.restore();
+        
+        return true; // Keep in array
+    });
+    
+    // Update and draw credit popups (2s duration)
+    creditPopups = creditPopups.filter(popup => {
+        popup.progress += 0.016 / 2.0; // Increment based on frame time / total duration
+        if (popup.progress >= 1) return false; // Remove completed animations
+        
+        // Font size based on amount (larger for bigger payouts)
+        let fontSize = 16;
+        if (popup.amount >= 1000) fontSize = 48;
+        else if (popup.amount >= 500) fontSize = 40;
+        else if (popup.amount >= 100) fontSize = 32;
+        else if (popup.amount >= 50) fontSize = 24;
+        
+        // Fade effect
+        const alpha = 1 - popup.progress;
+        
+        // Float up slightly
+        const yOffset = -popup.progress * 50;
+        
+        // Draw credit popup
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Outline
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 4;
+        ctx.strokeText(`+${popup.amount}`, popup.x, popup.y + yOffset);
+        
+        // Fill
+        ctx.fillStyle = '#ffcc00';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ffcc00';
+        ctx.fillText(`+${popup.amount}`, popup.x, popup.y + yOffset);
+        
+        ctx.restore();
+        
+        return true; // Keep in array
     });
     
     // Draw projectiles
@@ -1338,15 +1521,82 @@ function drawPlayerCannon(player) {
     ctx.restore();
     ctx.shadowBlur = 0;
     
-    // Player name with background
-    const nameOffset = player.playerSlot < 4 ? 100 : -100;
+    // Determine if turret is on top (slots 0-3) or bottom (slots 4-7)
+    const isTopTurret = player.playerSlot < 4;
+    
+    // Draw bet value with +/- buttons above turret (or above name if on bottom)
+    const betY = isTopTurret ? pos.y - 130 : pos.y - 180;
+    
+    if (isMe) {
+        // Draw bet value with +/- buttons for active player
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(pos.x - 70, betY - 15, 140, 30);
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(pos.x - 70, betY - 15, 140, 30);
+        
+        // - button
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(pos.x - 68, betY - 13, 26, 26);
+        ctx.strokeStyle = '#00ffff';
+        ctx.strokeRect(pos.x - 68, betY - 13, 26, 26);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('-', pos.x - 55, betY + 6);
+        
+        // + button
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(pos.x + 42, betY - 13, 26, 26);
+        ctx.strokeStyle = '#00ffff';
+        ctx.strokeRect(pos.x + 42, betY - 13, 26, 26);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('+', pos.x + 55, betY + 6);
+        
+        // Bet value in center
+        ctx.fillStyle = '#ffcc00';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText(`$${betValue}`, pos.x, betY + 5);
+        
+        // Store button bounds for click detection
+        if (!window.betButtonBounds) window.betButtonBounds = {};
+        window.betButtonBounds[player.playerSlot] = {
+            minus: { x: pos.x - 68, y: betY - 13, width: 26, height: 26 },
+            plus: { x: pos.x + 42, y: betY - 13, width: 26, height: 26 }
+        };
+    } else {
+        // Show bet value only for other players
+        ctx.fillStyle = '#ffcc00';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`$${player.betValue || 10}`, pos.x, betY + 5);
+    }
+    
+    // Player name below bet controls (or above credits if on bottom)
+    const nameY = isTopTurret ? pos.y - 100 : pos.y - 150;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(pos.x - 60, pos.y + nameOffset - 18, 120, 24);
+    ctx.fillRect(pos.x - 60, nameY - 15, 120, 24);
     
     ctx.fillStyle = isMe ? '#00ffff' : '#ffffff';
     ctx.font = 'bold 16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(player.displayName, pos.x, pos.y + nameOffset);
+    ctx.fillText(player.displayName, pos.x, nameY);
+    
+    // Credits beneath turret
+    const creditsY = isTopTurret ? pos.y + 110 : pos.y - 120;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(pos.x - 65, creditsY - 18, 130, 30);
+    ctx.strokeStyle = isMe ? '#00ffff' : '#666666';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(pos.x - 65, creditsY - 18, 130, 30);
+    
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'center';
+    ctx.shadowBlur = 5;
+    ctx.shadowColor = '#ffcc00';
+    ctx.fillText(`💰 ${Math.floor(player.credits)}`, pos.x, creditsY);
+    ctx.shadowBlur = 0;
 }
 
 

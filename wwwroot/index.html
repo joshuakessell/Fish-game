@@ -86,43 +86,6 @@
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
         }
 
-        #hud {
-            position: absolute;
-            top: 120px;
-            left: 120px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            pointer-events: none;
-        }
-
-        .player-info {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 5px 8px;
-            border-radius: 5px;
-            border: 1px solid #00ffff;
-            pointer-events: all;
-        }
-
-        .player-info h2 {
-            font-size: 12px;
-            color: #00ffff;
-            margin-bottom: 2px;
-        }
-
-        .player-info .credits {
-            font-size: 16px;
-            color: #ffcc00;
-            font-weight: bold;
-            text-shadow: 0 0 5px #ffcc00;
-        }
-
-        .player-info .stats {
-            font-size: 8px;
-            color: #aaa;
-            margin-top: 2px;
-        }
-
         #connectionStatus {
             position: absolute;
             top: 10px;
@@ -260,17 +223,6 @@
             </div>
             
             <canvas id="gameCanvas" width="1600" height="900"></canvas>
-            
-            <div id="hud">
-                <div class="player-info">
-                    <h2 id="playerDisplayName">Player</h2>
-                    <div class="credits">💰 <span id="playerCredits">0</span></div>
-                    <div class="stats">
-                        Kills: <span id="playerKills">0</span> | 
-                        Slot: <span id="playerSlot">-</span>
-                    </div>
-                </div>
-            </div>
             
             <div id="interactionOverlay"></div>
         </div>
