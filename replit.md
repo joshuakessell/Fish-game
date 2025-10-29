@@ -4,20 +4,26 @@
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
 ## Recent Changes (October 29, 2025)
+- **Ocean King 3 Fish Types**: 28 total fish types matching arcade standard (Flying Fish through Golden Dragon King)
+- **97% RTP**: Increased return-to-player from 90% to 97% for competitive casino gameplay
+- **Turret Selection System**: Players choose their turret position from 8 available slots on join
+  - Available turrets glow yellow with pulsing animation
+  - Turrets positioned at billiards table corners and sides
+  - Turrets are 2.5x larger (80x80 pixels) for better visibility
+- **Animated Turrets**: Turrets smoothly rotate to face the direction of each shot fired
+- **Lifelike Fish Swimming**: Smooth curved paths with natural speed variation, no erratic bouncing
+  - Fish slow down during turns, speed up on straights
+  - Natural acceleration and deceleration
+  - Exit screen naturally without wall bouncing
 - **Seamless Continuous Play**: Removed round transitions, players can join/quit anytime without interruptions
 - **Boss Rotation System**: Every 10 minutes, eligible bosses rotate (4 ultra-rare + 5 rare mid-bosses) seamlessly in background
 - **Bet Value System**: Replaced weapon selection with bet value controls (10-200 credits per shot) using +/- buttons
-- **Compact UI**: Side panels reduced to 20% of original size for better view of game area
+- **Compact UI**: Side panels reduced to 20% of original size and repositioned to avoid blocking turrets
 - **11 Ultra-Rare Jackpot Bosses**: Types 9-19 with elaborate death sequences and massive payouts (2500-7000 credits)
   - Kaiju Megalodon: Interactive QTE (5 teeth targets), dual sector clear
   - Emperor Kraken: Interactive chest choice (3 options), 8-vortex pull
-  - Cosmic Leviathan, Samurai Swordfish, Carnival King Crab, Wizard Octopus, Rocket Hammerhead, Pirate Captain Whale, and more
 - **Interactive Kill Sequences**: 2 bosses (Megalodon, Kraken) have player interactions with ±30% hidden payout modifiers
-- **Simplified Deaths**: Non-boss fish (types 0-8) have 0.5-1s fadeout with no special effects
-- **5 Special Creatures**: Sea Turtle, Manta Ray, Giant Jellyfish, Hammerhead Shark, Nautilus (25-40 credits)
 - **Development credits**: Players start with 10,000 credits for testing
-- **Varied movement**: Fish spawn from 8 directions with curved paths and group patterns
-- **90% RTP casino mechanics**: Probability-based destruction with high-volatility multipliers
 
 ## Project Architecture
 
