@@ -54,6 +54,31 @@ public class Fish
             AccelerationProgress = 0f
         };
         
+        // Check if this is a boss fish defined in BossCatalog
+        if (BossCatalog.IsBoss(typeId))
+        {
+            var bossDef = BossCatalog.GetBoss(typeId);
+            if (bossDef != null)
+            {
+                fish.BaseValue = bossDef.BaseValue;
+                fish.DestructionOdds = bossDef.DestructionOdds;
+                fish.HitboxRadius = bossDef.HitboxRadius;
+                fish.BaseSpeed = bossDef.BaseSpeed;
+                fish.CurrentSpeed = 0f; // Will accelerate smoothly
+                fish.MovementPatternId = bossDef.MovementPatternId;
+                fish.DespawnTick = currentTick + 1800; // 60 seconds max lifetime for bosses
+                
+                // Ultra-rare bosses get curved paths
+                if (bossDef.IsUltraRare)
+                {
+                    fish.PathCurveIntensity = 0.3f;
+                    fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;
+                }
+                
+                return fish;
+            }
+        }
+        
         // Configure based on type with proper crossing speeds and destruction odds
         // Destruction odds calculated for exactly 97% RTP with high-volatility multipliers
         // Formula: P = 0.97 / (BaseValue × AvgMultiplier)
