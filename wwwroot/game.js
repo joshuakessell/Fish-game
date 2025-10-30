@@ -1435,28 +1435,28 @@ function drawNautilus(size, colors, swimming) {
 }
 
 function drawProjectile(proj) {
-    // Glowing energy bullet
-    ctx.shadowBlur = 15;
+    // Glowing energy bullet (3x larger)
+    ctx.shadowBlur = 25;
     ctx.shadowColor = '#00ffff';
     
-    const gradient = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, 8);
+    const gradient = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, 20);
     gradient.addColorStop(0, '#ffffff');
     gradient.addColorStop(0.5, '#00ffff');
     gradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
     
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(proj.x, proj.y, 6, 0, Math.PI * 2);
+    ctx.arc(proj.x, proj.y, 12, 0, Math.PI * 2);
     ctx.fill();
     
     ctx.shadowBlur = 0;
     
-    // Energy trail
-    ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
-    ctx.lineWidth = 3;
+    // Energy trail (thicker and longer)
+    ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+    ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.moveTo(proj.x, proj.y);
-    ctx.lineTo(proj.x - proj.directionX * 15, proj.y - proj.directionY * 15);
+    ctx.lineTo(proj.x - proj.directionX * 25, proj.y - proj.directionY * 25);
     ctx.stroke();
 }
 

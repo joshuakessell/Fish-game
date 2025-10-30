@@ -47,14 +47,47 @@ public class FishManager
     {
         eligibleBosses ??= new List<int>();
 
+        // ALWAYS ensure at least one ultra-rare boss (types 9-19) is on screen
+        int ultraRareCount = _activeFish.Values.Count(f => f.TypeId >= 9 && f.TypeId <= 19);
+        var ultraRareBosses = eligibleBosses.Where(id => id >= 9 && id <= 19).ToList();
+        
+        if (ultraRareCount == 0 && ultraRareBosses.Count > 0)
+        {
+            // If at max capacity, remove lowest-value fish to make room
+            if (_activeFish.Count >= MAX_FISH_COUNT)
+            {
+                var lowestValueFish = _activeFish.Values
+                    .Where(f => f.TypeId < 9 || f.TypeId > 19) // Don't remove other ultra-rares (9-19)
+                    .OrderBy(f => f.BaseValue)
+                    .FirstOrDefault();
+                    
+                if (lowestValueFish != null)
+                {
+                    _activeFish.Remove(lowestValueFish.FishId);
+                    Console.WriteLine($"[GUARANTEE] Removed low-value fish (type {lowestValueFish.TypeId}) to make room for ultra-rare boss");
+                }
+                else
+                {
+                    // Edge case: arena full of ultra-rares, cannot guarantee another
+                    Console.WriteLine($"[GUARANTEE] Cannot spawn ultra-rare - arena full of ultra-rare bosses");
+                    return;
+                }
+            }
+            
+            var bossTypeId = ultraRareBosses[Random.Shared.Next(ultraRareBosses.Count)];
+            SpawnBoss(bossTypeId, currentTick);
+            _lastUltraRareBossSpawnTick = currentTick;
+            Console.WriteLine($"[GUARANTEE] Spawned ultra-rare boss to maintain minimum presence");
+            return;
+        }
+
         if (_activeFish.Count >= MAX_FISH_COUNT)
             return;
         
         if (currentTick - _lastUltraRareBossSpawnTick >= MIN_TICKS_BETWEEN_ULTRA_RARE && 
-            eligibleBosses.Count > 0)
+            ultraRareBosses.Count > 0)
         {
-            var ultraRareBosses = eligibleBosses.Where(id => id >= 9).ToList();
-            if (ultraRareBosses.Count > 0 && Random.Shared.Next(100) < 3)
+            if (Random.Shared.Next(100) < 3)
             {
                 var bossTypeId = ultraRareBosses[Random.Shared.Next(ultraRareBosses.Count)];
                 SpawnBoss(bossTypeId, currentTick);
