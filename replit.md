@@ -3,7 +3,16 @@
 ## Overview
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
-## Recent Changes (October 29, 2025)
+## Recent Changes (October 30, 2025)
+- **Guaranteed Ultra-Rare Presence**: At least one ultra-rare boss (types 9-19) always on screen
+  - When ultra-rare count drops to zero, system immediately spawns replacement
+  - If at max capacity (50 fish), removes lowest-value fish to make room
+  - Maintains excitement while respecting MAX_FISH_COUNT limit
+- **Larger Bouncing Bullets**: Projectiles 2x larger and bounce off screen edges
+  - Bullet radius increased from 6 to 12 pixels with enhanced glow effects
+  - Bullets ricochet off all four walls instead of disappearing
+  - Extended lifetime from 3 seconds to 30 seconds
+  - Bullets only disappear when hitting fish or timing out
 - **Natural Fish Swimming**: Fish now swim continuously from off-screen to off-screen
   - Fish only despawn when they exit the play area (never mid-screen)
   - Removed arbitrary lifetime limits causing mid-journey disappearances
