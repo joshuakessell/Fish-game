@@ -4,6 +4,24 @@
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
 ## Recent Changes (October 30, 2025)
+- **Ultra-Rare Boss Collision Fix**: Bullets now properly hit ultra-rare bosses (types 9-19)
+  - Boss fish initialized with correct HitboxRadius from BossCatalog
+  - Previously bullets passed through bosses (HitboxRadius was 0)
+  - All 11 ultra-rare jackpot bosses now hittable
+- **Enhanced Fish Graphics**: Significantly improved visual quality for all 28 fish types
+  - Realistic body gradients with highlights and shadows
+  - Animated tails that wag during swimming
+  - Flowing fins with wave motion
+  - Detailed eyes with pupils and highlights
+  - Body undulation for lifelike movement
+  - Texture details (scales, spots, suckers on octopus)
+  - Mouth and gill details
+- **Improved Swimming Animations**: More natural and realistic fish movement
+  - tailWag: Tail swaying motion synchronized to swimming
+  - finWave: Undulating fin movements
+  - bodyUndulate: Subtle body flexing during movement
+  - Multi-segment undulation data for serpentine fish
+  - All animations vary per fish for organic appearance
 - **Guaranteed Ultra-Rare Presence**: At least one ultra-rare boss (types 9-19) always on screen
   - When ultra-rare count drops to zero, system immediately spawns replacement
   - If at max capacity (50 fish), removes lowest-value fish to make room
