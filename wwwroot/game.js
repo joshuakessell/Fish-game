@@ -23,179 +23,58 @@ let previousFish = [];
 let dyingFish = []; // { fish, progress (0-1), x, y, type }
 let creditPopups = []; // { x, y, amount, progress (0-1) }
 
-// Fish visual varieties - exotic aquarium creatures
+// Fish visual configuration - Ocean King 3 catalog (29 types: 0-28)
 const fishTypes = {
-    0: { // Small - Tropical Fish
-        name: 'Clownfish',
-        colors: ['#FF6B35', '#FFFFFF', '#FFA500'],
-        pattern: 'stripes',
-        tailType: 'fan'
-    },
-    1: { // Medium - Fancy Fish  
-        name: 'Angelfish',
-        colors: ['#FFD700', '#FFA500', '#FF6B35'],
-        pattern: 'gradient',
-        tailType: 'long'
-    },
-    2: { // Large - Exotic Creatures
-        name: 'Octopus',
-        colors: ['#9B59B6', '#E74C3C', '#8E44AD'],
-        pattern: 'spots',
-        tailType: 'tentacles'
-    },
-    3: { // Boss - Legendary
-        name: 'Golden Dragon',
-        colors: ['#FFD700', '#FFA500', '#FF6B00'],
-        pattern: 'dragon',
-        tailType: 'dragon'
-    },
-    4: { // Special - Sea Turtle
-        name: 'Sea Turtle',
-        colors: ['#2E8B57', '#3CB371', '#228B22'],
-        pattern: 'turtle',
-        tailType: 'flippers'
-    },
-    5: { // Special - Manta Ray
-        name: 'Manta Ray',
-        colors: ['#1E3A5F', '#2E5090', '#4169E1'],
-        pattern: 'manta',
-        tailType: 'wings'
-    },
-    6: { // Special - Giant Jellyfish
-        name: 'Giant Jellyfish',
-        colors: ['#FF69B4', '#FF1493', '#C71585'],
-        pattern: 'jellyfish',
-        tailType: 'tentacles'
-    },
-    7: { // Special - Hammerhead Shark
-        name: 'Hammerhead Shark',
-        colors: ['#708090', '#778899', '#696969'],
-        pattern: 'hammerhead',
-        tailType: 'shark'
-    },
-    8: { // Special - Nautilus
-        name: 'Nautilus',
-        colors: ['#DEB887', '#D2691E', '#CD853F'],
-        pattern: 'nautilus',
-        tailType: 'shell'
-    },
-    9: { // Ultra-Rare - Kaiju Megalodon
-        name: 'Kaiju Megalodon',
-        colors: ['#1C1C1C', '#8B0000', '#FF0000'],
-        pattern: 'megalodon',
-        tailType: 'massive'
-    },
-    10: { // Ultra-Rare - Emperor Kraken
-        name: 'Emperor Kraken',
-        colors: ['#4B0082', '#8B008B', '#FF00FF'],
-        pattern: 'kraken',
-        tailType: 'tentacles'
-    },
-    11: { // Ultra-Rare - Cosmic Leviathan
-        name: 'Cosmic Leviathan',
-        colors: ['#000033', '#6A0DAD', '#00FFFF'],
-        pattern: 'leviathan',
-        tailType: 'cosmic'
-    },
-    12: { // Ultra-Rare - Samurai Swordfish
-        name: 'Samurai Swordfish',
-        colors: ['#C0C0C0', '#FF0000', '#FFD700'],
-        pattern: 'samurai',
-        tailType: 'blade'
-    },
-    13: { // Ultra-Rare - Carnival King Crab
-        name: 'Carnival King Crab',
-        colors: ['#FF1493', '#FFD700', '#00CED1'],
-        pattern: 'carnival',
-        tailType: 'claws'
-    },
-    14: { // Ultra-Rare - Wizard Octopus
-        name: 'Wizard Octopus',
-        colors: ['#4B0082', '#9370DB', '#FFD700'],
-        pattern: 'wizard',
-        tailType: 'magic'
-    },
-    15: { // Ultra-Rare - Rocket Hammerhead
-        name: 'Rocket Hammerhead',
-        colors: ['#FF4500', '#1E90FF', '#FFFFFF'],
-        pattern: 'rocket',
-        tailType: 'boosters'
-    },
-    16: { // Ultra-Rare - Pirate Captain Whale
-        name: 'Pirate Captain Whale',
-        colors: ['#2F4F4F', '#8B4513', '#FFD700'],
-        pattern: 'pirate',
-        tailType: 'whale'
-    },
-    17: { // Ultra-Rare - Frozen Narwhal King
-        name: 'Frozen Narwhal King',
-        colors: ['#B0E0E6', '#4682B4', '#FFFFFF'],
-        pattern: 'narwhal',
-        tailType: 'frozen'
-    },
-    18: { // Ultra-Rare - Phoenix Ray
-        name: 'Phoenix Ray',
-        colors: ['#FF4500', '#FFD700', '#FF6347'],
-        pattern: 'phoenix',
-        tailType: 'flames'
-    },
-    19: { // Ultra-Rare - Steampunk Turtle Fortress
-        name: 'Steampunk Turtle',
-        colors: ['#8B4513', '#C0C0C0', '#FFD700'],
-        pattern: 'steampunk',
-        tailType: 'fortress'
-    },
-    20: { // Extended - Lantern Fish
-        name: 'Lantern Fish',
-        colors: ['#FFD700', '#FFA500', '#FFFF00'],
-        pattern: 'gradient',
-        tailType: 'fan'
-    },
-    21: { // Extended - Deep Sea Turtle
-        name: 'Deep Sea Turtle',
-        colors: ['#006400', '#228B22', '#32CD32'],
-        pattern: 'turtle',
-        tailType: 'flippers'
-    },
-    22: { // Extended - Saw Shark
-        name: 'Saw Shark',
-        colors: ['#4682B4', '#5F9EA0', '#87CEEB'],
-        pattern: 'hammerhead',
-        tailType: 'shark'
-    },
-    23: { // Extended - Devilfish (Manta)
-        name: 'Devilfish',
-        colors: ['#2F4F4F', '#000080', '#191970'],
-        pattern: 'manta',
-        tailType: 'wings'
-    },
-    24: { // Extended - Jumbo Fish
-        name: 'Jumbo Fish',
-        colors: ['#FF6347', '#FF4500', '#DC143C'],
-        pattern: 'spots',
-        tailType: 'tentacles'
-    },
-    25: { // Extended - Great White Shark
-        name: 'Great White Shark',
-        colors: ['#708090', '#DCDCDC', '#696969'],
-        pattern: 'hammerhead',
-        tailType: 'shark'
-    },
-    26: { // Extended - Killer Whale (Orca)
-        name: 'Killer Whale',
-        colors: ['#000000', '#FFFFFF', '#2F4F4F'],
-        pattern: 'pirate',
-        tailType: 'whale'
-    },
-    27: { // Extended - Golden Dragon King
-        name: 'Golden Dragon King',
-        colors: ['#FFD700', '#FFA500', '#FF8C00'],
-        pattern: 'dragon',
-        tailType: 'dragon'
-    }
+    // SMALL FISH (Types 0-5) - Easy to catch, move in schools
+    0: { name: 'Clownfish', colors: ['#FF6B35', '#FFFFFF', '#FFA500'], pattern: 'stripes', category: 'small' },
+    1: { name: 'Neon Tetra', colors: ['#00CED1', '#1E90FF', '#4169E1'], pattern: 'gradient', category: 'small' },
+    2: { name: 'Butterflyfish', colors: ['#FFD700', '#FFFFFF', '#FFA500'], pattern: 'gradient', category: 'small' },
+    3: { name: 'Angelfish', colors: ['#FFD700', '#FFA500', '#FF6B35'], pattern: 'gradient', category: 'small' },
+    4: { name: 'Pufferfish', colors: ['#FFFF00', '#FFA500', '#FF6347'], pattern: 'spots', category: 'small' },
+    5: { name: 'Wrasse', colors: ['#32CD32', '#00FA9A', '#3CB371'], pattern: 'gradient', category: 'small' },
+    
+    // MEDIUM FISH (Types 6-11) - Moderate difficulty
+    6: { name: 'Lionfish', colors: ['#FF4500', '#FF6347', '#8B0000'], pattern: 'stripes', category: 'medium' },
+    7: { name: 'Parrotfish', colors: ['#00CED1', '#48D1CC', '#20B2AA'], pattern: 'gradient', category: 'medium' },
+    8: { name: 'Seahorse', colors: ['#FFA500', '#FF8C00', '#FF7F50'], pattern: 'gradient', category: 'medium' },
+    9: { name: 'Triggerfish', colors: ['#4169E1', '#1E90FF', '#00BFFF'], pattern: 'spots', category: 'medium' },
+    10: { name: 'Grouper', colors: ['#8B4513', '#A0522D', '#D2691E'], pattern: 'spots', category: 'medium' },
+    11: { name: 'Boxfish', colors: ['#FFD700', '#FFA500', '#FF8C00'], pattern: 'spots', category: 'medium' },
+    
+    // LARGE FISH (Types 12-16) - Require focused fire
+    12: { name: 'Swordfish', colors: ['#4682B4', '#5F9EA0', '#4169E1'], pattern: 'hammerhead', category: 'large' },
+    13: { name: 'Shark', colors: ['#708090', '#778899', '#696969'], pattern: 'hammerhead', category: 'large' },
+    14: { name: 'Manta Ray', colors: ['#2F4F4F', '#696969', '#778899'], pattern: 'manta', category: 'large' },
+    15: { name: 'Barracuda', colors: ['#C0C0C0', '#A9A9A9', '#808080'], pattern: 'hammerhead', category: 'large' },
+    16: { name: 'Moray Eel', colors: ['#2E8B57', '#3CB371', '#228B22'], pattern: 'gradient', category: 'large' },
+    
+    // HIGH-VALUE FISH (Types 17-20) - Rare, massive rewards
+    17: { name: 'Golden Carp', colors: ['#FFD700', '#FFA500', '#FF8C00'], pattern: 'gradient', category: 'highvalue' },
+    18: { name: 'Fire Kirin', colors: ['#FF4500', '#FF6347', '#FFD700'], pattern: 'dragon', category: 'highvalue' },
+    19: { name: 'Electric Eel', colors: ['#00FFFF', '#1E90FF', '#4169E1'], pattern: 'gradient', category: 'highvalue' },
+    20: { name: 'Crimson Whale', colors: ['#8B0000', '#DC143C', '#FF0000'], pattern: 'pirate', category: 'highvalue' },
+    
+    // SPECIAL ITEMS (Types 21-24) - Power-ups, always 1 active
+    21: { name: 'Drill Crab', colors: ['#FF4500', '#FF6347', '#FFA500'], pattern: 'carnival', category: 'special' },
+    22: { name: 'Laser Crab', colors: ['#00CED1', '#1E90FF', '#FFD700'], pattern: 'carnival', category: 'special' },
+    23: { name: 'Roulette Crab', colors: ['#FF1493', '#FFD700', '#00CED1'], pattern: 'carnival', category: 'special' },
+    24: { name: 'Vortex Jelly', colors: ['#9370DB', '#8A2BE2', '#9400D3'], pattern: 'jellyfish', category: 'special' },
+    
+    // BOSS FISH (Types 25-28) - Massive events, always 1 active
+    25: { name: 'Dragon King', colors: ['#FFD700', '#FFA500', '#FF8C00'], pattern: 'dragon', category: 'boss' },
+    26: { name: 'Emperor Turtle', colors: ['#2E8B57', '#3CB371', '#FFD700'], pattern: 'turtle', category: 'boss' },
+    27: { name: 'Poseidon', colors: ['#1E90FF', '#00CED1', '#FFD700'], pattern: 'wizard', category: 'boss' },
+    28: { name: 'Phantom Kraken', colors: ['#4B0082', '#8B008B', '#9400D3'], pattern: 'kraken', category: 'boss' }
 };
 
-const fishSizes = [15, 25, 40, 70, 38, 45, 40, 43, 35, 120, 130, 140, 110, 115, 105, 125, 135, 100, 128, 118, 45, 50, 55, 60, 65, 85, 95, 150]; // Regular 0-8, Ultra-rare 9-19, Extended 20-27
+const fishSizes = [
+    18, 16, 17, 19, 20, 17,           // Small (0-5)
+    26, 28, 24, 27, 29, 26,           // Medium (6-11)
+    45, 60, 55, 50, 52,               // Large (12-16)
+    38, 42, 48, 70,                   // High-Value (17-20)
+    35, 35, 36, 40,                   // Special Items (21-24)
+    80, 75, 85, 90                    // Boss Fish (25-28)
+]; // Total: 29 fish types (0-28)
 
 // Turret positions for each player slot (0-7) - positioned at table corners and sides
 const cannonPositions = [

@@ -40,6 +40,13 @@ public class Fish
 
     public static Fish CreateFish(int typeId, float x, float y, long currentTick, float velocityX, float velocityY, int movementPattern = 0)
     {
+        // Lookup fish definition from catalog
+        var fishDef = FishCatalog.GetFish(typeId);
+        if (fishDef == null)
+        {
+            throw new ArgumentException($"Invalid fish type ID: {typeId}");
+        }
+        
         var fish = new Fish
         {
             TypeId = typeId,
@@ -49,179 +56,52 @@ public class Fish
             MovementPatternId = movementPattern,
             VelocityX = velocityX,
             VelocityY = velocityY,
-            BaseSpeed = MathF.Sqrt(velocityX * velocityX + velocityY * velocityY),
+            BaseSpeed = fishDef.BaseSpeed,
             CurrentSpeed = 0f, // Start at 0, will accelerate smoothly
-            AccelerationProgress = 0f
+            AccelerationProgress = 0f,
+            HitboxRadius = fishDef.HitboxRadius
         };
         
-        // Check if this is a boss fish defined in BossCatalog
-        if (BossCatalog.IsBoss(typeId))
+        // Set BaseValue (payout multiplier from catalog)
+        fish.BaseValue = fishDef.PayoutMultiplier;
+        
+        // Set DestructionOdds (capture probability from catalog)
+        fish.DestructionOdds = fishDef.CaptureProbability;
+        
+        // Set despawn time based on category
+        switch (fishDef.Category)
         {
-            var bossDef = BossCatalog.GetBoss(typeId);
-            if (bossDef != null)
-            {
-                fish.BaseValue = bossDef.BaseValue;
-                fish.DestructionOdds = bossDef.DestructionOdds;
-                fish.HitboxRadius = bossDef.HitboxRadius;
-                fish.BaseSpeed = bossDef.BaseSpeed;
-                fish.CurrentSpeed = 0f; // Will accelerate smoothly
-                fish.MovementPatternId = bossDef.MovementPatternId;
-                fish.DespawnTick = currentTick + 1800; // 60 seconds max lifetime for bosses
-                
-                // Ultra-rare bosses get curved paths
-                if (bossDef.IsUltraRare)
-                {
-                    fish.PathCurveIntensity = 0.3f;
-                    fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;
-                }
-                
-                return fish;
-            }
+            case FishCategory.SmallFish:
+                fish.DespawnTick = currentTick + 600; // 20 seconds
+                break;
+            case FishCategory.MediumFish:
+                fish.DespawnTick = currentTick + 900; // 30 seconds
+                break;
+            case FishCategory.LargeFish:
+                fish.DespawnTick = currentTick + 1200; // 40 seconds
+                break;
+            case FishCategory.HighValueFish:
+                fish.DespawnTick = currentTick + 1500; // 50 seconds
+                break;
+            case FishCategory.SpecialItems:
+                fish.DespawnTick = currentTick + 1800; // 60 seconds
+                break;
+            case FishCategory.BossFish:
+                fish.DespawnTick = currentTick + 2400; // 80 seconds
+                fish.IsExplosive = true; // Boss fish trigger events
+                break;
         }
         
-        // Configure based on type with proper crossing speeds and destruction odds
-        // Destruction odds calculated for exactly 97% RTP with high-volatility multipliers
-        // Formula: P = 0.97 / (BaseValue × AvgMultiplier)
-        // AvgMultiplier = 1.74 (1x×70% + 2x×15% + 3x×8% + 5x×5% + 10x×1.5% + 20x×0.5%)
-        switch (typeId)
+        // Large fish, high-value fish, special items, and bosses get curved paths
+        if (fishDef.Category == FishCategory.LargeFish ||
+            fishDef.Category == FishCategory.HighValueFish ||
+            fishDef.Category == FishCategory.SpecialItems ||
+            fishDef.Category == FishCategory.BossFish)
         {
-            // OCEAN KING 3 STANDARD FISH (Types 0-8)
-            
-            case 0: // Flying Fish - 2x multiplier
-                fish.BaseValue = 2m;
-                fish.DestructionOdds = 0.97f / (2f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 15f;
-                fish.DespawnTick = currentTick + 600; // 20 seconds max lifetime
-                break;
-                
-            case 1: // Clown Fish - 3x multiplier
-                fish.BaseValue = 3m;
-                fish.DestructionOdds = 0.97f / (3f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 18f;
-                fish.DespawnTick = currentTick + 600; // 20 seconds max lifetime
-                break;
-                
-            case 2: // Butterfly Fish - 4x multiplier
-                fish.BaseValue = 4m;
-                fish.DestructionOdds = 0.97f / (4f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 20f;
-                fish.DespawnTick = currentTick + 700; // 23 seconds max lifetime
-                break;
-                
-            case 3: // Fugu - 5x multiplier
-                fish.BaseValue = 5m;
-                fish.DestructionOdds = 0.97f / (5f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 22f;
-                fish.DespawnTick = currentTick + 700; // 23 seconds max lifetime
-                break;
-                
-            case 4: // Lionfish - 6x multiplier
-                fish.BaseValue = 6m;
-                fish.DestructionOdds = 0.97f / (6f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 25f;
-                fish.DespawnTick = currentTick + 800; // 27 seconds max lifetime
-                break;
-                
-            case 5: // Flatfish - 8x multiplier
-                fish.BaseValue = 8m;
-                fish.DestructionOdds = 0.97f / (8f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 28f;
-                fish.DespawnTick = currentTick + 800; // 27 seconds max lifetime
-                break;
-                
-            case 6: // Lobster - 10x multiplier
-                fish.BaseValue = 10m;
-                fish.DestructionOdds = 0.97f / (10f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 30f;
-                fish.DespawnTick = currentTick + 900; // 30 seconds max lifetime
-                break;
-                
-            case 7: // Spearfish - 12x multiplier
-                fish.BaseValue = 12m;
-                fish.DestructionOdds = 0.97f / (12f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 32f;
-                fish.DespawnTick = currentTick + 900; // 30 seconds max lifetime
-                break;
-                
-            case 8: // Octopus - 15x multiplier
-                fish.BaseValue = 15m;
-                fish.DestructionOdds = 0.97f / (15f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 35f;
-                fish.DespawnTick = currentTick + 1000; // 33 seconds max lifetime
-                break;
-                
-            // Types 9-19 are ultra-rare bosses (defined in BossCatalog.cs)
-            
-            // OCEAN KING 3 EXTENDED FISH (Types 20-27)
-            
-            case 20: // Lantern Fish - 18x multiplier
-                fish.BaseValue = 18m;
-                fish.DestructionOdds = 0.97f / (18f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 38f;
-                fish.DespawnTick = currentTick + 1100; // 37 seconds max lifetime
-                break;
-                
-            case 21: // Sea Turtle - 25x multiplier
-                fish.BaseValue = 25m;
-                fish.DestructionOdds = 0.97f / (25f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 45f;
-                fish.DespawnTick = currentTick + 1200; // 40 seconds max lifetime
-                fish.PathCurveIntensity = 0.3f;
-                fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;
-                break;
-                
-            case 22: // Saw Shark - 30x multiplier
-                fish.BaseValue = 30m;
-                fish.DestructionOdds = 0.97f / (30f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 50f;
-                fish.DespawnTick = currentTick + 1300; // 43 seconds max lifetime
-                fish.PathCurveIntensity = 0.35f;
-                fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;
-                break;
-                
-            case 23: // Devilfish - 35x multiplier
-                fish.BaseValue = 35m;
-                fish.DestructionOdds = 0.97f / (35f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 55f;
-                fish.DespawnTick = currentTick + 1400; // 47 seconds max lifetime
-                fish.PathCurveIntensity = 0.4f;
-                fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;
-                break;
-                
-            case 24: // Jumbo Fish - 40x multiplier
-                fish.BaseValue = 40m;
-                fish.DestructionOdds = 0.97f / (40f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 60f;
-                fish.DespawnTick = currentTick + 1500; // 50 seconds max lifetime
-                break;
-                
-            case 25: // Shark - 60x multiplier
-                fish.BaseValue = 60m;
-                fish.DestructionOdds = 0.97f / (60f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 70f;
-                fish.DespawnTick = currentTick + 1600; // 53 seconds max lifetime
-                fish.PathCurveIntensity = 0.5f;
-                fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;
-                break;
-                
-            case 26: // Killer Whale - 100x multiplier
-                fish.BaseValue = 100m;
-                fish.DestructionOdds = 0.97f / (100f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 85f;
-                fish.DespawnTick = currentTick + 1700; // 57 seconds max lifetime
-                fish.PathCurveIntensity = 0.4f;
-                fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;
-                break;
-                
-            case 27: // Golden Dragon - 500x multiplier
-                fish.BaseValue = 500m;
-                fish.DestructionOdds = 0.97f / (500f * 1.74f); // 97% RTP
-                fish.HitboxRadius = 100f;
-                fish.DespawnTick = currentTick + 1800; // 60 seconds max lifetime
-                fish.IsExplosive = true;
-                break;
+            fish.PathCurveIntensity = 0.3f + (Random.Shared.NextSingle() * 0.2f); // 0.3 to 0.5
+            fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;
         }
-
+        
         return fish;
     }
 
@@ -242,18 +122,14 @@ public class Fish
             CurrentSpeed = BaseSpeed;
         }
         
-        // Apply curved path for special fish (types 4-8, 21-23, 25-26)
-        bool hasCurvedPath = (TypeId >= 4 && TypeId <= 8) || 
-                            (TypeId >= 21 && TypeId <= 23) || 
-                            TypeId == 25 || TypeId == 26;
-        
-        if (hasCurvedPath && PathCurveIntensity > 0)
+        // Apply curved path if fish has one (set in CreateFish based on category)
+        if (PathCurveIntensity > 0)
         {
             ApplyCurvedPath(timeSinceSpawn, deltaTime);
         }
         else
         {
-            // Base movement for regular fish with speed variation
+            // Base movement for regular fish
             float velocityMagnitude = MathF.Sqrt(VelocityX * VelocityX + VelocityY * VelocityY);
             if (velocityMagnitude > 0)
             {
@@ -268,37 +144,6 @@ public class Fish
         if (!string.IsNullOrEmpty(GroupId) && GroupSize > 1)
         {
             ApplyGroupPattern(timeSinceSpawn);
-        }
-        
-        // Apply individual movement patterns for regular fish
-        if (TypeId < 4)
-        {
-            switch (MovementPatternId)
-            {
-                case 1: // Gentle sine wave
-                    Y += MathF.Sin(timeSinceSpawn * 1.5f) * 2.5f;
-                    break;
-                    
-                case 2: // Larger circular motion
-                    if (TypeId >= 2)
-                    {
-                        float angle = timeSinceSpawn * 0.8f;
-                        Y += MathF.Sin(angle) * 2.25f;
-                        X += MathF.Cos(angle) * 1.5f;
-                    }
-                    else
-                    {
-                        Y += MathF.Sin(timeSinceSpawn * 2f) * 1.5f;
-                    }
-                    break;
-                    
-                case 3: // Spiral movement
-                    float spiralAngle = timeSinceSpawn;
-                    float spiralRadius = timeSinceSpawn * 5f;
-                    Y += MathF.Sin(spiralAngle) * spiralRadius * 0.1f;
-                    X += MathF.Cos(spiralAngle) * spiralRadius * 0.05f;
-                    break;
-            }
         }
     }
     
@@ -330,33 +175,6 @@ public class Fish
         float effectiveSpeed = CurrentSpeed * speedMultiplier;
         X += MathF.Cos(newAngle) * effectiveSpeed * deltaTime;
         Y += MathF.Sin(newAngle) * effectiveSpeed * deltaTime;
-        
-        // Add type-specific movement variations
-        switch (TypeId)
-        {
-            case 4: // Sea Turtle - gentle bobbing
-                Y += MathF.Sin(timeSinceSpawn * 0.8f) * 1.5f;
-                break;
-                
-            case 5: // Manta Ray - graceful gliding swoops
-                Y += MathF.Sin(timeSinceSpawn * 1.2f) * 2.8f;
-                X += MathF.Cos(timeSinceSpawn * 0.6f) * 1.2f;
-                break;
-                
-            case 6: // Jellyfish - pulsing vertical motion
-                Y += MathF.Sin(timeSinceSpawn * 2.5f) * 3.5f;
-                break;
-                
-            case 7: // Hammerhead - hunting sway
-                X += MathF.Sin(timeSinceSpawn * 1.5f) * 2.0f;
-                break;
-                
-            case 8: // Nautilus - gentle spiral addition
-                float nautAngle = timeSinceSpawn * 0.5f;
-                X += MathF.Cos(nautAngle) * 1.8f;
-                Y += MathF.Sin(nautAngle) * 1.8f;
-                break;
-        }
     }
     
     private void ApplyGroupPattern(float timeSinceSpawn)

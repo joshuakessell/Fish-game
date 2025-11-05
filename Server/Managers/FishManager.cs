@@ -40,67 +40,69 @@ public class FishManager
         }
     }
 
-    private long _lastUltraRareBossSpawnTick = 0;
-    private const int MIN_TICKS_BETWEEN_ULTRA_RARE = 5400; // 3 minutes at 30 TPS
-
     public void SpawnFishIfNeeded(long currentTick, List<int>? eligibleBosses = null)
     {
-        eligibleBosses ??= new List<int>();
-
-        // ALWAYS ensure at least one ultra-rare boss (types 9-19) is on screen
-        int ultraRareCount = _activeFish.Values.Count(f => f.TypeId >= 9 && f.TypeId <= 19);
-        var ultraRareBosses = eligibleBosses.Where(id => id >= 9 && id <= 19).ToList();
+        // CRITICAL: Always maintain exactly 1 Special Item (types 21-24) and 1 Boss Fish (types 25-28)
+        int specialItemCount = _activeFish.Values.Count(f => f.TypeId >= 21 && f.TypeId <= 24);
+        int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 25 && f.TypeId <= 28);
         
-        if (ultraRareCount == 0 && ultraRareBosses.Count > 0)
+        // Spawn Special Item if missing
+        if (specialItemCount == 0)
         {
-            // If at max capacity, remove lowest-value fish to make room
             if (_activeFish.Count >= MAX_FISH_COUNT)
             {
+                // Make room by removing lowest-value non-special/non-boss fish
                 var lowestValueFish = _activeFish.Values
-                    .Where(f => f.TypeId < 9 || f.TypeId > 19) // Don't remove other ultra-rares (9-19)
+                    .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
                     .OrderBy(f => f.BaseValue)
                     .FirstOrDefault();
                     
                 if (lowestValueFish != null)
                 {
                     _activeFish.Remove(lowestValueFish.FishId);
-                    Console.WriteLine($"[GUARANTEE] Removed low-value fish (type {lowestValueFish.TypeId}) to make room for ultra-rare boss");
-                }
-                else
-                {
-                    // Edge case: arena full of ultra-rares, cannot guarantee another
-                    Console.WriteLine($"[GUARANTEE] Cannot spawn ultra-rare - arena full of ultra-rare bosses");
-                    return;
+                    Console.WriteLine($"[SPECIAL] Removed low-value fish to make room for Special Item");
                 }
             }
             
-            var bossTypeId = ultraRareBosses[Random.Shared.Next(ultraRareBosses.Count)];
-            SpawnBoss(bossTypeId, currentTick);
-            _lastUltraRareBossSpawnTick = currentTick;
-            Console.WriteLine($"[GUARANTEE] Spawned ultra-rare boss to maintain minimum presence");
-            return;
+            // Spawn random Special Item (21-24)
+            int specialTypeId = Random.Shared.Next(21, 25);
+            SpawnSingleFish(specialTypeId, currentTick);
+            Console.WriteLine($"[SPECIAL] Spawned Special Item type {specialTypeId}");
+        }
+        
+        // Spawn Boss Fish if missing
+        if (bossFishCount == 0)
+        {
+            if (_activeFish.Count >= MAX_FISH_COUNT)
+            {
+                // Make room by removing lowest-value non-special/non-boss fish
+                var lowestValueFish = _activeFish.Values
+                    .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
+                    .OrderBy(f => f.BaseValue)
+                    .FirstOrDefault();
+                    
+                if (lowestValueFish != null)
+                {
+                    _activeFish.Remove(lowestValueFish.FishId);
+                    Console.WriteLine($"[BOSS] Removed low-value fish to make room for Boss Fish");
+                }
+            }
+            
+            // Spawn random Boss Fish (25-28)
+            int bossTypeId = Random.Shared.Next(25, 29);
+            SpawnSingleFish(bossTypeId, currentTick);
+            Console.WriteLine($"[BOSS] Spawned Boss Fish type {bossTypeId}");
         }
 
         if (_activeFish.Count >= MAX_FISH_COUNT)
             return;
-        
-        if (currentTick - _lastUltraRareBossSpawnTick >= MIN_TICKS_BETWEEN_ULTRA_RARE && 
-            ultraRareBosses.Count > 0)
-        {
-            if (Random.Shared.Next(100) < 3)
-            {
-                var bossTypeId = ultraRareBosses[Random.Shared.Next(ultraRareBosses.Count)];
-                SpawnBoss(bossTypeId, currentTick);
-                _lastUltraRareBossSpawnTick = currentTick;
-                return;
-            }
-        }
             
+        // Regular spawning for normal fish
         if (_activeFish.Count < MIN_FISH_COUNT)
         {
-            while (_activeFish.Count < MIN_FISH_COUNT)
+            while (_activeFish.Count < MIN_FISH_COUNT && _activeFish.Count < MAX_FISH_COUNT)
             {
-                SpawnRandomFish(currentTick, eligibleBosses);
+                SpawnRandomFish(currentTick);
             }
             _lastSpawnTick = currentTick;
         }
@@ -108,157 +110,124 @@ public class FishManager
         {
             if (currentTick - _lastSpawnTick >= MIN_TICKS_BETWEEN_SPAWNS)
             {
-                if (Random.Shared.Next(10) < 4)
+                if (Random.Shared.Next(10) < 4) // 40% chance
                 {
-                    SpawnRandomFish(currentTick, eligibleBosses);
+                    SpawnRandomFish(currentTick);
                     _lastSpawnTick = currentTick;
                 }
             }
         }
     }
 
-    private void SpawnBoss(int bossTypeId, long currentTick)
+    private void SpawnSingleFish(int typeId, long currentTick)
     {
-        var bossDef = Entities.BossCatalog.GetBoss(bossTypeId);
-        if (bossDef == null) return;
+        var fishDef = Entities.FishCatalog.GetFish(typeId);
+        if (fishDef == null) return;
 
-        var spawnDirection = Random.Shared.Next(4);
+        // Choose spawn direction (8 possibilities for varied movement)
+        int spawnDirection = Random.Shared.Next(8);
         float x, y, velocityX, velocityY;
         
         switch (spawnDirection)
         {
-            case 0:
-                x = -bossDef.HitboxRadius;
-                y = ARENA_HEIGHT / 2;
-                velocityX = bossDef.BaseSpeed;
+            case 0: // Left to right (horizontal)
+                x = -fishDef.HitboxRadius;
+                y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
+                velocityX = fishDef.BaseSpeed;
                 velocityY = 0;
                 break;
-            case 1:
-                x = ARENA_WIDTH + bossDef.HitboxRadius;
-                y = ARENA_HEIGHT / 2;
-                velocityX = -bossDef.BaseSpeed;
+            case 1: // Right to left (horizontal)
+                x = ARENA_WIDTH + fishDef.HitboxRadius;
+                y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
+                velocityX = -fishDef.BaseSpeed;
                 velocityY = 0;
                 break;
-            case 2:
-                x = ARENA_WIDTH / 2;
-                y = -bossDef.HitboxRadius;
+            case 2: // Top to bottom (vertical)
+                x = Random.Shared.Next(100, ARENA_WIDTH - 100);
+                y = -fishDef.HitboxRadius;
                 velocityX = 0;
-                velocityY = bossDef.BaseSpeed;
+                velocityY = fishDef.BaseSpeed;
                 break;
-            default:
-                x = ARENA_WIDTH / 2;
-                y = ARENA_HEIGHT + bossDef.HitboxRadius;
+            case 3: // Bottom to top (vertical)
+                x = Random.Shared.Next(100, ARENA_WIDTH - 100);
+                y = ARENA_HEIGHT + fishDef.HitboxRadius;
                 velocityX = 0;
-                velocityY = -bossDef.BaseSpeed;
+                velocityY = -fishDef.BaseSpeed;
+                break;
+            case 4: // Top-left to bottom-right (diagonal)
+                x = -fishDef.HitboxRadius;
+                y = -fishDef.HitboxRadius;
+                velocityX = fishDef.BaseSpeed * 0.707f;
+                velocityY = fishDef.BaseSpeed * 0.707f;
+                break;
+            case 5: // Top-right to bottom-left (diagonal)
+                x = ARENA_WIDTH + fishDef.HitboxRadius;
+                y = -fishDef.HitboxRadius;
+                velocityX = -fishDef.BaseSpeed * 0.707f;
+                velocityY = fishDef.BaseSpeed * 0.707f;
+                break;
+            case 6: // Bottom-left to top-right (diagonal)
+                x = -fishDef.HitboxRadius;
+                y = ARENA_HEIGHT + fishDef.HitboxRadius;
+                velocityX = fishDef.BaseSpeed * 0.707f;
+                velocityY = -fishDef.BaseSpeed * 0.707f;
+                break;
+            default: // Bottom-right to top-left (diagonal)
+                x = ARENA_WIDTH + fishDef.HitboxRadius;
+                y = ARENA_HEIGHT + fishDef.HitboxRadius;
+                velocityX = -fishDef.BaseSpeed * 0.707f;
+                velocityY = -fishDef.BaseSpeed * 0.707f;
                 break;
         }
 
-        var fish = Fish.CreateFish(bossTypeId, x, y, currentTick, velocityX, velocityY, bossDef.MovementPatternId);
+        var fish = Fish.CreateFish(typeId, x, y, currentTick, velocityX, velocityY);
         _activeFish[fish.FishId] = fish;
-        
-        Console.WriteLine($"Ultra-rare boss spawned: {bossDef.Name} (type {bossTypeId})");
     }
 
-    private void SpawnRandomFish(long currentTick, List<int>? eligibleBosses = null)
+    private void SpawnRandomFish(long currentTick)
     {
-        eligibleBosses ??= new List<int>();
+        // Use weight-based spawning for regular fish (types 0-20)
+        // Special Items (21-24) and Boss Fish (25-28) are handled separately
         
-        int largeFishCount = _activeFish.Values.Count(f => f.TypeId == 2);
-        int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 2 && f.TypeId <= 6);
-        int specialFishCount = _activeFish.Values.Count(f => f.TypeId >= 4 && f.TypeId <= 8);
-        int extendedFishCount = _activeFish.Values.Count(f => f.TypeId >= 20 && f.TypeId <= 27);
+        // Build weighted list from catalog (only regular fish: Small, Medium, Large, High-Value)
+        var spawnableFish = new List<(int typeId, int weight)>();
+        int totalWeight = 0;
         
-        // Weighted spawn with limits on rare fish (now includes types 0-8 and 20-27)
-        var rand = Random.Shared.Next(1000);
-        int typeId;
-        
-        if (rand < 500) // 50% small fish (type 0)
+        for (int typeId = 0; typeId <= 20; typeId++)
         {
-            typeId = 0;
-            // Spawn small fish in groups with patterns
-            SpawnFishGroup(typeId, currentTick);
-            return;
-        }
-        else if (rand < 700) // 20% medium fish (type 1)
-        {
-            typeId = 1;
-            // Medium fish spawn in pairs sometimes
-            if (Random.Shared.Next(10) < 4) // 40% chance of pair
+            var fishDef = Entities.FishCatalog.GetFish(typeId);
+            if (fishDef != null)
             {
-                SpawnFishGroup(typeId, currentTick, 2, 2);
-                return;
-            }
-        }
-        else if (rand < 800) // 10% special creatures (types 4-8)
-        {
-            if (specialFishCount >= 4) // Limit special fish on screen
-            {
-                typeId = 1; // Spawn medium instead
-            }
-            else
-            {
-                // Choose a random special creature type
-                typeId = Random.Shared.Next(4, 9); // 4-8
-            }
-        }
-        else if (rand < 880) // 8% extended fish types 20-23 (lower value extended fish)
-        {
-            if (extendedFishCount >= 3) // Limit extended fish on screen
-            {
-                typeId = 1; // Spawn medium instead
-            }
-            else
-            {
-                typeId = Random.Shared.Next(20, 24); // 20-23
-            }
-        }
-        else if (rand < 930) // 5% extended fish types 24-25 (medium value extended fish)
-        {
-            if (extendedFishCount >= 3)
-            {
-                typeId = 2; // Spawn large instead
-            }
-            else
-            {
-                typeId = Random.Shared.Next(24, 26); // 24-25
-            }
-        }
-        else if (rand < 960) // 3% extended fish types 26-27 (high value extended fish)
-        {
-            if (extendedFishCount >= 2)
-            {
-                typeId = 2; // Spawn large instead
-            }
-            else
-            {
-                typeId = Random.Shared.Next(26, 28); // 26-27
-            }
-        }
-        else if (rand < 980) // 2% large fish (type 2)
-        {
-            if (largeFishCount >= MAX_LARGE_FISH)
-            {
-                typeId = 1; // Spawn medium instead
-            }
-            else
-            {
-                typeId = 2;
-            }
-        }
-        else // 2% boss fish (type 3)
-        {
-            if (bossFishCount >= MAX_BOSS_FISH)
-            {
-                typeId = 2; // Spawn large instead
-            }
-            else
-            {
-                typeId = 3;
+                spawnableFish.Add((typeId, fishDef.SpawnWeight));
+                totalWeight += fishDef.SpawnWeight;
             }
         }
         
-        // Spawn single fish
-        SpawnFishGroup(typeId, currentTick, 1, 1);
+        // Pick random fish based on weights
+        int randomValue = Random.Shared.Next(totalWeight);
+        int cumulativeWeight = 0;
+        int selectedTypeId = 0;
+        
+        foreach (var (typeId, weight) in spawnableFish)
+        {
+            cumulativeWeight += weight;
+            if (randomValue < cumulativeWeight)
+            {
+                selectedTypeId = typeId;
+                break;
+            }
+        }
+        
+        // Small fish (types 0-5) spawn in groups
+        if (selectedTypeId <= 5)
+        {
+            SpawnFishGroup(selectedTypeId, currentTick, 3, 6);
+        }
+        else
+        {
+            // Medium, Large, and High-Value fish spawn solo
+            SpawnSingleFish(selectedTypeId, currentTick);
+        }
     }
 
     private void SpawnFishGroup(int typeId, long currentTick, int minCount = -1, int maxCount = -1)
