@@ -3,7 +3,21 @@
 ## Overview
 A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
 
-## Recent Changes (October 30, 2025)
+## Recent Changes (November 5, 2025)
+- **Complete Fish Catalog Overhaul**: Replaced hardcoded fish system with spreadsheet-driven FishCatalog
+  - Created FishCatalog.cs with all 29 fish types (0-28) from balanced spreadsheet data
+  - Categories: Small Fish (0-5), Medium Fish (6-11), Large Fish (12-16), High-Value Fish (17-20), Special Items (21-24), Boss Fish (25-28)
+  - Weight-based spawning: Small fish appear most frequently (25-34%), rare fish at 1-2%
+  - "Always 1 active" guarantee: Exactly 1 Special Item and 1 Boss Fish always on screen
+  - Each fish has: FishName, PayoutMultiplier, CaptureProbability, SpawnWeight, HitboxRadius, BaseSpeed
+  - Removed 200+ lines of hardcoded switch statements, replaced with catalog lookup
+  - Fish.CreateFish now uses catalog data for multipliers, probabilities, and behaviors
+  - FishManager automatically maintains Special/Boss presence, makes room by removing low-value fish
+  - Client rendering updated with all 29 new fish types and category-appropriate visuals
+  - Special Items: Drill Crab, Laser Crab, Roulette Crab, Vortex Jelly
+  - Boss Fish: Dragon King, Emperor Turtle, Poseidon, Phantom Kraken
+
+## Previous Changes (October 30, 2025)
 - **Ultra-Rare Boss Collision Fix**: Bullets now properly hit ultra-rare bosses (types 9-19)
   - Boss fish initialized with correct HitboxRadius from BossCatalog
   - Previously bullets passed through bosses (HitboxRadius was 0)
@@ -88,10 +102,14 @@ A casino-style betting table game where 8 players shoot at exotic fish swimming 
 - **wwwroot/game.js**: Exotic aquarium rendering with animated fish, turret positions, underwater effects
 
 ### Key Features
-- **9 Exotic Creatures**:
-  - Regular: Clownfish, Angelfish, Octopus, Golden Dragon
-  - Special: Sea Turtle, Manta Ray, Giant Jellyfish, Hammerhead Shark, Nautilus
-- **Casino Mechanics**: 90% RTP with probability-based destruction, 1x-20x multipliers
+- **29 Fish Types** (Spreadsheet-Driven Catalog):
+  - Small Fish (0-5): Clownfish, Neon Tetra, Butterflyfish, Angelfish, Pufferfish, Wrasse
+  - Medium Fish (6-11): Lionfish, Parrotfish, Seahorse, Triggerfish, Grouper, Boxfish
+  - Large Fish (12-16): Swordfish, Shark, Manta Ray, Barracuda, Moray Eel
+  - High-Value Fish (17-20): Golden Carp, Fire Kirin, Electric Eel, Crimson Whale
+  - Special Items (21-24): Drill Crab, Laser Crab, Roulette Crab, Vortex Jelly (Always 1 active)
+  - Boss Fish (25-28): Dragon King, Emperor Turtle, Poseidon, Phantom Kraken (Always 1 active)
+- **Casino Mechanics**: 97% RTP with probability-based capture, variable payout multipliers
 - **Billiards Table**: 2:1 aspect ratio, 8 turret positions at pocket locations like pool table
 - **Natural Movement**: Fish spawn from 8 directions, move in curved paths, exit freely
 - **Group Patterns**: Small fish swim in synchronized formations (blooming, symmetrical, circular)
