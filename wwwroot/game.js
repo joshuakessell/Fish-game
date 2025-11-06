@@ -368,7 +368,7 @@ function handleClick(event) {
     const length = Math.sqrt(dx * dx + dy * dy);
     
     // Update turret target rotation for smooth animation
-    if (length > 0 && gameState.myPlayerSlot >= 0 && gameState.myPlayerSlot < 8) {
+    if (length > 0 && gameState.myPlayerSlot >= 0 && gameState.myPlayerSlot < 6) {
         const targetAngle = Math.atan2(dy, dx) * (180 / Math.PI);
         turretTargetRotations[gameState.myPlayerSlot] = targetAngle;
     }
