@@ -1,9 +1,28 @@
 # Ocean King 3 - Casino Betting Table Game
 
 ## Overview
-A casino-style betting table game where 8 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The play area mimics a billiards table with shooting turrets positioned at the pocket locations.
+A casino-style betting table game where 6 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. Features a large centered play area (1800x900) with player UI positioned in margins outside the play area.
 
-## Recent Changes (November 5, 2025)
+## Recent Changes (November 6, 2025)
+- **Major Layout Redesign**: Expanded canvas and separated play area from UI
+  - Canvas increased from 1600×800 to 2400×1400 (50% larger overall)
+  - Centered play area: 1800×900 (maintains 2:1 aspect ratio)
+  - Play area positioned at (300, 250) with clear cyan boundary visualization
+  - Margins: 300px left/right, 250px top/bottom for player UI
+- **6-Player System** (reduced from 8): Optimized for more spacious gameplay
+  - Top row (y=250): 3 turrets at x=900, 1200, 1500 (left 2/3, center, right 2/3)
+  - Bottom row (y=1150): 3 turrets at x=900, 1200, 1500 (left 2/3, center, right 2/3)
+  - Player slots: 0-5 (top: 0-2, bottom: 3-5)
+- **UI Outside Play Area**: All player elements moved to margins
+  - Top turrets (0-2): UI displayed above in top margin (name, bet controls, credits)
+  - Bottom turrets (3-5): UI displayed below in bottom margin (credits, bet controls, name)
+  - Play area remains clean and unobstructed for fish viewing
+- **Server Updates**: MAX_PLAYERS_PER_MATCH reduced to 6 across all systems
+  - PlayerManager, GameServerHost, MatchManager all updated
+  - Slot validation: 0-5 range
+  - Login screen: "Up to 6 players can play together!"
+
+## Previous Changes (November 5, 2025)
 - **Complete Fish Catalog Overhaul**: Replaced hardcoded fish system with spreadsheet-driven FishCatalog
   - Created FishCatalog.cs with all 29 fish types (0-28) from balanced spreadsheet data
   - Categories: Small Fish (0-5), Medium Fish (6-11), Large Fish (12-16), High-Value Fish (17-20), Special Items (21-24), Boss Fish (25-28)
@@ -110,7 +129,8 @@ A casino-style betting table game where 8 players shoot at exotic fish swimming 
   - Special Items (21-24): Drill Crab, Laser Crab, Roulette Crab, Vortex Jelly (Always 1 active)
   - Boss Fish (25-28): Dragon King, Emperor Turtle, Poseidon, Phantom Kraken (Always 1 active)
 - **Casino Mechanics**: 97% RTP with probability-based capture, variable payout multipliers
-- **Billiards Table**: 2:1 aspect ratio, 8 turret positions at pocket locations like pool table
+- **Large Play Area**: 1800×900 centered region with 300px margins for UI (canvas: 2400×1400)
+- **6 Turret Positions**: 3 top, 3 bottom evenly distributed across play area width
 - **Natural Movement**: Fish spawn from 8 directions, move in curved paths, exit freely
 - **Group Patterns**: Small fish swim in synchronized formations (blooming, symmetrical, circular)
 - **30-50 Fish On-Screen**: Constant action with varied spawn rates by rarity
@@ -138,7 +158,7 @@ A casino-style betting table game where 8 players shoot at exotic fish swimming 
 - **Hot Seat**: Purely visual excitement - rotates randomly but doesn't affect actual odds
 
 ### Network Protocol
-- **JoinMatch**: Player joins match and gets assigned turret slot (0-7)
+- **JoinMatch**: Player joins match and gets assigned turret slot (0-5)
 - **Fire**: Send shooting commands from turret position
 - **SetBetValue**: Update bet value for shots (10-200 credits)
 - **StateDelta**: Server broadcasts game state every tick (30 times/sec)
@@ -159,7 +179,8 @@ A casino-style betting table game where 8 players shoot at exotic fish swimming 
 - Language: C#
 - Framework: ASP.NET Core 8 with SignalR
 - Target: Web-based multiplayer game playable online
-- Player Count: Support for 8 concurrent players (updated from initial 6)
+- Player Count: Support for 6 concurrent players (reduced from 8 for better spacing)
+- Layout: Large centered play area with UI in margins outside game field
 
 ## Next Steps (Optional Enhancements)
 - Special weapons (Lightning Chain, Bomb with AoE)
