@@ -76,21 +76,29 @@ const fishSizes = [
     80, 75, 85, 90                    // Boss Fish (25-28)
 ]; // Total: 29 fish types (0-28)
 
-// Turret positions for each player slot (0-7) - positioned at table corners and sides
+// Play area configuration (centered on 2400x1400 canvas)
+const CANVAS_WIDTH = 2400;
+const CANVAS_HEIGHT = 1400;
+const PLAY_AREA = {
+    x: 300,          // Left margin
+    y: 250,          // Top margin
+    width: 1800,     // Play area width (2:1 aspect ratio)
+    height: 900      // Play area height
+};
+
+// Turret positions for 6 players (3 top, 3 bottom)
 const cannonPositions = [
-    { x: 50, y: 50, rotation: 135 },      // Slot 0: Top-left corner
-    { x: 533, y: 20, rotation: 180 },     // Slot 1: Top-left third
-    { x: 1067, y: 20, rotation: 180 },    // Slot 2: Top-right third  
-    { x: 1550, y: 50, rotation: 225 },    // Slot 3: Top-right corner
-    { x: 1550, y: 750, rotation: 315 },   // Slot 4: Bottom-right corner
-    { x: 1067, y: 780, rotation: 0 },     // Slot 5: Bottom-right third
-    { x: 533, y: 780, rotation: 0 },      // Slot 6: Bottom-left third
-    { x: 50, y: 750, rotation: 45 }       // Slot 7: Bottom-left corner
+    { x: 900, y: 250, rotation: 180 },    // Slot 0: Top-left (2/3 from left edge)
+    { x: 1200, y: 250, rotation: 180 },   // Slot 1: Top-center
+    { x: 1500, y: 250, rotation: 180 },   // Slot 2: Top-right (2/3 from left edge)
+    { x: 900, y: 1150, rotation: 0 },     // Slot 3: Bottom-left (2/3 from left edge)
+    { x: 1200, y: 1150, rotation: 0 },    // Slot 4: Bottom-center
+    { x: 1500, y: 1150, rotation: 0 }     // Slot 5: Bottom-right (2/3 from left edge)
 ];
 
 // Track current turret rotation angles for smooth animation
-const turretRotations = [135, 180, 180, 225, 315, 0, 0, 45]; // Initialize with default rotations
-const turretTargetRotations = [135, 180, 180, 225, 315, 0, 0, 45]; // Target rotations for interpolation
+const turretRotations = [180, 180, 180, 0, 0, 0]; // Initialize with default rotations
+const turretTargetRotations = [180, 180, 180, 0, 0, 0]; // Target rotations for interpolation
 
 function getCannonPosition(slot) {
     return cannonPositions[slot] || cannonPositions[0];
@@ -187,13 +195,13 @@ async function joinGame() {
 }
 
 function resizeCanvas() {
-    // Maintain billiards table aspect ratio (2:1 like a pool table)
+    // Maintain aspect ratio for larger board
     const container = document.getElementById('gameContainer');
     const width = container.clientWidth;
-    const height = Math.round(width * 0.5); // 2:1 ratio
+    const height = Math.round(width * (CANVAS_HEIGHT / CANVAS_WIDTH));
     
-    canvas.width = 1600;
-    canvas.height = 800; // Billiards table proportions
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
 }
@@ -215,8 +223,8 @@ function showTurretSelection(availableSlots) {
     // Create selection canvas
     const selectionCanvas = document.getElementById('turretSelectionCanvas');
     const selCtx = selectionCanvas.getContext('2d');
-    selectionCanvas.width = 1600;
-    selectionCanvas.height = 800;
+    selectionCanvas.width = CANVAS_WIDTH;
+    selectionCanvas.height = CANVAS_HEIGHT;
     
     // Draw turret positions
     function drawSelectionScreen() {
@@ -227,7 +235,12 @@ function showTurretSelection(availableSlots) {
         selCtx.fillStyle = gradient;
         selCtx.fillRect(0, 0, selectionCanvas.width, selectionCanvas.height);
         
-        // Draw all 8 turret positions
+        // Draw play area boundary
+        selCtx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+        selCtx.lineWidth = 3;
+        selCtx.strokeRect(PLAY_AREA.x, PLAY_AREA.y, PLAY_AREA.width, PLAY_AREA.height);
+        
+        // Draw all 6 turret positions
         cannonPositions.forEach((pos, idx) => {
             const isAvailable = availableSlots.includes(idx);
             
@@ -448,7 +461,7 @@ function render() {
     animationTime += 0.016;
     
     // Smooth turret rotation interpolation
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
         const current = turretRotations[i];
         const target = turretTargetRotations[i];
         
@@ -479,6 +492,16 @@ function render() {
     radialGrad.addColorStop(1, 'rgba(0, 0, 20, 0.4)');
     ctx.fillStyle = radialGrad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw play area boundary
+    ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(PLAY_AREA.x, PLAY_AREA.y, PLAY_AREA.width, PLAY_AREA.height);
+    
+    // Add inner glow to play area
+    ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(PLAY_AREA.x - 4, PLAY_AREA.y - 4, PLAY_AREA.width + 8, PLAY_AREA.height + 8);
     
     // Draw underwater elements
     drawKelp();
@@ -1559,11 +1582,13 @@ function drawPlayerCannon(player) {
     ctx.restore();
     ctx.shadowBlur = 0;
     
-    // Determine if turret is on top (slots 0-3) or bottom (slots 4-7)
-    const isTopTurret = player.playerSlot < 4;
+    // Determine if turret is on top (slots 0-2) or bottom (slots 3-5)
+    const isTopTurret = player.playerSlot < 3;
     
-    // Draw bet value with +/- buttons above turret (or above name if on bottom)
-    const betY = isTopTurret ? pos.y - 130 : pos.y - 180;
+    // Draw UI elements OUTSIDE play area
+    // Top turrets: UI goes ABOVE the play area (in top margin)
+    // Bottom turrets: UI goes BELOW the play area (in bottom margin)
+    const betY = isTopTurret ? pos.y - 100 : pos.y + 100;
     
     if (isMe) {
         // Draw bet value with +/- buttons for active player
@@ -1610,8 +1635,8 @@ function drawPlayerCannon(player) {
         ctx.fillText(`$${player.betValue || 10}`, pos.x, betY + 5);
     }
     
-    // Player name below bet controls (or above credits if on bottom)
-    const nameY = isTopTurret ? pos.y - 100 : pos.y - 150;
+    // Player name (further from play area)
+    const nameY = isTopTurret ? pos.y - 140 : pos.y + 140;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(pos.x - 60, nameY - 15, 120, 24);
     
@@ -1620,8 +1645,8 @@ function drawPlayerCannon(player) {
     ctx.textAlign = 'center';
     ctx.fillText(player.displayName, pos.x, nameY);
     
-    // Credits beneath turret
-    const creditsY = isTopTurret ? pos.y + 110 : pos.y - 120;
+    // Credits (closest to play area)
+    const creditsY = isTopTurret ? pos.y - 60 : pos.y + 60;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.fillRect(pos.x - 65, creditsY - 18, 130, 30);
     ctx.strokeStyle = isMe ? '#00ffff' : '#666666';

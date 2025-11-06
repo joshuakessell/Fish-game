@@ -10,7 +10,7 @@ public class MatchManager
     private readonly IHubContext<GameHub> _hubContext;
     private int _matchIdCounter = 0;
 
-    public const int MAX_PLAYERS_PER_MATCH = 8;
+    public const int MAX_PLAYERS_PER_MATCH = 6;
 
     public MatchManager(IHubContext<GameHub> hubContext)
     {

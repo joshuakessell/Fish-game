@@ -14,7 +14,7 @@ public class PlayerManager
             if (_players.ContainsKey(playerId))
                 return _players[playerId];
 
-            if (_players.Count >= 8)
+            if (_players.Count >= 6)
                 return null; // Match is full
 
             var player = new Player
@@ -37,12 +37,12 @@ public class PlayerManager
         lock (_lock)
         {
             var occupiedSlots = _players.Values
-                .Where(p => p.PlayerSlot >= 0 && p.PlayerSlot <= 7)
+                .Where(p => p.PlayerSlot >= 0 && p.PlayerSlot <= 5)
                 .Select(p => p.PlayerSlot)
                 .ToHashSet();
 
             var availableSlots = new List<int>();
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 6; i++)
             {
                 if (!occupiedSlots.Contains(i))
                 {
@@ -61,7 +61,7 @@ public class PlayerManager
             if (!_players.TryGetValue(playerId, out var player))
                 return false;
 
-            if (slotIndex < 0 || slotIndex > 7)
+            if (slotIndex < 0 || slotIndex > 5)
                 return false;
 
             var availableSlots = GetAvailableSlots();

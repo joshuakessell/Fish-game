@@ -19,7 +19,7 @@ public class GameServerHost
         
         _isRunning = true;
         Console.WriteLine("Ocean King 3 Game Server Started");
-        Console.WriteLine("Ready to accept up to 8 players per match");
+        Console.WriteLine("Ready to accept up to 6 players per match");
     }
 
     public void Stop()
