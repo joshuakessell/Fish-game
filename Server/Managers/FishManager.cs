@@ -26,9 +26,9 @@ public class FishManager
         {
             fish.UpdatePosition(deltaTime, currentTick);
 
-            // Remove fish only when they swim off screen (never despawn mid-screen)
-            if (fish.X < -200 || fish.X > ARENA_WIDTH + 200 ||
-                fish.Y < -200 || fish.Y > ARENA_HEIGHT + 200)
+            // Remove fish immediately when they exit the play area boundaries
+            if (fish.X < 0 || fish.X > ARENA_WIDTH ||
+                fish.Y < 0 || fish.Y > ARENA_HEIGHT)
             {
                 fishToRemove.Add(fish.FishId);
             }
@@ -131,50 +131,50 @@ public class FishManager
         switch (spawnDirection)
         {
             case 0: // Left to right (horizontal)
-                x = -fishDef.HitboxRadius;
+                x = 0;
                 y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = fishDef.BaseSpeed;
                 velocityY = 0;
                 break;
             case 1: // Right to left (horizontal)
-                x = ARENA_WIDTH + fishDef.HitboxRadius;
+                x = ARENA_WIDTH;
                 y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = -fishDef.BaseSpeed;
                 velocityY = 0;
                 break;
             case 2: // Top to bottom (vertical)
                 x = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                y = -fishDef.HitboxRadius;
+                y = 0;
                 velocityX = 0;
                 velocityY = fishDef.BaseSpeed;
                 break;
             case 3: // Bottom to top (vertical)
                 x = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                y = ARENA_HEIGHT + fishDef.HitboxRadius;
+                y = ARENA_HEIGHT;
                 velocityX = 0;
                 velocityY = -fishDef.BaseSpeed;
                 break;
             case 4: // Top-left to bottom-right (diagonal)
-                x = -fishDef.HitboxRadius;
-                y = -fishDef.HitboxRadius;
+                x = 0;
+                y = 0;
                 velocityX = fishDef.BaseSpeed * 0.707f;
                 velocityY = fishDef.BaseSpeed * 0.707f;
                 break;
             case 5: // Top-right to bottom-left (diagonal)
-                x = ARENA_WIDTH + fishDef.HitboxRadius;
-                y = -fishDef.HitboxRadius;
+                x = ARENA_WIDTH;
+                y = 0;
                 velocityX = -fishDef.BaseSpeed * 0.707f;
                 velocityY = fishDef.BaseSpeed * 0.707f;
                 break;
             case 6: // Bottom-left to top-right (diagonal)
-                x = -fishDef.HitboxRadius;
-                y = ARENA_HEIGHT + fishDef.HitboxRadius;
+                x = 0;
+                y = ARENA_HEIGHT;
                 velocityX = fishDef.BaseSpeed * 0.707f;
                 velocityY = -fishDef.BaseSpeed * 0.707f;
                 break;
             default: // Bottom-right to top-left (diagonal)
-                x = ARENA_WIDTH + fishDef.HitboxRadius;
-                y = ARENA_HEIGHT + fishDef.HitboxRadius;
+                x = ARENA_WIDTH;
+                y = ARENA_HEIGHT;
                 velocityX = -fishDef.BaseSpeed * 0.707f;
                 velocityY = -fishDef.BaseSpeed * 0.707f;
                 break;
@@ -258,14 +258,14 @@ public class FishManager
         switch (spawnDirection)
         {
             case 0: // Left to right (horizontal)
-                baseX = -50;
+                baseX = 0;
                 baseY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = GetSpeedForType(typeId);
                 velocityY = (Random.Shared.NextSingle() - 0.5f) * 20f;
                 break;
                 
             case 1: // Right to left (horizontal)
-                baseX = ARENA_WIDTH + 50;
+                baseX = ARENA_WIDTH;
                 baseY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = -GetSpeedForType(typeId);
                 velocityY = (Random.Shared.NextSingle() - 0.5f) * 20f;
@@ -273,48 +273,48 @@ public class FishManager
                 
             case 2: // Top to bottom (vertical)
                 baseX = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                baseY = -50;
+                baseY = 0;
                 velocityX = (Random.Shared.NextSingle() - 0.5f) * 30f;
                 velocityY = GetSpeedForType(typeId) * 0.7f;
                 break;
                 
             case 3: // Bottom to top (vertical)
                 baseX = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                baseY = ARENA_HEIGHT + 50;
+                baseY = ARENA_HEIGHT;
                 velocityX = (Random.Shared.NextSingle() - 0.5f) * 30f;
                 velocityY = -GetSpeedForType(typeId) * 0.7f;
                 break;
                 
             case 4: // Top-left to bottom-right (diagonal)
-                baseX = -50;
-                baseY = -50;
+                baseX = 0;
+                baseY = 0;
                 velocityX = GetSpeedForType(typeId) * 0.8f;
                 velocityY = GetSpeedForType(typeId) * 0.6f;
                 break;
                 
             case 5: // Top-right to bottom-left (diagonal)
-                baseX = ARENA_WIDTH + 50;
-                baseY = -50;
+                baseX = ARENA_WIDTH;
+                baseY = 0;
                 velocityX = -GetSpeedForType(typeId) * 0.8f;
                 velocityY = GetSpeedForType(typeId) * 0.6f;
                 break;
                 
             case 6: // Complex path: top to center then to bottom-right corner
                 baseX = Random.Shared.Next(200, ARENA_WIDTH - 200);
-                baseY = -50;
+                baseY = 0;
                 velocityX = GetSpeedForType(typeId) * 0.4f;
                 velocityY = GetSpeedForType(typeId) * 0.8f;
                 break;
                 
             case 7: // Complex path: left to center then to top-right corner
-                baseX = -50;
+                baseX = 0;
                 baseY = Random.Shared.Next(200, ARENA_HEIGHT - 200);
                 velocityX = GetSpeedForType(typeId) * 0.9f;
                 velocityY = -GetSpeedForType(typeId) * 0.3f;
                 break;
                 
             default:
-                baseX = -50;
+                baseX = 0;
                 baseY = ARENA_HEIGHT / 2;
                 velocityX = GetSpeedForType(typeId);
                 velocityY = 0;

@@ -41,6 +41,12 @@ public class MatchInstance
     
     private DateTime _lastPlayerCheckTime = DateTime.UtcNow;
     private const double EMPTY_ROOM_TIMEOUT_SECONDS = 60;
+    
+    // Play area boundaries (must match FishManager)
+    private const int ARENA_WIDTH = 1800;
+    private const int ARENA_HEIGHT = 900;
+    private const int PLAY_AREA_OFFSET_X = 300;
+    private const int PLAY_AREA_OFFSET_Y = 250;
 
     public MatchInstance(string matchId, MatchManager matchManager, IHubContext<GameHub> hubContext)
     {
@@ -204,6 +210,17 @@ public class MatchInstance
         var cost = player.BetValue;
         if (player.Credits < cost) return;
 
+        // Transform from canvas space to play-area space
+        float playAreaX = command.X - PLAY_AREA_OFFSET_X;
+        float playAreaY = command.Y - PLAY_AREA_OFFSET_Y;
+
+        // Validate projectile coordinates are within play area boundaries
+        if (playAreaX < 0 || playAreaX > ARENA_WIDTH || 
+            playAreaY < 0 || playAreaY > ARENA_HEIGHT)
+        {
+            return; // Reject fire command if outside play area
+        }
+
         // Deduct credits immediately (authoritative)
         player.Credits -= cost;
         player.TotalSpent += cost;
@@ -214,8 +231,8 @@ public class MatchInstance
         {
             OwnerPlayerId = player.PlayerId,
             WeaponTypeId = 0,
-            X = command.X,
-            Y = command.Y,
+            X = playAreaX,
+            Y = playAreaY,
             DirectionX = command.DirectionX,
             DirectionY = command.DirectionY,
             Damage = 10f * player.CannonLevel,

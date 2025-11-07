@@ -140,8 +140,7 @@ async function joinGame() {
         connection.on("StateDelta", handleStateDelta);
 
         connection.onreconnecting(() => {
-            document.getElementById('connectionStatus').innerHTML = 
-                '<span class="status-disconnected">Reconnecting...</span>';
+            console.log("Reconnecting...");
         });
 
         connection.onreconnected(async () => {
@@ -151,8 +150,6 @@ async function joinGame() {
                 if (result.success) {
                     gameState.myPlayerId = result.playerId;
                     gameState.myPlayerSlot = result.playerSlot;
-                    document.getElementById('connectionStatus').innerHTML = 
-                        '<span class="status-connected">● Connected</span>';
                     console.log("Rejoined match after reconnection");
                 }
             } catch (error) {
@@ -161,8 +158,7 @@ async function joinGame() {
         });
 
         connection.onclose(() => {
-            document.getElementById('connectionStatus').innerHTML = 
-                '<span class="status-disconnected">● Disconnected</span>';
+            console.log("Disconnected from server");
         });
 
         // Connect
@@ -176,9 +172,6 @@ async function joinGame() {
         if (result.success) {
             gameState.myPlayerId = result.playerId;
             gameState.myPlayerSlot = result.playerSlot;
-            
-            document.getElementById('connectionStatus').innerHTML = 
-                '<span class="status-connected">● Connected</span>';
             
             // Show turret selection if not assigned yet
             if (result.playerSlot === -1 && result.availableSlots && result.availableSlots.length > 0) {
