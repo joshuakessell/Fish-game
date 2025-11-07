@@ -3,15 +3,43 @@
 ## Overview
 A casino-style betting table game where 6 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. Features a large centered play area (1800x900) with player UI positioned in margins outside the play area.
 
-## Recent Changes (November 6, 2025)
+## Recent Changes (November 7, 2025)
+- **Enhanced Turret Positioning**: Turrets spread further apart for better spacing
+  - Top row (y=250): 3 turrets at x=516, 1200, 1884 (12%, 50%, 88% of play area width)
+  - Bottom row (y=1150): 3 turrets at x=516, 1200, 1884 (mirrored positioning)
+  - Increased spacing from 300px to 684px between edge turrets
+- **Strict Play Area Boundaries**: All interactions restricted to 1800×900 play area
+  - Canvas clipping implemented with ctx.clip() for rendering
+  - Boundary checks on all interaction handlers (click, mousedown, mousemove)
+  - Clicks outside play area completely ignored
+  - Fish and bullets only viewable and hittable within bounds
+- **Increased Game Speed**: Faster-paced arcade action
+  - Bullet speed increased by 1.4x (300 → 420 px/s)
+  - All 29 fish speeds increased by 1.25x across all categories
+- **Targeting Mode**: Lock onto specific fish for focused attacks
+  - "Target Mode" button toggles targeting state
+  - Click any fish to lock target (within hitbox radius)
+  - Visual indicators: pulsing yellow crosshair and glowing circles on targeted fish
+  - Auto-clears when fish dies or despawns
+  - "Clear Target" button for manual cancellation
+- **Auto-Fire Mode**: Continuous firing with tap-and-hold
+  - "Auto-Fire" toggle button enables/disables mode
+  - Hold mouse button to fire continuously every 200ms
+  - Fires at targeted fish if locked, otherwise toward cursor
+  - Stops firing when mouse released or leaves play area
+  - Prevents normal click-to-fire when auto-fire enabled
+- **Integrated Targeting + Auto-Fire**: Combined advanced gameplay
+  - Enable both modes to lock onto fish and auto-fire until it dies/escapes
+  - Turret smoothly tracks targeted fish position
+  - Auto-stops when target lost or destroyed
+
+## Previous Changes (November 6, 2025)
 - **Major Layout Redesign**: Expanded canvas and separated play area from UI
   - Canvas increased from 1600×800 to 2400×1400 (50% larger overall)
   - Centered play area: 1800×900 (maintains 2:1 aspect ratio)
   - Play area positioned at (300, 250) with clear cyan boundary visualization
   - Margins: 300px left/right, 250px top/bottom for player UI
 - **6-Player System** (reduced from 8): Optimized for more spacious gameplay
-  - Top row (y=250): 3 turrets at x=900, 1200, 1500 (left 2/3, center, right 2/3)
-  - Bottom row (y=1150): 3 turrets at x=900, 1200, 1500 (left 2/3, center, right 2/3)
   - Player slots: 0-5 (top: 0-2, bottom: 3-5)
 - **UI Outside Play Area**: All player elements moved to margins
   - Top turrets (0-2): UI displayed above in top margin (name, bet controls, credits)
