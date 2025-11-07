@@ -1,207 +1,7 @@
 # Ocean King 3 - Casino Betting Table Game
 
 ## Overview
-A casino-style betting table game where 6 players shoot at exotic fish swimming through a large aquarium window. Built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. Features a large centered play area (1800x900) with player UI positioned in margins outside the play area.
-
-## Recent Changes (November 7, 2025)
-- **Enhanced Turret Positioning**: Turrets spread further apart for better spacing
-  - Top row (y=250): 3 turrets at x=516, 1200, 1884 (12%, 50%, 88% of play area width)
-  - Bottom row (y=1150): 3 turrets at x=516, 1200, 1884 (mirrored positioning)
-  - Increased spacing from 300px to 684px between edge turrets
-- **Strict Play Area Boundaries**: All interactions restricted to 1800×900 play area
-  - Canvas clipping implemented with ctx.clip() for rendering
-  - Boundary checks on all interaction handlers (click, mousedown, mousemove)
-  - Clicks outside play area completely ignored
-  - Fish and bullets only viewable and hittable within bounds
-- **Increased Game Speed**: Faster-paced arcade action
-  - Bullet speed increased by 1.4x (300 → 420 px/s)
-  - All 29 fish speeds increased by 1.25x across all categories
-- **Targeting Mode**: Lock onto specific fish for focused attacks
-  - "Target Mode" button toggles targeting state
-  - Click any fish to lock target (within hitbox radius)
-  - Visual indicators: pulsing yellow crosshair and glowing circles on targeted fish
-  - Auto-clears when fish dies or despawns
-  - "Clear Target" button for manual cancellation
-- **Auto-Fire Mode**: Continuous firing with tap-and-hold
-  - "Auto-Fire" toggle button enables/disables mode
-  - Hold mouse button to fire continuously every 200ms
-  - Fires at targeted fish if locked, otherwise toward cursor
-  - Stops firing when mouse released or leaves play area
-  - Prevents normal click-to-fire when auto-fire enabled
-- **Integrated Targeting + Auto-Fire**: Combined advanced gameplay
-  - Enable both modes to lock onto fish and auto-fire until it dies/escapes
-  - Turret smoothly tracks targeted fish position
-  - Auto-stops when target lost or destroyed
-
-## Previous Changes (November 6, 2025)
-- **Major Layout Redesign**: Expanded canvas and separated play area from UI
-  - Canvas increased from 1600×800 to 2400×1400 (50% larger overall)
-  - Centered play area: 1800×900 (maintains 2:1 aspect ratio)
-  - Play area positioned at (300, 250) with clear cyan boundary visualization
-  - Margins: 300px left/right, 250px top/bottom for player UI
-- **6-Player System** (reduced from 8): Optimized for more spacious gameplay
-  - Player slots: 0-5 (top: 0-2, bottom: 3-5)
-- **UI Outside Play Area**: All player elements moved to margins
-  - Top turrets (0-2): UI displayed above in top margin (name, bet controls, credits)
-  - Bottom turrets (3-5): UI displayed below in bottom margin (credits, bet controls, name)
-  - Play area remains clean and unobstructed for fish viewing
-- **Server Updates**: MAX_PLAYERS_PER_MATCH reduced to 6 across all systems
-  - PlayerManager, GameServerHost, MatchManager all updated
-  - Slot validation: 0-5 range
-  - Login screen: "Up to 6 players can play together!"
-
-## Previous Changes (November 5, 2025)
-- **Complete Fish Catalog Overhaul**: Replaced hardcoded fish system with spreadsheet-driven FishCatalog
-  - Created FishCatalog.cs with all 29 fish types (0-28) from balanced spreadsheet data
-  - Categories: Small Fish (0-5), Medium Fish (6-11), Large Fish (12-16), High-Value Fish (17-20), Special Items (21-24), Boss Fish (25-28)
-  - Weight-based spawning: Small fish appear most frequently (25-34%), rare fish at 1-2%
-  - "Always 1 active" guarantee: Exactly 1 Special Item and 1 Boss Fish always on screen
-  - Each fish has: FishName, PayoutMultiplier, CaptureProbability, SpawnWeight, HitboxRadius, BaseSpeed
-  - Removed 200+ lines of hardcoded switch statements, replaced with catalog lookup
-  - Fish.CreateFish now uses catalog data for multipliers, probabilities, and behaviors
-  - FishManager automatically maintains Special/Boss presence, makes room by removing low-value fish
-  - Client rendering updated with all 29 new fish types and category-appropriate visuals
-  - Special Items: Drill Crab, Laser Crab, Roulette Crab, Vortex Jelly
-  - Boss Fish: Dragon King, Emperor Turtle, Poseidon, Phantom Kraken
-
-## Previous Changes (October 30, 2025)
-- **Ultra-Rare Boss Collision Fix**: Bullets now properly hit ultra-rare bosses (types 9-19)
-  - Boss fish initialized with correct HitboxRadius from BossCatalog
-  - Previously bullets passed through bosses (HitboxRadius was 0)
-  - All 11 ultra-rare jackpot bosses now hittable
-- **Enhanced Fish Graphics**: Significantly improved visual quality for all 28 fish types
-  - Realistic body gradients with highlights and shadows
-  - Animated tails that wag during swimming
-  - Flowing fins with wave motion
-  - Detailed eyes with pupils and highlights
-  - Body undulation for lifelike movement
-  - Texture details (scales, spots, suckers on octopus)
-  - Mouth and gill details
-- **Improved Swimming Animations**: More natural and realistic fish movement
-  - tailWag: Tail swaying motion synchronized to swimming
-  - finWave: Undulating fin movements
-  - bodyUndulate: Subtle body flexing during movement
-  - Multi-segment undulation data for serpentine fish
-  - All animations vary per fish for organic appearance
-- **Guaranteed Ultra-Rare Presence**: At least one ultra-rare boss (types 9-19) always on screen
-  - When ultra-rare count drops to zero, system immediately spawns replacement
-  - If at max capacity (50 fish), removes lowest-value fish to make room
-  - Maintains excitement while respecting MAX_FISH_COUNT limit
-- **Larger Bouncing Bullets**: Projectiles 2x larger and bounce off screen edges
-  - Bullet radius increased from 6 to 12 pixels with enhanced glow effects
-  - Bullets ricochet off all four walls instead of disappearing
-  - Extended lifetime from 3 seconds to 30 seconds
-  - Bullets only disappear when hitting fish or timing out
-- **Natural Fish Swimming**: Fish now swim continuously from off-screen to off-screen
-  - Fish only despawn when they exit the play area (never mid-screen)
-  - Removed arbitrary lifetime limits causing mid-journey disappearances
-  - Only exception: fish destroyed by shots show death animation
-- **Bet-Scaled Rewards**: Payouts now multiply by bet value for proper casino mechanics
-  - Formula: `fishValue × randomMultiplier × betValue`
-  - Example: $100 bet on 5× fish with 2× multiplier = 1,000 credits
-  - Projectiles snapshot bet value at fire time (immutable across flight)
-- **Turret-Centric UI**: All information displayed directly at each turret on canvas
-  - Player credits shown beneath turret with glowing gold display
-  - Bet value ($10-$200) displayed above turret with clickable +/- buttons
-  - Player name positioned above turret
-  - All floating windows removed (no HUD clutter)
-- **Fish Death Animation**: 0.25 second spinning, shrinking, fading animation when fish are destroyed
-  - 2 full rotations while dying
-  - Shrinks to 30% of original size
-  - Fades to transparent
-- **Credit Popup Animation**: 2 second floating credit display when earning kills
-  - Font size scales with payout (16px to 48px for jackpots)
-  - Floats upward 50 pixels while fading
-  - Gold color with black outline and glow effect
-- **Ocean King 3 Fish Types**: 28 total fish types matching arcade standard (Flying Fish through Golden Dragon King)
-- **97% RTP**: Increased return-to-player from 90% to 97% for competitive casino gameplay
-- **Turret Selection System**: Players choose their turret position from 8 available slots on join
-  - Available turrets glow yellow with pulsing animation
-  - Turrets positioned at billiards table corners and sides
-  - Turrets are 2.5x larger (80x80 pixels) for better visibility
-- **Animated Turrets**: Turrets smoothly rotate to face the direction of each shot fired
-- **Lifelike Fish Swimming**: Smooth curved paths with natural speed variation, no erratic bouncing
-  - Fish slow down during turns, speed up on straights
-  - Natural acceleration and deceleration
-  - Exit screen naturally without wall bouncing
-- **Seamless Continuous Play**: Removed round transitions, players can join/quit anytime without interruptions
-- **Boss Rotation System**: Every 10 minutes, eligible bosses rotate (4 ultra-rare + 5 rare mid-bosses) seamlessly in background
-- **Bet Value System**: Replaced weapon selection with bet value controls (10-200 credits per shot) using +/- buttons
-- **11 Ultra-Rare Jackpot Bosses**: Types 9-19 with elaborate death sequences and massive payouts (2500-7000 credits)
-  - Kaiju Megalodon: Interactive QTE (5 teeth targets), dual sector clear
-  - Emperor Kraken: Interactive chest choice (3 options), 8-vortex pull
-- **Interactive Kill Sequences**: 2 bosses (Megalodon, Kraken) have player interactions with ±30% hidden payout modifiers
-- **Development credits**: Players start with 10,000 credits for testing
-
-## Project Architecture
-
-### Server (C# / ASP.NET Core 8)
-- **Program.cs**: Application entry point, configures SignalR and static files
-- **Server/GameServerHost.cs**: Main game server coordinator
-- **Server/MatchManager.cs**: Manages multiple match instances
-- **Server/MatchInstance.cs**: Core game loop running at 30 TPS, handles all game state
-- **Server/Entities/**: Fish, Projectile, Player entity classes
-- **Server/Managers/**: PlayerManager, FishManager, ProjectileManager, CollisionResolver
-- **Hubs/GameHub.cs**: SignalR hub for client-server communication
-
-### Client (HTML5 Canvas + JavaScript)
-- **wwwroot/index.html**: Game UI and login screen
-- **wwwroot/game.js**: Exotic aquarium rendering with animated fish, turret positions, underwater effects
-
-### Key Features
-- **29 Fish Types** (Spreadsheet-Driven Catalog):
-  - Small Fish (0-5): Clownfish, Neon Tetra, Butterflyfish, Angelfish, Pufferfish, Wrasse
-  - Medium Fish (6-11): Lionfish, Parrotfish, Seahorse, Triggerfish, Grouper, Boxfish
-  - Large Fish (12-16): Swordfish, Shark, Manta Ray, Barracuda, Moray Eel
-  - High-Value Fish (17-20): Golden Carp, Fire Kirin, Electric Eel, Crimson Whale
-  - Special Items (21-24): Drill Crab, Laser Crab, Roulette Crab, Vortex Jelly (Always 1 active)
-  - Boss Fish (25-28): Dragon King, Emperor Turtle, Poseidon, Phantom Kraken (Always 1 active)
-- **Casino Mechanics**: 97% RTP with probability-based capture, variable payout multipliers
-- **Large Play Area**: 1800×900 centered region with 300px margins for UI (canvas: 2400×1400)
-- **6 Turret Positions**: 3 top, 3 bottom evenly distributed across play area width
-- **Natural Movement**: Fish spawn from 8 directions, move in curved paths, exit freely
-- **Group Patterns**: Small fish swim in synchronized formations (blooming, symmetrical, circular)
-- **30-50 Fish On-Screen**: Constant action with varied spawn rates by rarity
-- **Curved Paths**: Special creatures change direction smoothly (max ~100°) throughout journey
-- **Authoritative Server**: All game logic and RNG server-side at 30 TPS
-
-## How to Play
-1. Enter your name on the login screen
-2. Click "Join Game" to enter a match
-3. Adjust your bet value (10-200 credits) using the +/- buttons on the side
-4. Click anywhere on the canvas to shoot in that direction
-5. Hit fish to damage them and earn credits when they die
-6. Higher bet values = higher costs per shot, same destruction odds
-
-## Casino Mechanics
-
-### RTP System
-- **Target RTP**: 90% over weekly/monthly periods
-- **Destruction Odds**: Calculated dynamically using formula `P = 0.90 / (BaseValue × AvgMultiplier)`
-  - Small fish (5 credits): ~10.9% destruction chance per hit
-  - Medium fish (15 credits): ~3.6% destruction chance per hit
-  - Large fish (50 credits): ~1.1% destruction chance per hit
-  - Boss fish (500 credits): ~0.11% destruction chance per hit
-- **Multipliers**: High-volatility system (1x=70%, 2x=15%, 3x=8%, 5x=5%, 10x=1.5%, 20x=0.5%)
-- **Hot Seat**: Purely visual excitement - rotates randomly but doesn't affect actual odds
-
-### Network Protocol
-- **JoinMatch**: Player joins match and gets assigned turret slot (0-5)
-- **Fire**: Send shooting commands from turret position
-- **SetBetValue**: Update bet value for shots (10-200 credits)
-- **StateDelta**: Server broadcasts game state every tick (30 times/sec)
-
-### Performance Optimizations
-- Single-threaded game loop per match (avoids race conditions)
-- Spatial collision detection (simple distance checks)
-- Fire-and-forget state broadcasting
-- Thread-safe command queue for player inputs
-
-### Scaling Considerations
-- Currently uses in-memory state (no database)
-- Each match runs independently
-- Empty matches auto-cleanup after 60 seconds
-- Can run multiple matches concurrently
+This project is a casino-style betting table game named "Ocean King 3," where up to 6 players shoot at exotic fish in a large aquarium. It is built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The game features a large, central play area (1800x900 pixels) with player UI elements strategically positioned in the margins outside the play area, ensuring an unobstructed view of the gameplay. The core business vision is to deliver an engaging, fast-paced arcade fishing experience with competitive casino mechanics, targeting a high Return-To-Player (RTP) of 97%. The game emphasizes real-time interaction, rich visual effects, and a streamlined user experience, aiming for a prominent position in the online multiplayer casino game market.
 
 ## User Preferences
 - Language: C#
@@ -210,10 +10,41 @@ A casino-style betting table game where 6 players shoot at exotic fish swimming 
 - Player Count: Support for 6 concurrent players (reduced from 8 for better spacing)
 - Layout: Large centered play area with UI in margins outside game field
 
-## Next Steps (Optional Enhancements)
-- Special weapons (Lightning Chain, Bomb with AoE)
-- Bonus events (Crazy Crab Wave, Golden Dragon Boss)
-- Visual effects and animations
-- Sound effects
-- Performance optimizations (object pooling, binary serialization)
-- Spatial partitioning for larger fish counts
+## System Architecture
+The game follows a client-server architecture with ASP.NET Core 8 handling the server-side logic and an HTML5 Canvas-based client for rendering.
+
+**UI/UX Decisions:**
+- **Layout:** A 2400x1400 canvas features a centered 1800x900 main play area, leaving 300px margins on the sides and 250px on top/bottom for player-specific UI. This design keeps the central game action clean and unobstructed.
+- **Player UI:** All player information (credits, bet controls, name) is integrated directly around their respective turrets on the canvas, removing floating windows and reducing clutter.
+- **Visuals:** Enhanced fish graphics with realistic gradients, animated tails, flowing fins, body undulation, and detailed features. Turrets animate to face shot direction.
+- **Interaction:** "Targeting Mode" allows players to lock onto specific fish with visual indicators. "Auto-Fire Mode" provides continuous shooting, which can be combined with targeting for automated gameplay.
+- **Dynamic Feedback:** Fish death animations (spinning, shrinking, fading) and credit popup animations (floating, scaling, fading) provide clear visual feedback.
+
+**Technical Implementations:**
+- **Server-Side:**
+    - **Game Loop:** A core game loop runs at 30 TPS, managed by `MatchInstance.cs`, handling all game state, physics, and collisions.
+    - **Authoritative Server:** All game logic, RNG, fish spawning, projectile validation, and collision resolution are server-authoritative.
+    - **Fish Catalog:** A spreadsheet-driven `FishCatalog.cs` defines 29 fish types with properties like payout, capture probability, spawn weight, hitbox, and speed. It supports categorized fish (Small, Medium, Large, High-Value, Special Items, Boss Fish) and ensures specific types (Special Items, Boss Fish) are always present.
+    - **Casino Mechanics:** Implements a 97% RTP system with dynamically calculated destruction odds and high-volatility payout multipliers (1x-20x). Bet values multiply rewards.
+    - **Player Management:** `MatchManager.cs` orchestrates multiple matches, and `PlayerManager.cs` handles player states and turret assignments.
+- **Client-Side:**
+    - **HTML5 Canvas:** `game.js` renders the aquarium, fish animations, turrets, and all UI elements.
+    - **Real-time Communication:** SignalR (`GameHub.cs`) facilitates real-time client-server communication for game state updates and player actions.
+    - **Boundary Enforcement:** Client-side rendering and interaction handlers are strictly clipped and validated to the 1800x900 play area.
+- **Core Features:**
+    - **29 Unique Fish Types:** Categorized with specific behaviors and values.
+    - **Dynamic Fish Spawning:** Weight-based spawning with guaranteed presence for Special Items and Boss Fish. Fish swim continuously from off-screen to off-screen in curved paths.
+    - **6 Turret System:** Evenly distributed turret positions for 6 players.
+    - **Advanced Shooting:** Targeting and auto-fire modes, bullets are larger, bounce off edges, and have extended lifetimes.
+    - **Bet Value System:** Replaces weapon selection, allowing players to adjust bet per shot (10-200 credits).
+
+**System Design Choices:**
+- **Single-threaded game loop per match:** Simplifies concurrency management.
+- **In-memory state:** Current implementation relies on in-memory state for scalability, with matches running independently and auto-cleaning.
+- **Spatial collision detection:** Simple distance-based checks for efficiency.
+- **Fire-and-forget state broadcasting:** Optimizes real-time updates.
+
+## External Dependencies
+- **ASP.NET Core 8:** Server-side framework.
+- **SignalR:** Real-time communication library for client-server interactions.
+- **HTML5 Canvas:** Client-side rendering technology.
