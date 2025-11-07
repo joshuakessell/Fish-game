@@ -13,9 +13,13 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(to bottom, #001f3f 0%, #003d7a 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: black;
             color: white;
-            overflow: hidden;
+            overflow-y: auto;
             user-select: none;
         }
 
@@ -75,7 +79,62 @@
             display: none;
             width: 100%;
             height: 100%;
-            position: relative;
+            padding: 20px 0;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .player-info-bar {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 1800px;
+            min-height: 60px;
+            padding: 10px 20px;
+            background: rgba(0, 31, 63, 0.6);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .player-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            min-width: 150px;
+        }
+
+        .player-stat .player-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+        }
+
+        .player-stat .player-credits {
+            font-size: 14px;
+            color: #ffff00;
+            text-shadow: 0 0 5px #ffff00;
+        }
+
+        .player-stat .player-score {
+            font-size: 12px;
+            color: #00ff00;
+        }
+
+        #gameCanvasContainer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #gameCanvas {
@@ -84,6 +143,149 @@
             cursor: crosshair;
             border: 3px solid #00ffff;
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+
+        .my-hud {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1800px;
+            padding: 20px 30px;
+            background: rgba(0, 31, 63, 0.9);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            gap: 30px;
+        }
+
+        .hud-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .hud-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .hud-label {
+            font-size: 14px;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+            min-width: 80px;
+        }
+
+        .hud-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffff00;
+            text-shadow: 0 0 8px #ffff00;
+            min-width: 100px;
+        }
+
+        .bet-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .bet-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00ffff;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-shadow: 0 0 5px #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .bet-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .bet-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .bet-slider {
+            width: 200px;
+            height: 8px;
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .bet-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00ffff;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .bet-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #00ffff;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ffff;
+            border: none;
+        }
+
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            background: rgba(0, 31, 63, 0.8);
+            color: #00ffff;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-shadow: 0 0 5px #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            white-space: nowrap;
+        }
+
+        .control-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .control-button.active {
+            background: rgba(0, 255, 255, 0.4);
+            border-color: #ffff00;
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.6);
+        }
+
+        .control-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         #interactionOverlay {
@@ -185,49 +387,6 @@
             max-width: 90vw;
             max-height: 70vh;
         }
-
-        #gameControls {
-            position: absolute;
-            top: 60px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 100;
-        }
-
-        .control-button {
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            border: 2px solid #00ffff;
-            border-radius: 8px;
-            background: rgba(0, 31, 63, 0.8);
-            color: #00ffff;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-shadow: 0 0 5px #00ffff;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-        }
-
-        .control-button:hover {
-            background: rgba(0, 255, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
-            transform: scale(1.05);
-        }
-
-        .control-button.active {
-            background: rgba(0, 255, 255, 0.4);
-            border-color: #ffff00;
-            color: #ffff00;
-            text-shadow: 0 0 10px #ffff00;
-            box-shadow: 0 0 20px rgba(255, 255, 0, 0.6);
-        }
-
-        .control-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
     </style>
 </head>
 <body>
@@ -242,19 +401,52 @@
         </div>
 
         <div id="gameScreen">
-            <div id="gameControls">
-                <button id="targetModeBtn" class="control-button" onclick="toggleTargetMode()">
-                    🎯 Target Mode
-                </button>
-                <button id="autoFireBtn" class="control-button" onclick="toggleAutoFire()">
-                    ⚡ Auto-Fire
-                </button>
-                <button id="clearTargetBtn" class="control-button" onclick="clearTarget()" style="display: none;">
-                    ❌ Clear Target
-                </button>
+            <div id="topPlayers" class="player-info-bar">
             </div>
             
-            <canvas id="gameCanvas" width="2400" height="1400"></canvas>
+            <div id="gameCanvasContainer">
+                <canvas id="gameCanvas" width="1800" height="900"></canvas>
+            </div>
+            
+            <div id="bottomPlayers" class="player-info-bar">
+            </div>
+            
+            <div id="myHud" class="my-hud">
+                <div class="hud-section">
+                    <div class="hud-row">
+                        <span class="hud-label">Credits:</span>
+                        <span id="hudCredits" class="hud-value">1000</span>
+                    </div>
+                    <div class="hud-row">
+                        <span class="hud-label">Score:</span>
+                        <span id="hudScore" class="hud-value">0</span>
+                    </div>
+                </div>
+
+                <div class="hud-section">
+                    <div class="hud-row">
+                        <span class="hud-label">Bet:</span>
+                        <span id="hudBet" class="hud-value">10</span>
+                    </div>
+                    <div class="bet-controls">
+                        <button class="bet-button" onclick="decreaseBet()">-</button>
+                        <input type="range" class="bet-slider" id="betSlider" min="1" max="100" value="10" step="1">
+                        <button class="bet-button" onclick="increaseBet()">+</button>
+                    </div>
+                </div>
+
+                <div class="game-controls">
+                    <button id="targetModeBtn" class="control-button" onclick="toggleTargetMode()">
+                        🎯 Target Mode
+                    </button>
+                    <button id="autoFireBtn" class="control-button" onclick="toggleAutoFire()">
+                        ⚡ Auto-Fire
+                    </button>
+                    <button id="clearTargetBtn" class="control-button" onclick="clearTarget()" style="display: none;">
+                        ❌ Clear Target
+                    </button>
+                </div>
+            </div>
             
             <div id="interactionOverlay"></div>
         </div>

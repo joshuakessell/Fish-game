@@ -84,25 +84,19 @@ const fishSizes = [
     80, 75, 85, 90                    // Boss Fish (25-28)
 ]; // Total: 29 fish types (0-28)
 
-// Play area configuration (centered on 2400x1400 canvas)
-const CANVAS_WIDTH = 2400;
-const CANVAS_HEIGHT = 1400;
-const PLAY_AREA = {
-    x: 300,          // Left margin
-    y: 250,          // Top margin
-    width: 1800,     // Play area width (2:1 aspect ratio)
-    height: 900      // Play area height
-};
+// Canvas configuration (1800x900 canvas, 2:1 aspect ratio)
+const CANVAS_WIDTH = 1800;
+const CANVAS_HEIGHT = 900;
 
 // Turret positions for 6 players (3 top, 3 bottom)
-// Calculated as PLAY_AREA.x + [0.12, 0.5, 0.88] * PLAY_AREA.width
+// Calculated as [0.12, 0.5, 0.88] * CANVAS_WIDTH for x, 90 (top) / 810 (bottom) for y
 const cannonPositions = [
-    { x: 516, y: 250, rotation: 180 },    // Slot 0: Top-left (12% from left edge)
-    { x: 1200, y: 250, rotation: 180 },   // Slot 1: Top-center (50%)
-    { x: 1884, y: 250, rotation: 180 },   // Slot 2: Top-right (88%)
-    { x: 516, y: 1150, rotation: 0 },     // Slot 3: Bottom-left (12%)
-    { x: 1200, y: 1150, rotation: 0 },    // Slot 4: Bottom-center (50%)
-    { x: 1884, y: 1150, rotation: 0 }     // Slot 5: Bottom-right (88%)
+    { x: 216, y: 90, rotation: 180 },    // Slot 0: Top-left (12%)
+    { x: 900, y: 90, rotation: 180 },    // Slot 1: Top-center (50%)
+    { x: 1584, y: 90, rotation: 180 },   // Slot 2: Top-right (88%)
+    { x: 216, y: 810, rotation: 0 },     // Slot 3: Bottom-left (12%)
+    { x: 900, y: 810, rotation: 0 },     // Slot 4: Bottom-center (50%)
+    { x: 1584, y: 810, rotation: 0 }     // Slot 5: Bottom-right (88%)
 ];
 
 // Track current turret rotation angles for smooth animation
@@ -114,10 +108,7 @@ function getCannonPosition(slot) {
 }
 
 function isWithinPlayArea(x, y) {
-    return x >= PLAY_AREA.x && 
-           x <= PLAY_AREA.x + PLAY_AREA.width &&
-           y >= PLAY_AREA.y && 
-           y <= PLAY_AREA.y + PLAY_AREA.height;
+    return x >= 0 && x <= 1800 && y >= 0 && y <= 900;
 }
 
 let connection;
@@ -204,10 +195,29 @@ async function joinGame() {
 }
 
 function resizeCanvas() {
-    // Maintain aspect ratio for larger board
-    const container = document.getElementById('gameContainer');
-    const width = container.clientWidth;
-    const height = Math.round(width * (CANVAS_HEIGHT / CANVAS_WIDTH));
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Reserve space for UI elements (padding, bars, HUD, gaps)
+    const reservedHeight = 330;
+    
+    // Calculate available space with minimum bounds
+    const maxWidth = Math.max(200, Math.min(viewportWidth - 40, CANVAS_WIDTH));
+    const maxHeight = Math.max(100, viewportHeight - reservedHeight);
+    
+    // Calculate scaled size maintaining 2:1 aspect ratio
+    let width = maxWidth;
+    let height = width * 0.5; // 900/1800 = 0.5
+    
+    // If height exceeds available space, scale down based on height
+    if (height > maxHeight) {
+        height = maxHeight;
+        width = height * 2; // 1800/900 = 2
+    }
+    
+    // Ensure dimensions are never negative or too small
+    width = Math.max(200, width);
+    height = Math.max(100, height);
     
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
@@ -219,6 +229,20 @@ function startGame() {
     // Hide login, show game
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'flex';
+    
+    // Set up bet slider event listener
+    const betSlider = document.getElementById('betSlider');
+    if (betSlider) {
+        betSlider.addEventListener('input', function() {
+            betValue = parseInt(this.value);
+            updateMyHud();
+            sendBetValueToServer();
+        });
+    }
+    
+    // Initialize HUD displays
+    updateMyHud();
+    updateOtherPlayers();
 }
 
 function showTurretSelection(availableSlots) {
@@ -232,8 +256,8 @@ function showTurretSelection(availableSlots) {
     // Create selection canvas
     const selectionCanvas = document.getElementById('turretSelectionCanvas');
     const selCtx = selectionCanvas.getContext('2d');
-    selectionCanvas.width = CANVAS_WIDTH;
-    selectionCanvas.height = CANVAS_HEIGHT;
+    selectionCanvas.width = 1800;
+    selectionCanvas.height = 900;
     
     // Draw turret positions
     function drawSelectionScreen() {
@@ -243,11 +267,6 @@ function showTurretSelection(availableSlots) {
         gradient.addColorStop(1, '#004d7a');
         selCtx.fillStyle = gradient;
         selCtx.fillRect(0, 0, selectionCanvas.width, selectionCanvas.height);
-        
-        // Draw play area boundary
-        selCtx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
-        selCtx.lineWidth = 3;
-        selCtx.strokeRect(PLAY_AREA.x, PLAY_AREA.y, PLAY_AREA.width, PLAY_AREA.height);
         
         // Draw all 6 turret positions
         cannonPositions.forEach((pos, idx) => {
@@ -351,30 +370,6 @@ function handleClick(event) {
     const canvasX = (event.clientX - rect.left) * scaleX;
     const canvasY = (event.clientY - rect.top) * scaleY;
     
-    // Ignore clicks outside play area
-    if (!isWithinPlayArea(canvasX, canvasY)) {
-        return;
-    }
-    
-    // Check if clicking on +/- buttons for bet value
-    if (window.betButtonBounds && window.betButtonBounds[gameState.myPlayerSlot]) {
-        const bounds = window.betButtonBounds[gameState.myPlayerSlot];
-        
-        // Check minus button
-        if (canvasX >= bounds.minus.x && canvasX <= bounds.minus.x + bounds.minus.width &&
-            canvasY >= bounds.minus.y && canvasY <= bounds.minus.y + bounds.minus.height) {
-            decreaseBet();
-            return; // Don't fire
-        }
-        
-        // Check plus button
-        if (canvasX >= bounds.plus.x && canvasX <= bounds.plus.x + bounds.plus.width &&
-            canvasY >= bounds.plus.y && canvasY <= bounds.plus.y + bounds.plus.height) {
-            increaseBet();
-            return; // Don't fire
-        }
-    }
-    
     // Store mouse position for auto-fire
     lastMousePos = { x: canvasX, y: canvasY };
     
@@ -437,11 +432,13 @@ function handleClick(event) {
 
 function increaseBet() {
     betValue = Math.min(200, betValue + 10);
+    updateMyHud();
     sendBetValueToServer();
 }
 
 function decreaseBet() {
     betValue = Math.max(10, betValue - 10);
+    updateMyHud();
     sendBetValueToServer();
 }
 
@@ -450,6 +447,54 @@ function sendBetValueToServer() {
         connection.invoke("SetBetValue", betValue)
             .catch(err => console.error('Bet value error:', err));
     }
+}
+
+function updateMyHud() {
+    const myPlayer = gameState.players.find(p => p.playerId === gameState.myPlayerId);
+    if (!myPlayer) return;
+    
+    // Update credits display
+    document.getElementById('hudCredits').textContent = Math.floor(myPlayer.credits);
+    
+    // Update score display (net profit/loss)
+    const score = Math.floor(myPlayer.totalEarned - myPlayer.totalSpent);
+    document.getElementById('hudScore').textContent = score;
+    
+    // Update bet value display
+    document.getElementById('hudBet').textContent = betValue;
+    
+    // Update bet slider value
+    document.getElementById('betSlider').value = betValue;
+}
+
+function updateOtherPlayers() {
+    const topPlayers = document.getElementById('topPlayers');
+    const bottomPlayers = document.getElementById('bottomPlayers');
+    
+    topPlayers.innerHTML = '';
+    bottomPlayers.innerHTML = '';
+    
+    gameState.players.forEach(player => {
+        if (player.playerId === gameState.myPlayerId) return; // Skip own player
+        
+        const playerDiv = document.createElement('div');
+        playerDiv.className = 'player-stat';
+        
+        const score = Math.floor(player.totalEarned - player.totalSpent);
+        
+        playerDiv.innerHTML = `
+            <div class="player-name">${player.displayName}</div>
+            <div class="player-credits">${Math.floor(player.credits)} credits</div>
+            <div class="player-score">Score: ${score}</div>
+        `;
+        
+        // Slots 0-2 go in top, 3-5 go in bottom
+        if (player.playerSlot >= 0 && player.playerSlot <= 2) {
+            topPlayers.appendChild(playerDiv);
+        } else if (player.playerSlot >= 3 && player.playerSlot <= 5) {
+            bottomPlayers.appendChild(playerDiv);
+        }
+    });
 }
 
 function handleStateDelta(delta) {
@@ -503,6 +548,10 @@ function handleStateDelta(delta) {
     gameState.activeBossSequences = delta.activeBossSequences || [];
     gameState.pendingInteractions = delta.pendingInteractions || [];
     
+    // Update HUD and other players display
+    updateMyHud();
+    updateOtherPlayers();
+    
     if (gameState.pendingInteractions.length > 0) {
         const myInteraction = gameState.pendingInteractions.find(i => i.playerId === gameState.myPlayerId);
         if (myInteraction) {
@@ -548,25 +597,9 @@ function render() {
     ctx.fillStyle = radialGrad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw play area boundary
-    ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(PLAY_AREA.x, PLAY_AREA.y, PLAY_AREA.width, PLAY_AREA.height);
-    
-    // Add inner glow to play area
-    ctx.strokeStyle = 'rgba(0, 255, 255, 0.15)';
-    ctx.lineWidth = 8;
-    ctx.strokeRect(PLAY_AREA.x - 4, PLAY_AREA.y - 4, PLAY_AREA.width + 8, PLAY_AREA.height + 8);
-    
     // Draw underwater elements
     drawKelp();
     drawBubbles();
-    
-    // Save context and apply clipping to play area
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(PLAY_AREA.x, PLAY_AREA.y, PLAY_AREA.width, PLAY_AREA.height);
-    ctx.clip();
     
     // Draw fish (behind bullets)
     gameState.fish.forEach(fish => {
@@ -758,9 +791,6 @@ function render() {
     gameState.projectiles.forEach(proj => {
         drawProjectile(proj);
     });
-    
-    // Restore context (remove clipping)
-    ctx.restore();
     
     // Draw players (cannons)
     gameState.players.forEach(player => {
@@ -1694,84 +1724,8 @@ function drawPlayerCannon(player) {
     ctx.restore();
     ctx.shadowBlur = 0;
     
-    // Determine if turret is on top (slots 0-2) or bottom (slots 3-5)
-    const isTopTurret = player.playerSlot < 3;
-    
-    // Draw UI elements OUTSIDE play area
-    // Top turrets: UI goes ABOVE the play area (in top margin)
-    // Bottom turrets: UI goes BELOW the play area (in bottom margin)
-    const betY = isTopTurret ? pos.y - 100 : pos.y + 100;
-    
-    if (isMe) {
-        // Draw bet value with +/- buttons for active player
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(pos.x - 70, betY - 15, 140, 30);
-        ctx.strokeStyle = '#00ffff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(pos.x - 70, betY - 15, 140, 30);
-        
-        // - button
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(pos.x - 68, betY - 13, 26, 26);
-        ctx.strokeStyle = '#00ffff';
-        ctx.strokeRect(pos.x - 68, betY - 13, 26, 26);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 18px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('-', pos.x - 55, betY + 6);
-        
-        // + button
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(pos.x + 42, betY - 13, 26, 26);
-        ctx.strokeStyle = '#00ffff';
-        ctx.strokeRect(pos.x + 42, betY - 13, 26, 26);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('+', pos.x + 55, betY + 6);
-        
-        // Bet value in center
-        ctx.fillStyle = '#ffcc00';
-        ctx.font = 'bold 16px Arial';
-        ctx.fillText(`$${betValue}`, pos.x, betY + 5);
-        
-        // Store button bounds for click detection
-        if (!window.betButtonBounds) window.betButtonBounds = {};
-        window.betButtonBounds[player.playerSlot] = {
-            minus: { x: pos.x - 68, y: betY - 13, width: 26, height: 26 },
-            plus: { x: pos.x + 42, y: betY - 13, width: 26, height: 26 }
-        };
-    } else {
-        // Show bet value only for other players
-        ctx.fillStyle = '#ffcc00';
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`$${player.betValue || 10}`, pos.x, betY + 5);
-    }
-    
-    // Player name (further from play area)
-    const nameY = isTopTurret ? pos.y - 140 : pos.y + 140;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(pos.x - 60, nameY - 15, 120, 24);
-    
-    ctx.fillStyle = isMe ? '#00ffff' : '#ffffff';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(player.displayName, pos.x, nameY);
-    
-    // Credits (closest to play area)
-    const creditsY = isTopTurret ? pos.y - 60 : pos.y + 60;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.fillRect(pos.x - 65, creditsY - 18, 130, 30);
-    ctx.strokeStyle = isMe ? '#00ffff' : '#666666';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(pos.x - 65, creditsY - 18, 130, 30);
-    
-    ctx.fillStyle = '#ffcc00';
-    ctx.font = 'bold 18px Arial';
-    ctx.textAlign = 'center';
-    ctx.shadowBlur = 5;
-    ctx.shadowColor = '#ffcc00';
-    ctx.fillText(`💰 ${Math.floor(player.credits)}`, pos.x, creditsY);
-    ctx.shadowBlur = 0;
+    // Player UI (credits, bet controls, player names) is now rendered in HTML
+    // All canvas player UI rendering has been removed
 }
 
 
