@@ -54,7 +54,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
             HitboxRadius = 18f,
-            BaseSpeed = 60f
+            BaseSpeed = 75f
         },
         [1] = new FishDefinition
         {
@@ -71,7 +71,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 34,
             HitboxRadius = 16f,
-            BaseSpeed = 70f
+            BaseSpeed = 87.5f
         },
         [2] = new FishDefinition
         {
@@ -88,7 +88,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 34,
             HitboxRadius = 17f,
-            BaseSpeed = 65f
+            BaseSpeed = 81.25f
         },
         [3] = new FishDefinition
         {
@@ -105,7 +105,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 34,
             HitboxRadius = 19f,
-            BaseSpeed = 65f
+            BaseSpeed = 81.25f
         },
         [4] = new FishDefinition
         {
@@ -122,7 +122,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 22,
             HitboxRadius = 20f,
-            BaseSpeed = 55f
+            BaseSpeed = 68.75f
         },
         [5] = new FishDefinition
         {
@@ -139,7 +139,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
             HitboxRadius = 17f,
-            BaseSpeed = 75f
+            BaseSpeed = 93.75f
         },
         
         // MEDIUM FISH (Types 6-11) - Moderate difficulty
@@ -158,7 +158,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 17,
             HitboxRadius = 26f,
-            BaseSpeed = 50f
+            BaseSpeed = 62.5f
         },
         [7] = new FishDefinition
         {
@@ -175,7 +175,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 14,
             HitboxRadius = 28f,
-            BaseSpeed = 45f
+            BaseSpeed = 56.25f
         },
         [8] = new FishDefinition
         {
@@ -192,7 +192,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 10,
             HitboxRadius = 24f,
-            BaseSpeed = 40f
+            BaseSpeed = 50f
         },
         [9] = new FishDefinition
         {
@@ -209,7 +209,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 16,
             HitboxRadius = 27f,
-            BaseSpeed = 48f
+            BaseSpeed = 60f
         },
         [10] = new FishDefinition
         {
@@ -226,7 +226,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 13,
             HitboxRadius = 29f,
-            BaseSpeed = 46f
+            BaseSpeed = 57.5f
         },
         [11] = new FishDefinition
         {
@@ -243,7 +243,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 15,
             HitboxRadius = 26f,
-            BaseSpeed = 47f
+            BaseSpeed = 58.75f
         },
         
         // LARGE FISH (Types 12-16) - Low capture probability
@@ -262,7 +262,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 9,
             HitboxRadius = 45f,
-            BaseSpeed = 80f
+            BaseSpeed = 100f
         },
         [13] = new FishDefinition
         {
@@ -279,7 +279,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
             HitboxRadius = 60f,
-            BaseSpeed = 70f
+            BaseSpeed = 87.5f
         },
         [14] = new FishDefinition
         {
@@ -296,7 +296,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
             HitboxRadius = 55f,
-            BaseSpeed = 65f
+            BaseSpeed = 81.25f
         },
         [15] = new FishDefinition
         {
@@ -313,7 +313,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 9,
             HitboxRadius = 50f,
-            BaseSpeed = 85f
+            BaseSpeed = 106.25f
         },
         [16] = new FishDefinition
         {
@@ -330,7 +330,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
             HitboxRadius = 52f,
-            BaseSpeed = 55f
+            BaseSpeed = 68.75f
         },
         
         // HIGH-VALUE FISH (Types 17-20) - Rare, very low capture probability
@@ -349,7 +349,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 1,
             HitboxRadius = 38f,
-            BaseSpeed = 90f
+            BaseSpeed = 112.5f
         },
         [18] = new FishDefinition
         {
@@ -366,7 +366,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 2,
             HitboxRadius = 42f,
-            BaseSpeed = 75f
+            BaseSpeed = 93.75f
         },
         [19] = new FishDefinition
         {
@@ -383,7 +383,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 2,
             HitboxRadius = 48f,
-            BaseSpeed = 95f
+            BaseSpeed = 118.75f
         },
         [20] = new FishDefinition
         {
@@ -400,7 +400,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 2,
             HitboxRadius = 70f,
-            BaseSpeed = 60f
+            BaseSpeed = 75f
         },
         
         // SPECIAL ITEMS (Types 21-24) - Always exactly 1 active
@@ -421,7 +421,7 @@ public static class FishCatalog
             ExtendedDeathBehavior = "Upon death, launches a bouncing drill that ricochets around the screen for 5–7 seconds, damaging nearby fish. Respawn of new special item delayed until drill stops moving and all rewards are awarded.",
             SpawnWeight = 1000,
             HitboxRadius = 35f,
-            BaseSpeed = 30f
+            BaseSpeed = 37.5f
         },
         [22] = new FishDefinition
         {
@@ -440,7 +440,7 @@ public static class FishCatalog
             ExtendedDeathBehavior = "Fires a sweeping laser beam for 4 seconds across the playfield, destroying small and medium fish in its path. Respawn of special item disabled until beam cycle completes.",
             SpawnWeight = 1000,
             HitboxRadius = 35f,
-            BaseSpeed = 30f
+            BaseSpeed = 37.5f
         },
         [23] = new FishDefinition
         {
@@ -459,7 +459,7 @@ public static class FishCatalog
             ExtendedDeathBehavior = "Triggers a roulette wheel event for all players. Wheel spins 3–4 seconds, granting random multipliers or mini bonus games. New special item cannot spawn until the roulette event finishes.",
             SpawnWeight = 1000,
             HitboxRadius = 36f,
-            BaseSpeed = 28f
+            BaseSpeed = 35f
         },
         [24] = new FishDefinition
         {
@@ -478,7 +478,7 @@ public static class FishCatalog
             ExtendedDeathBehavior = "Creates a vortex that lasts 5 seconds, pulling nearby fish inward and rewarding chain bonuses per capture. Respawn blocked until vortex dissipates.",
             SpawnWeight = 1000,
             HitboxRadius = 40f,
-            BaseSpeed = 25f
+            BaseSpeed = 31.25f
         },
         
         // BOSS FISH (Types 25-28) - Always exactly 1 active
@@ -499,7 +499,7 @@ public static class FishCatalog
             ExtendedDeathBehavior = "Unleashes a multi-phase animation where it circles the field and explodes into flames and gold coins for 8 seconds. Respawn of boss fish paused until explosion effect concludes.",
             SpawnWeight = 1000,
             HitboxRadius = 80f,
-            BaseSpeed = 40f
+            BaseSpeed = 50f
         },
         [26] = new FishDefinition
         {
@@ -518,7 +518,7 @@ public static class FishCatalog
             ExtendedDeathBehavior = "Retreats into its shell and releases waves of energy that radiate outward for 6 seconds, damaging nearby fish. Respawn prevented until the wave animation ends.",
             SpawnWeight = 1000,
             HitboxRadius = 75f,
-            BaseSpeed = 35f
+            BaseSpeed = 43.75f
         },
         [27] = new FishDefinition
         {
@@ -537,7 +537,7 @@ public static class FishCatalog
             ExtendedDeathBehavior = "Summons lightning storms and crashing waves for 7 seconds, turning screen tint blue and increasing catch rates temporarily. No boss fish respawn during this event.",
             SpawnWeight = 1000,
             HitboxRadius = 85f,
-            BaseSpeed = 38f
+            BaseSpeed = 47.5f
         },
         [28] = new FishDefinition
         {
@@ -556,7 +556,7 @@ public static class FishCatalog
             ExtendedDeathBehavior = "Spawns tentacles that sweep across the playfield for 9 seconds, each hitting random areas. Respawn halted until tentacle phase is complete.",
             SpawnWeight = 1000,
             HitboxRadius = 90f,
-            BaseSpeed = 32f
+            BaseSpeed = 40f
         }
     };
     

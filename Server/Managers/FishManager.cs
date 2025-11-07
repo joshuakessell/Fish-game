@@ -7,8 +7,8 @@ public class FishManager
     private readonly Dictionary<string, Fish> _activeFish = new();
     private const int MIN_FISH_COUNT = 30;
     private const int MAX_FISH_COUNT = 50;
-    private const int ARENA_WIDTH = 1600;
-    private const int ARENA_HEIGHT = 800; // Billiards table proportions (2:1)
+    private const int ARENA_WIDTH = 1800;
+    private const int ARENA_HEIGHT = 900; // Billiards table proportions (2:1)
     
     // Spawn rate control
     private long _lastSpawnTick = 0;

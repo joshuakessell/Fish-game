@@ -200,10 +200,10 @@ public class KillSequenceHandler
         
         var sectorX = step switch
         {
-            1 => 400f,
-            2 => 800f,
-            3 => 1200f,
-            _ => 800f
+            1 => 450f,
+            2 => 900f,
+            3 => 1350f,
+            _ => 900f
         };
         
         return activeFish
@@ -216,8 +216,8 @@ public class KillSequenceHandler
     {
         if (step < 1 || step > 2) return new List<Fish>();
         
-        const float centerX = 800f;
-        const float centerY = 400f;
+        const float centerX = 900f;
+        const float centerY = 450f;
         
         return activeFish
             .Where(f => f.TypeId < 9)
@@ -230,7 +230,7 @@ public class KillSequenceHandler
     {
         if (step != 1) return new List<Fish>();
         
-        var lineY = 400f;
+        var lineY = 450f;
         
         return activeFish
             .Where(f => f.TypeId < 9 && Math.Abs(f.Y - lineY) < 100)

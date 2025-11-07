@@ -18,6 +18,14 @@ let betValue = 10;
 let playerName = '';
 let animationTime = 0;
 
+// Targeting and Auto-Fire state
+let targetingArmed = false;
+let targetedFishId = null;
+let autoFireEnabled = false;
+let isHoldingDown = false;
+let autoFireInterval = null;
+let lastMousePos = { x: 0, y: 0 };
+
 // Animation tracking
 let previousFish = [];
 let dyingFish = []; // { fish, progress (0-1), x, y, type }
@@ -87,13 +95,14 @@ const PLAY_AREA = {
 };
 
 // Turret positions for 6 players (3 top, 3 bottom)
+// Calculated as PLAY_AREA.x + [0.12, 0.5, 0.88] * PLAY_AREA.width
 const cannonPositions = [
-    { x: 900, y: 250, rotation: 180 },    // Slot 0: Top-left (2/3 from left edge)
-    { x: 1200, y: 250, rotation: 180 },   // Slot 1: Top-center
-    { x: 1500, y: 250, rotation: 180 },   // Slot 2: Top-right (2/3 from left edge)
-    { x: 900, y: 1150, rotation: 0 },     // Slot 3: Bottom-left (2/3 from left edge)
-    { x: 1200, y: 1150, rotation: 0 },    // Slot 4: Bottom-center
-    { x: 1500, y: 1150, rotation: 0 }     // Slot 5: Bottom-right (2/3 from left edge)
+    { x: 516, y: 250, rotation: 180 },    // Slot 0: Top-left (12% from left edge)
+    { x: 1200, y: 250, rotation: 180 },   // Slot 1: Top-center (50%)
+    { x: 1884, y: 250, rotation: 180 },   // Slot 2: Top-right (88%)
+    { x: 516, y: 1150, rotation: 0 },     // Slot 3: Bottom-left (12%)
+    { x: 1200, y: 1150, rotation: 0 },    // Slot 4: Bottom-center (50%)
+    { x: 1884, y: 1150, rotation: 0 }     // Slot 5: Bottom-right (88%)
 ];
 
 // Track current turret rotation angles for smooth animation
@@ -102,6 +111,13 @@ const turretTargetRotations = [180, 180, 180, 0, 0, 0]; // Target rotations for 
 
 function getCannonPosition(slot) {
     return cannonPositions[slot] || cannonPositions[0];
+}
+
+function isWithinPlayArea(x, y) {
+    return x >= PLAY_AREA.x && 
+           x <= PLAY_AREA.x + PLAY_AREA.width &&
+           y >= PLAY_AREA.y && 
+           y <= PLAY_AREA.y + PLAY_AREA.height;
 }
 
 let connection;
@@ -312,6 +328,9 @@ function showTurretSelection(availableSlots) {
                         resizeCanvas();
                         window.addEventListener('resize', resizeCanvas);
                         canvas.addEventListener('click', handleClick);
+                        canvas.addEventListener('mousedown', handleMouseDown);
+                        canvas.addEventListener('mouseup', handleMouseUp);
+                        canvas.addEventListener('mousemove', handleMouseMove);
                         requestAnimationFrame(render);
                     } else {
                         alert('Failed to select turret: ' + result.message);
@@ -339,6 +358,11 @@ function handleClick(event) {
     const canvasX = (event.clientX - rect.left) * scaleX;
     const canvasY = (event.clientY - rect.top) * scaleY;
     
+    // Ignore clicks outside play area
+    if (!isWithinPlayArea(canvasX, canvasY)) {
+        return;
+    }
+    
     // Check if clicking on +/- buttons for bet value
     if (window.betButtonBounds && window.betButtonBounds[gameState.myPlayerSlot]) {
         const bounds = window.betButtonBounds[gameState.myPlayerSlot];
@@ -356,6 +380,39 @@ function handleClick(event) {
             increaseBet();
             return; // Don't fire
         }
+    }
+    
+    // Store mouse position for auto-fire
+    lastMousePos = { x: canvasX, y: canvasY };
+    
+    // If targeting mode is armed, select a fish instead of firing
+    if (targetingArmed) {
+        // Find fish at click coordinates
+        const clickedFish = gameState.fish.find(fish => {
+            const dx = fish.x - canvasX;
+            const dy = fish.y - canvasY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const hitboxRadius = fishSizes[fish.typeId] || 20;
+            return distance <= hitboxRadius;
+        });
+        
+        if (clickedFish) {
+            targetedFishId = clickedFish.fishId;
+            targetingArmed = false;
+            updateTargetModeButton();
+            document.getElementById('clearTargetBtn').style.display = 'block';
+            console.log('Target locked:', clickedFish.fishId);
+        } else {
+            // No fish clicked, disable targeting mode
+            targetingArmed = false;
+            updateTargetModeButton();
+        }
+        return; // Don't fire when in targeting mode
+    }
+    
+    // Don't fire on click if auto-fire is enabled (use mousedown/up instead)
+    if (autoFireEnabled) {
+        return;
     }
     
     // Get the player's cannon position based on their slot
@@ -424,6 +481,11 @@ function handleStateDelta(delta) {
                 y: oldFish.y,
                 type: oldFish.typeId
             });
+            
+            // Clear target if this was the targeted fish
+            if (targetedFishId === oldFish.fishId) {
+                clearTarget();
+            }
             
             // If this fish was killed by the current player, add credit popup
             if (oldPlayer && newPlayer && newPlayer.credits > oldPlayer.credits) {
@@ -507,10 +569,64 @@ function render() {
     drawKelp();
     drawBubbles();
     
+    // Save context and apply clipping to play area
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(PLAY_AREA.x, PLAY_AREA.y, PLAY_AREA.width, PLAY_AREA.height);
+    ctx.clip();
+    
     // Draw fish (behind bullets)
     gameState.fish.forEach(fish => {
         drawFish(fish);
     });
+    
+    // Draw visual indicator for targeted fish
+    if (targetedFishId) {
+        const targetedFish = gameState.fish.find(f => f.fishId === targetedFishId);
+        if (targetedFish) {
+            const size = fishSizes[targetedFish.typeId] || 20;
+            
+            ctx.save();
+            ctx.translate(targetedFish.x, targetedFish.y);
+            
+            // Draw pulsing crosshair
+            const pulse = Math.sin(animationTime * 4) * 0.3 + 0.7; // Pulse between 0.4 and 1.0
+            ctx.strokeStyle = `rgba(255, 255, 0, ${pulse})`;
+            ctx.lineWidth = 3;
+            
+            // Draw crosshair lines
+            const crosshairSize = size * 2;
+            ctx.beginPath();
+            ctx.moveTo(-crosshairSize, 0);
+            ctx.lineTo(-size * 1.2, 0);
+            ctx.moveTo(size * 1.2, 0);
+            ctx.lineTo(crosshairSize, 0);
+            ctx.moveTo(0, -crosshairSize);
+            ctx.lineTo(0, -size * 1.2);
+            ctx.moveTo(0, size * 1.2);
+            ctx.lineTo(0, crosshairSize);
+            ctx.stroke();
+            
+            // Draw glowing circle around target
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 1.5, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 0, ${pulse * 0.6})`;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            // Draw inner circle
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 1.3, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 0, ${pulse * 0.4})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+        } else {
+            // Target fish is gone, clear it
+            clearTarget();
+        }
+    }
     
     // Update and draw dying fish animations (0.25s duration)
     dyingFish = dyingFish.filter(dying => {
@@ -649,6 +765,9 @@ function render() {
     gameState.projectiles.forEach(proj => {
         drawProjectile(proj);
     });
+    
+    // Restore context (remove clipping)
+    ctx.restore();
     
     // Draw players (cannons)
     gameState.players.forEach(player => {
@@ -2124,5 +2243,182 @@ function drawBoss_SteampunkTurtle(size, colors, anim) {
         
         ctx.fillStyle = colors[2];
         ctx.fillRect(x - size * 0.05, y - size * 0.1, size * 0.1, size * 0.2);
+    }
+}
+
+// Toggle functions for targeting and auto-fire
+function toggleTargetMode() {
+    targetingArmed = !targetingArmed;
+    updateTargetModeButton();
+    console.log('Targeting mode:', targetingArmed ? 'ARMED' : 'OFF');
+}
+
+function toggleAutoFire() {
+    autoFireEnabled = !autoFireEnabled;
+    updateAutoFireButton();
+    
+    // Stop auto-fire if it's being disabled
+    if (!autoFireEnabled) {
+        stopAutoFire();
+    }
+    
+    console.log('Auto-fire mode:', autoFireEnabled ? 'ENABLED' : 'DISABLED');
+}
+
+function clearTarget() {
+    targetedFishId = null;
+    document.getElementById('clearTargetBtn').style.display = 'none';
+    console.log('Target cleared');
+}
+
+function updateTargetModeButton() {
+    const btn = document.getElementById('targetModeBtn');
+    if (targetingArmed) {
+        btn.classList.add('active');
+        btn.textContent = '🎯 Select Target';
+    } else {
+        btn.classList.remove('active');
+        btn.textContent = '🎯 Target Mode';
+    }
+}
+
+function updateAutoFireButton() {
+    const btn = document.getElementById('autoFireBtn');
+    if (autoFireEnabled) {
+        btn.classList.add('active');
+        btn.textContent = '⚡ Auto-Fire ON';
+    } else {
+        btn.classList.remove('active');
+        btn.textContent = '⚡ Auto-Fire';
+    }
+}
+
+// Mouse event handlers for auto-fire
+function handleMouseDown(event) {
+    if (!autoFireEnabled) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const canvasX = (event.clientX - rect.left) * scaleX;
+    const canvasY = (event.clientY - rect.top) * scaleY;
+    
+    // Only start auto-fire if within play area
+    if (!isWithinPlayArea(canvasX, canvasY)) {
+        return;
+    }
+    
+    // Store mouse position
+    lastMousePos = { x: canvasX, y: canvasY };
+    
+    // Start auto-firing
+    isHoldingDown = true;
+    startAutoFire();
+}
+
+function handleMouseUp(event) {
+    if (!autoFireEnabled) return;
+    
+    // Stop auto-firing
+    isHoldingDown = false;
+    stopAutoFire();
+}
+
+function handleMouseMove(event) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const canvasX = (event.clientX - rect.left) * scaleX;
+    const canvasY = (event.clientY - rect.top) * scaleY;
+    
+    // If mouse moves outside play area and auto-fire is active, stop it
+    if (!isWithinPlayArea(canvasX, canvasY)) {
+        if (autoFireEnabled && isHoldingDown) {
+            isHoldingDown = false;
+            stopAutoFire();
+        }
+        return;
+    }
+    
+    // Update mouse position
+    lastMousePos = { x: canvasX, y: canvasY };
+}
+
+function startAutoFire() {
+    // Fire immediately
+    fireProjectile();
+    
+    // Set up interval to fire every 200ms
+    if (autoFireInterval) {
+        clearInterval(autoFireInterval);
+    }
+    
+    autoFireInterval = setInterval(() => {
+        if (isHoldingDown) {
+            fireProjectile();
+        } else {
+            stopAutoFire();
+        }
+    }, 200);
+}
+
+function stopAutoFire() {
+    if (autoFireInterval) {
+        clearInterval(autoFireInterval);
+        autoFireInterval = null;
+    }
+}
+
+function fireProjectile() {
+    if (!connection || gameState.myPlayerSlot === null) return;
+    
+    const cannonPos = getCannonPosition(gameState.myPlayerSlot);
+    const playerX = cannonPos.x;
+    const playerY = cannonPos.y;
+    
+    let targetX, targetY;
+    
+    // If we have a targeted fish, fire at it
+    if (targetedFishId) {
+        const targetFish = gameState.fish.find(f => f.fishId === targetedFishId);
+        if (targetFish) {
+            targetX = targetFish.x;
+            targetY = targetFish.y;
+        } else {
+            // Target fish is gone, clear it
+            clearTarget();
+            targetX = lastMousePos.x;
+            targetY = lastMousePos.y;
+        }
+    } else {
+        // Fire toward mouse cursor
+        targetX = lastMousePos.x;
+        targetY = lastMousePos.y;
+    }
+    
+    // Don't fire if target is outside play area
+    if (!isWithinPlayArea(targetX, targetY)) {
+        return;
+    }
+    
+    const dx = targetX - playerX;
+    const dy = targetY - playerY;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    
+    // Update turret target rotation for smooth animation
+    if (length > 0 && gameState.myPlayerSlot >= 0 && gameState.myPlayerSlot < 6) {
+        const targetAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+        turretTargetRotations[gameState.myPlayerSlot] = targetAngle;
+    }
+    
+    if (length > 0) {
+        const dirX = dx / length;
+        const dirY = dy / length;
+        
+        // Send fire command to server
+        connection.invoke("Fire", playerX, playerY, dirX, dirY)
+            .catch(err => console.error('Fire error:', err));
     }
 }

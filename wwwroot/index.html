@@ -204,6 +204,49 @@
             max-width: 90vw;
             max-height: 70vh;
         }
+
+        #gameControls {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .control-button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            background: rgba(0, 31, 63, 0.8);
+            color: #00ffff;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-shadow: 0 0 5px #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .control-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .control-button.active {
+            background: rgba(0, 255, 255, 0.4);
+            border-color: #ffff00;
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.6);
+        }
+
+        .control-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -220,6 +263,18 @@
         <div id="gameScreen">
             <div id="connectionStatus">
                 <span class="status-disconnected">Connecting...</span>
+            </div>
+            
+            <div id="gameControls">
+                <button id="targetModeBtn" class="control-button" onclick="toggleTargetMode()">
+                    🎯 Target Mode
+                </button>
+                <button id="autoFireBtn" class="control-button" onclick="toggleAutoFire()">
+                    ⚡ Auto-Fire
+                </button>
+                <button id="clearTargetBtn" class="control-button" onclick="clearTarget()" style="display: none;">
+                    ❌ Clear Target
+                </button>
             </div>
             
             <canvas id="gameCanvas" width="2400" height="1400"></canvas>
