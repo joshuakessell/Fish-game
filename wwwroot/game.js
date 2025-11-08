@@ -18,6 +18,15 @@ let betValue = 10;
 let playerName = '';
 let animationTime = 0;
 
+// Canvas scaling factors for coordinate projection
+let canvasScaleX = 1;
+let canvasScaleY = 1;
+let canvasOffsetX = 0;
+let canvasOffsetY = 0;
+
+// Track last known canvas dimensions for detecting runtime viewport changes
+let lastCanvasRect = { width: 0, height: 0, left: 0, top: 0 };
+
 // Targeting and Auto-Fire state
 let targetingArmed = false;
 let targetedFishId = null;
@@ -28,8 +37,10 @@ let lastMousePos = { x: 0, y: 0 };
 
 // Animation tracking
 let previousFish = [];
-let dyingFish = []; // { fish, progress (0-1), x, y, type }
+let dyingFish = []; // { fish, progress (0-1), x, y, type, rotation, scale }
 let creditPopups = []; // { x, y, amount, progress (0-1) }
+let hitFlashes = []; // { x, y, progress (0-1) }
+let shockwaves = []; // { x, y, radius, progress, text, triggeredFishIds }
 
 // Fish visual configuration - Ocean King 3 catalog (29 types: 0-28)
 const fishTypes = {
@@ -268,57 +279,136 @@ function resizeCanvas() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    // Reserve space for UI elements (player bars + HUD, minimal gaps)
-    // Top player bar: ~60px, Bottom player bar: ~60px, HUD: ~100px = ~220px total
-    const reservedHeight = 220;
-    
-    // Calculate available space for canvas (use full width, minimal margins)
-    const maxWidth = Math.max(200, Math.min(viewportWidth, CANVAS_WIDTH));
-    const maxHeight = Math.max(100, viewportHeight - reservedHeight);
-    
-    // Calculate scaled size maintaining 2:1 aspect ratio
-    let width = maxWidth;
+    // Calculate scaled size maintaining 2:1 aspect ratio to fill viewport
+    let width = viewportWidth;
     let height = width * 0.5; // 900/1800 = 0.5
     
-    // If height exceeds available space, scale down based on height
-    if (height > maxHeight) {
-        height = maxHeight;
+    // If height exceeds viewport, scale down based on height
+    if (height > viewportHeight) {
+        height = viewportHeight;
         width = height * 2; // 1800/900 = 2
     }
     
-    // Ensure dimensions are never negative or too small
-    width = Math.max(200, width);
-    height = Math.max(100, height);
-    
+    // Set canvas internal resolution (always 1800x900)
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
+    
+    // Set canvas display size
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
+    
+    // Calculate scale factors for coordinate projection
+    canvasScaleX = width / CANVAS_WIDTH;
+    canvasScaleY = height / CANVAS_HEIGHT;
+    
+    // CRITICAL FIX: Defer overlay position update using requestAnimationFrame
+    // to ensure browser has flushed layout and getBoundingClientRect() returns accurate values
+    requestAnimationFrame(() => {
+        // Calculate canvas offset AFTER layout flush
+        const rect = canvas.getBoundingClientRect();
+        canvasOffsetX = rect.left;
+        canvasOffsetY = rect.top;
+        
+        // Update cached dimensions
+        lastCanvasRect = {
+            width: rect.width,
+            height: rect.height,
+            left: rect.left,
+            top: rect.top
+        };
+        
+        // Update overlay control positions with accurate rect
+        updateOverlayPositions();
+    });
+}
+
+// Helper function to project world coordinates to screen coordinates
+function projectToScreen(worldX, worldY) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: rect.left + (worldX / CANVAS_WIDTH) * rect.width,
+        y: rect.top + (worldY / CANVAS_HEIGHT) * rect.height
+    };
+}
+
+// Update overlay control positions based on player turret
+function updateOverlayPositions() {
+    if (gameState.myPlayerSlot === null || gameState.myPlayerSlot < 0) return;
+    
+    const turretPos = getCannonPosition(gameState.myPlayerSlot);
+    const screenPos = projectToScreen(turretPos.x, turretPos.y);
+    
+    // Position bet buttons on sides of turret
+    const betDecreaseBtn = document.getElementById('betDecreaseBtn');
+    const betIncreaseBtn = document.getElementById('betIncreaseBtn');
+    const creditsDisplay = document.getElementById('creditsDisplay');
+    
+    if (betDecreaseBtn && betIncreaseBtn && creditsDisplay) {
+        // Scale-aware offsets (multiply by canvas scale to shrink on small viewports)
+        const leftOffsetX = 80 * canvasScaleX;
+        const rightOffsetX = 40 * canvasScaleX;
+        const verticalOffsetY = 20 * canvasScaleY;
+        const creditsOffsetX = 50 * canvasScaleX;
+        const creditsOffsetY = 60 * canvasScaleY;
+        
+        // Left button (decrease) - positioned to left of turret
+        let decreaseLeft = screenPos.x - leftOffsetX;
+        let decreaseTop = screenPos.y - verticalOffsetY;
+        
+        // Right button (increase) - positioned to right of turret
+        let increaseLeft = screenPos.x + rightOffsetX;
+        let increaseTop = screenPos.y - verticalOffsetY;
+        
+        // Credits display at base of turret
+        const offsetY = turretPos.y < CANVAS_HEIGHT / 2 ? creditsOffsetY : -creditsOffsetY;
+        let creditsLeft = screenPos.x - creditsOffsetX;
+        let creditsTop = screenPos.y + offsetY;
+        
+        // Viewport clamping - get element dimensions for accurate bounds checking
+        const decreaseWidth = betDecreaseBtn.offsetWidth || 40;
+        const decreaseHeight = betDecreaseBtn.offsetHeight || 40;
+        const increaseWidth = betIncreaseBtn.offsetWidth || 40;
+        const increaseHeight = betIncreaseBtn.offsetHeight || 40;
+        const creditsWidth = creditsDisplay.offsetWidth || 100;
+        const creditsHeight = creditsDisplay.offsetHeight || 30;
+        
+        // Clamp decrease button to stay within viewport
+        decreaseLeft = Math.max(0, Math.min(window.innerWidth - decreaseWidth, decreaseLeft));
+        decreaseTop = Math.max(0, Math.min(window.innerHeight - decreaseHeight, decreaseTop));
+        
+        // Clamp increase button to stay within viewport
+        increaseLeft = Math.max(0, Math.min(window.innerWidth - increaseWidth, increaseLeft));
+        increaseTop = Math.max(0, Math.min(window.innerHeight - increaseHeight, increaseTop));
+        
+        // Clamp credits display to stay within viewport
+        creditsLeft = Math.max(0, Math.min(window.innerWidth - creditsWidth, creditsLeft));
+        creditsTop = Math.max(0, Math.min(window.innerHeight - creditsHeight, creditsTop));
+        
+        // Apply clamped positions
+        betDecreaseBtn.style.left = decreaseLeft + 'px';
+        betDecreaseBtn.style.top = decreaseTop + 'px';
+        
+        betIncreaseBtn.style.left = increaseLeft + 'px';
+        betIncreaseBtn.style.top = increaseTop + 'px';
+        
+        creditsDisplay.style.left = creditsLeft + 'px';
+        creditsDisplay.style.top = creditsTop + 'px';
+    }
 }
 
 function startGame() {
     // Hide login, show game
     document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('gameScreen').style.display = 'flex';
+    document.getElementById('gameScreen').style.display = 'block';
     
     // Show scroll instruction for mobile/tablet users
     setTimeout(() => {
         showScrollInstruction();
     }, 500);
     
-    // Set up bet slider event listener
-    const betSlider = document.getElementById('betSlider');
-    if (betSlider) {
-        betSlider.addEventListener('input', function() {
-            betValue = parseInt(this.value);
-            updateMyHud();
-            sendBetValueToServer();
-        });
-    }
-    
-    // Initialize HUD displays
-    updateMyHud();
-    updateOtherPlayers();
+    // Initialize overlay displays
+    updateOverlayDisplays();
+    updateOverlayPositions();
 }
 
 function showTurretSelection(availableSlots) {
@@ -464,7 +554,6 @@ function handleClick(event) {
             targetedFishId = clickedFish.fishId;
             targetingArmed = false;
             updateTargetModeButton();
-            document.getElementById('clearTargetBtn').style.display = 'block';
             console.log('Target locked:', clickedFish.fishId);
         } else {
             // No fish clicked, disable targeting mode
@@ -508,13 +597,13 @@ function handleClick(event) {
 
 function increaseBet() {
     betValue = Math.min(200, betValue + 10);
-    updateMyHud();
+    updateOverlayDisplays();
     sendBetValueToServer();
 }
 
 function decreaseBet() {
     betValue = Math.max(10, betValue - 10);
-    updateMyHud();
+    updateOverlayDisplays();
     sendBetValueToServer();
 }
 
@@ -525,52 +614,15 @@ function sendBetValueToServer() {
     }
 }
 
-function updateMyHud() {
+function updateOverlayDisplays() {
     const myPlayer = gameState.players.find(p => p.playerId === gameState.myPlayerId);
     if (!myPlayer) return;
     
     // Update credits display
-    document.getElementById('hudCredits').textContent = Math.floor(myPlayer.credits);
-    
-    // Update score display (net profit/loss)
-    const score = Math.floor(myPlayer.totalEarned - myPlayer.totalSpent);
-    document.getElementById('hudScore').textContent = score;
-    
-    // Update bet value display
-    document.getElementById('hudBet').textContent = betValue;
-    
-    // Update bet slider value
-    document.getElementById('betSlider').value = betValue;
-}
-
-function updateOtherPlayers() {
-    const topPlayers = document.getElementById('topPlayers');
-    const bottomPlayers = document.getElementById('bottomPlayers');
-    
-    topPlayers.innerHTML = '';
-    bottomPlayers.innerHTML = '';
-    
-    gameState.players.forEach(player => {
-        if (player.playerId === gameState.myPlayerId) return; // Skip own player
-        
-        const playerDiv = document.createElement('div');
-        playerDiv.className = 'player-stat';
-        
-        const score = Math.floor(player.totalEarned - player.totalSpent);
-        
-        playerDiv.innerHTML = `
-            <div class="player-name">${player.displayName}</div>
-            <div class="player-credits">${Math.floor(player.credits)} credits</div>
-            <div class="player-score">Score: ${score}</div>
-        `;
-        
-        // Slots 0-2 go in top, 3-5 go in bottom
-        if (player.playerSlot >= 0 && player.playerSlot <= 2) {
-            topPlayers.appendChild(playerDiv);
-        } else if (player.playerSlot >= 3 && player.playerSlot <= 5) {
-            bottomPlayers.appendChild(playerDiv);
-        }
-    });
+    const creditsValue = document.getElementById('creditsValue');
+    if (creditsValue) {
+        creditsValue.textContent = Math.floor(myPlayer.credits);
+    }
 }
 
 function handleStateDelta(delta) {
@@ -587,13 +639,15 @@ function handleStateDelta(delta) {
     // Find fish that were in previous state but not in new state (they died)
     previousFish.forEach(oldFish => {
         if (!newFishIds.has(oldFish.fishId)) {
-            // Fish died - add to dying animation array (use typeId not fishType)
+            // Fish died - add to dying animation array with rotation and scale
             dyingFish.push({
                 fish: oldFish,
                 progress: 0,
                 x: oldFish.x,
                 y: oldFish.y,
-                type: oldFish.typeId
+                type: oldFish.typeId,
+                rotation: 0,
+                scale: 1
             });
             
             // Clear target if this was the targeted fish
@@ -614,19 +668,34 @@ function handleStateDelta(delta) {
         }
     });
     
+    // Detect bullet hit flashes (projectiles that disappeared)
+    const previousProjectiles = gameState.projectiles || [];
+    const newProjectiles = delta.projectiles || [];
+    const newProjectileIds = new Set(newProjectiles.map(p => p.projectileId));
+    
+    previousProjectiles.forEach(oldProj => {
+        if (!newProjectileIds.has(oldProj.projectileId)) {
+            // Projectile disappeared (likely hit something)
+            hitFlashes.push({
+                x: oldProj.x,
+                y: oldProj.y,
+                progress: 0
+            });
+        }
+    });
+    
     previousFish = newFish;
     gameState.players = delta.players;
     gameState.fish = newFish;
-    gameState.projectiles = delta.projectiles;
+    gameState.projectiles = newProjectiles;
     gameState.roundNumber = delta.roundNumber || 1;
     gameState.timeRemainingTicks = delta.timeRemainingTicks || 18000;
     gameState.isRoundTransitioning = delta.isRoundTransitioning || false;
     gameState.activeBossSequences = delta.activeBossSequences || [];
     gameState.pendingInteractions = delta.pendingInteractions || [];
     
-    // Update HUD and other players display
-    updateMyHud();
-    updateOtherPlayers();
+    // Update overlay displays
+    updateOverlayDisplays();
     
     if (gameState.pendingInteractions.length > 0) {
         const myInteraction = gameState.pendingInteractions.find(i => i.playerId === gameState.myPlayerId);
@@ -639,6 +708,32 @@ function handleStateDelta(delta) {
 
 function render() {
     animationTime += 0.016;
+    
+    // CRITICAL FIX: Check if canvas dimensions have changed during runtime (orientation changes, browser chrome, etc.)
+    // This ensures overlays stay correctly positioned even when viewport changes during gameplay
+    const currentRect = canvas.getBoundingClientRect();
+    if (currentRect.width !== lastCanvasRect.width || 
+        currentRect.height !== lastCanvasRect.height ||
+        currentRect.left !== lastCanvasRect.left ||
+        currentRect.top !== lastCanvasRect.top) {
+        
+        // Update cached dimensions
+        lastCanvasRect = {
+            width: currentRect.width,
+            height: currentRect.height,
+            left: currentRect.left,
+            top: currentRect.top
+        };
+        
+        // Update scale factors and offsets with accurate rect
+        canvasScaleX = currentRect.width / CANVAS_WIDTH;
+        canvasScaleY = currentRect.height / CANVAS_HEIGHT;
+        canvasOffsetX = currentRect.left;
+        canvasOffsetY = currentRect.top;
+        
+        // Update overlay positions to match new dimensions
+        updateOverlayPositions();
+    }
     
     // Smooth turret rotation interpolation
     for (let i = 0; i < 6; i++) {
@@ -730,10 +825,14 @@ function render() {
         }
     }
     
-    // Update and draw dying fish animations (0.25s duration)
+    // Update and draw dying fish animations (0.5s duration)
     dyingFish = dyingFish.filter(dying => {
-        dying.progress += 0.016 / 0.25; // Increment based on frame time / total duration
+        dying.progress += 0.016 / 0.5; // Increment based on frame time / total duration
         if (dying.progress >= 1) return false; // Remove completed animations
+        
+        // Update rotation and scale based on progress
+        dying.rotation = dying.progress * 720; // 720 degrees = 2 full rotations
+        dying.scale = 1 - dying.progress; // Scale from 1 to 0
         
         // Draw dying fish with spin, shrink, and fade
         const type = fishTypes[dying.type] || fishTypes[0];
@@ -743,12 +842,11 @@ function render() {
         ctx.save();
         ctx.translate(dying.x, dying.y);
         
-        // Spin effect (multiple rotations)
-        ctx.rotate(dying.progress * Math.PI * 4); // 2 full rotations
+        // Spin effect (use rotation field)
+        ctx.rotate((dying.rotation * Math.PI) / 180);
         
-        // Shrink effect
-        const scale = 1 - dying.progress * 0.7; // Shrink to 30% of original size
-        ctx.scale(scale, scale);
+        // Shrink effect (use scale field)
+        ctx.scale(dying.scale, dying.scale);
         
         // Fade effect
         ctx.globalAlpha = 1 - dying.progress;
@@ -861,6 +959,91 @@ function render() {
         ctx.restore();
         
         return true; // Keep in array
+    });
+    
+    // Update and draw bullet hit flashes (0.3s duration)
+    hitFlashes = hitFlashes.filter(flash => {
+        flash.progress += 0.016 / 0.3;
+        if (flash.progress >= 1) return false;
+        
+        const radius = flash.progress * 20; // Expand to 20px
+        const alpha = 1 - flash.progress; // Fade out
+        
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(flash.x, flash.y, 0, flash.x, flash.y, radius);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.4)');
+        gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(flash.x, flash.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner bright flash
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(flash.x, flash.y, radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+        
+        return true;
+    });
+    
+    // Update and draw shockwave animations (1s duration)
+    shockwaves = shockwaves.filter(shockwave => {
+        shockwave.progress += 0.016 / 1.0;
+        if (shockwave.progress >= 1) return false;
+        
+        shockwave.radius = shockwave.progress * 150; // Expand to 150px
+        const alpha = 1 - shockwave.progress;
+        
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.7;
+        
+        // Expanding ring gradient
+        ctx.strokeStyle = 'rgba(100, 200, 255, 0.8)';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(shockwave.x, shockwave.y, shockwave.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Inner ring
+        ctx.strokeStyle = 'rgba(150, 220, 255, 0.6)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(shockwave.x, shockwave.y, shockwave.radius * 0.7, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Shockwave text with rumble effect
+        if (shockwave.text && shockwave.progress < 0.7) {
+            const rumbleX = (Math.random() - 0.5) * 4;
+            const rumbleY = (Math.random() - 0.5) * 4;
+            
+            ctx.globalAlpha = alpha;
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Outline
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 4;
+            ctx.strokeText(shockwave.text, shockwave.x + rumbleX, shockwave.y + rumbleY - 50);
+            
+            // Fill
+            ctx.fillStyle = 'rgba(100, 200, 255, 1)';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(100, 200, 255, 0.8)';
+            ctx.fillText(shockwave.text, shockwave.x + rumbleX, shockwave.y + rumbleY - 50);
+        }
+        
+        ctx.restore();
+        
+        return true;
     });
     
     // Draw projectiles
@@ -2290,29 +2473,28 @@ function toggleAutoFire() {
 
 function clearTarget() {
     targetedFishId = null;
-    document.getElementById('clearTargetBtn').style.display = 'none';
     console.log('Target cleared');
 }
 
 function updateTargetModeButton() {
     const btn = document.getElementById('targetModeBtn');
-    if (targetingArmed) {
-        btn.classList.add('active');
-        btn.textContent = '🎯 Select Target';
-    } else {
-        btn.classList.remove('active');
-        btn.textContent = '🎯 Target Mode';
+    if (btn) {
+        if (targetingArmed) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
     }
 }
 
 function updateAutoFireButton() {
     const btn = document.getElementById('autoFireBtn');
-    if (autoFireEnabled) {
-        btn.classList.add('active');
-        btn.textContent = '⚡ Auto-Fire ON';
-    } else {
-        btn.classList.remove('active');
-        btn.textContent = '⚡ Auto-Fire';
+    if (btn) {
+        if (autoFireEnabled) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
     }
 }
 
