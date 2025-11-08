@@ -133,12 +133,31 @@ function isMobileOrTablet() {
     return isMobile || (isTouch && isSmallScreen);
 }
 
+let orientationCheckTimeout = null;
+
 function checkOrientation() {
     const rotationOverlay = document.getElementById('rotationOverlay');
     if (!rotationOverlay) return;
     
     if (isMobileOrTablet()) {
-        const isPortrait = window.innerHeight > window.innerWidth;
+        // Use screen dimensions instead of window dimensions to avoid browser chrome issues
+        // screen.width/height represent device screen, not affected by address bar
+        let isPortrait = false;
+        
+        // Try to use screen.orientation API first (most reliable)
+        if (screen.orientation && screen.orientation.type) {
+            isPortrait = screen.orientation.type.includes('portrait');
+        } 
+        // Fallback to screen dimensions (more stable than window dimensions)
+        else if (screen.width && screen.height) {
+            isPortrait = screen.height > screen.width;
+        }
+        // Last resort: use window dimensions with margin of error to prevent flickering
+        else {
+            // Add 100px margin to account for browser chrome fluctuations
+            isPortrait = (window.innerHeight - 100) > window.innerWidth;
+        }
+        
         if (isPortrait) {
             rotationOverlay.style.display = 'flex';
         } else {
@@ -154,9 +173,18 @@ function checkOrientation() {
     }
 }
 
+// Debounced orientation check to prevent rapid flickering
+function debouncedCheckOrientation() {
+    if (orientationCheckTimeout) {
+        clearTimeout(orientationCheckTimeout);
+    }
+    orientationCheckTimeout = setTimeout(checkOrientation, 100);
+}
+
 // Listen for orientation changes
 window.addEventListener('orientationchange', checkOrientation);
-window.addEventListener('resize', checkOrientation);
+// Use debounced version for resize to prevent flickering from browser chrome
+window.addEventListener('resize', debouncedCheckOrientation);
 
 // Check orientation on page load
 window.addEventListener('DOMContentLoaded', checkOrientation);
