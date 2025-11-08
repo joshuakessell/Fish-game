@@ -1,15 +1,32 @@
 # Ocean King 3 - Casino Betting Table Game
 
 ## Recent Changes (November 8, 2025)
+- **Canvas Overlay Control System** (November 8, 2025 - Latest):
+  - Removed all HTML UI bars (top/bottom player bars, bottom HUD) for pure fullscreen arcade experience
+  - All controls now rendered as HTML overlays positioned dynamically via coordinate projection
+  - Bet controls: ± buttons on either side of turret (increment by 10 credits)
+  - Credits display: Semi-transparent black box with yellow text at base of turret
+  - Mode buttons: Target Mode and Auto-Fire as small semi-transparent icons on left side
+  - Scale-aware positioning: All overlay offsets multiply by canvas scale factors for proper alignment on all viewport sizes
+  - Viewport clamping: Prevents any controls from going offscreen on mobile/small screens
+  - Continuous dimension tracking: Overlays update automatically when canvas resizes or orientation changes
+  - Deferred positioning: Uses requestAnimationFrame to ensure accurate layout before calculating overlay positions
+  - No neon borders: All bright colored borders and glow effects removed for cleaner aesthetic
+
+- **Enhanced Animations** (November 8, 2025):
+  - Bullet hit flash: White circular flash at impact point with fade-out
+  - Fish death animation: Fade, spin (720°), and shrink over 0.8 seconds
+  - Shockwave animation: Expanding blue ring with rumbling "+X" text for high-value fish
+  - Sequential fish deaths: Chain reaction effect for boss fish
+  - Animation cleanup: All animation arrays (hitFlashes, dyingFish, shockwaves) properly filter completed entries to prevent memory leaks
+
 - **Full-Screen Layout** (November 8, 2025):
   - Removed all black space - game now fills entire viewport
   - Changed background from black to ocean blue (#001f3f) theme
   - Body set to position: fixed with overflow: hidden for true full-screen experience
-  - Compact UI elements: reduced padding on player bars (5px/15px) and HUD (12px/20px)
-  - Canvas resizing optimized with 220px reserved height for compact layout
+  - Canvas: 100vw × 100vh with responsive scaling maintaining 2:1 aspect ratio
   - Mobile/tablet scroll instruction overlay: "Swipe up to hide browser bars for full screen"
   - Scroll instruction appears once per session (localStorage), auto-hides after 5s or on interaction
-  - Works in all scenarios: landscape start, portrait-to-landscape rotation
 
 - **Mobile/Tablet Landscape Requirement** (November 8, 2025):
   - Added landscape orientation requirement for mobile and tablet devices
@@ -47,31 +64,39 @@
   - No more mixed rendering contexts or offset calculations
 
 ## Overview
-This project is a casino-style betting table game named "Ocean King 3," where up to 6 players shoot at exotic fish in a large aquarium. It is built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The game features a centered 1800×900 canvas with a clean black background, responsive layout that adapts to different screen sizes, and HTML-based UI elements positioned above and below the game area. The core business vision is to deliver an engaging, fast-paced arcade fishing experience with competitive casino mechanics, targeting a high Return-To-Player (RTP) of 97%. The game emphasizes real-time interaction, rich visual effects, and a streamlined user experience, aiming for a prominent position in the online multiplayer casino game market.
+This project is a casino-style betting table game named "Ocean King 3," where up to 6 players shoot at exotic fish in a large aquarium. It is built with ASP.NET Core 8, SignalR for real-time communication, and HTML5 Canvas for client-side rendering. The game features a fullscreen 1800×900 canvas with ocean blue background, responsive scaling that adapts to all screen sizes, and dynamic HTML overlay controls positioned via coordinate projection. All UI elements (bet controls, credits display, mode buttons) are rendered as semi-transparent overlays anchored to turret positions with scale-aware positioning. The core business vision is to deliver an engaging, fast-paced arcade fishing experience with competitive casino mechanics, targeting a high Return-To-Player (RTP) of 97%. The game emphasizes real-time interaction, rich visual effects with enhanced animations (bullet flashes, fish death, shockwaves), and a streamlined fullscreen user experience, aiming for a prominent position in the online multiplayer casino game market.
 
 ## User Preferences
 - Language: C#
 - Framework: ASP.NET Core 8 with SignalR
 - Target: Web-based multiplayer game playable online
 - Player Count: Support for 6 concurrent players
-- Layout: Centered responsive canvas (1800×900) with HTML-based UI above/below game area
+- Layout: Fullscreen canvas (100vw×100vh) with HTML overlay controls positioned via coordinate projection
 
 ## System Architecture
 The game follows a client-server architecture with ASP.NET Core 8 handling the server-side logic and an HTML5 Canvas-based client for rendering.
 
 **UI/UX Decisions:**
-- **Layout:** Responsive centered design with 1800×900 canvas, black background, and HTML-based UI elements
-  - Canvas: 1800×900 logical size with responsive display scaling (maintains 2:1 aspect ratio)
-  - Top player bar: Displays info for turret slots 0-2 (top row players)
-  - Bottom player bar: Displays info for turret slots 3-5 (bottom row players)
-  - Player HUD: Below canvas, shows current player's credits, score, bet controls, and game modes
-  - Responsive: Adapts to viewport size while maintaining minimum dimensions and aspect ratio
-- **Player UI:** All player information moved from canvas to HTML elements for cleaner separation
-  - Current player: Credits, score, bet slider, +/- buttons, Target Mode, Auto-Fire buttons in HUD below canvas
-  - Other players: Names and credits displayed in bars above/below canvas near their turrets
+- **Layout:** Fullscreen canvas-first arcade experience with overlay controls
+  - Canvas: 100vw × 100vh fullscreen with responsive scaling (maintains 2:1 aspect ratio)
+  - Ocean blue background (#001f3f) fills entire viewport, no black space
+  - All controls rendered as HTML overlays positioned via coordinate projection
+  - Scale-aware positioning: Offsets multiply by canvas scale factors for proper alignment across all viewports
+  - Viewport clamping: Prevents controls from going offscreen on mobile/small screens
+- **Player Controls:** Overlay-based UI anchored to turret positions
+  - Bet controls: ± buttons on either side of turret (increment by 10 credits)
+  - Credits display: Semi-transparent black box with yellow text at base of turret
+  - Mode buttons: Target Mode and Auto-Fire as small semi-transparent icons on left side
+  - No neon borders: Clean aesthetic with semi-transparent styling
+  - Continuous updates: Overlays reposition automatically when canvas resizes or orientation changes
 - **Visuals:** Enhanced fish graphics with realistic gradients, animated tails, flowing fins, body undulation, and detailed features. Turrets animate to face shot direction.
 - **Interaction:** "Targeting Mode" allows players to lock onto specific fish with visual indicators. "Auto-Fire Mode" provides continuous shooting, which can be combined with targeting for automated gameplay.
-- **Dynamic Feedback:** Fish death animations (spinning, shrinking, fading) and credit popup animations (floating, scaling, fading) provide clear visual feedback.
+- **Dynamic Feedback:** 
+  - Bullet hit flash: White circular flash at impact point with fade-out
+  - Fish death animations: Fade, spin (720°), and shrink over 0.8 seconds
+  - Shockwave effects: Expanding blue ring with rumbling "+X" text for high-value fish
+  - Sequential deaths: Chain reaction effect for boss fish
+  - Credit popup animations: Floating, scaling, fading for visual feedback
 
 **Technical Implementations:**
 - **Server-Side:**
