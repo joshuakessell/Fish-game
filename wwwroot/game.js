@@ -132,6 +132,11 @@ function checkOrientation() {
             rotationOverlay.style.display = 'flex';
         } else {
             rotationOverlay.style.display = 'none';
+            // When rotating to landscape, show scroll instruction if game is active
+            const gameScreen = document.getElementById('gameScreen');
+            if (gameScreen && gameScreen.style.display === 'flex') {
+                showScrollInstruction();
+            }
         }
     } else {
         rotationOverlay.style.display = 'none';
@@ -144,6 +149,39 @@ window.addEventListener('resize', checkOrientation);
 
 // Check orientation on page load
 window.addEventListener('DOMContentLoaded', checkOrientation);
+
+// Scroll instruction for mobile/tablet devices
+function showScrollInstruction() {
+    const scrollInstruction = document.getElementById('scrollInstruction');
+    if (!scrollInstruction) return;
+    
+    // Check if user has seen this before
+    const hasSeenInstruction = localStorage.getItem('oceanking_scroll_instruction_seen');
+    
+    if (isMobileOrTablet() && !hasSeenInstruction) {
+        const isLandscape = window.innerWidth > window.innerHeight;
+        if (isLandscape) {
+            scrollInstruction.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                scrollInstruction.style.display = 'none';
+                localStorage.setItem('oceanking_scroll_instruction_seen', 'true');
+            }, 5000);
+            
+            // Hide on scroll or touch
+            const hideInstruction = () => {
+                scrollInstruction.style.display = 'none';
+                localStorage.setItem('oceanking_scroll_instruction_seen', 'true');
+                window.removeEventListener('scroll', hideInstruction);
+                window.removeEventListener('touchstart', hideInstruction);
+            };
+            
+            window.addEventListener('scroll', hideInstruction);
+            window.addEventListener('touchstart', hideInstruction);
+        }
+    }
+}
 
 async function joinGame() {
     playerName = document.getElementById('playerName').value.trim();
@@ -230,11 +268,12 @@ function resizeCanvas() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    // Reserve space for UI elements (padding, bars, HUD, gaps)
-    const reservedHeight = 330;
+    // Reserve space for UI elements (player bars + HUD, minimal gaps)
+    // Top player bar: ~60px, Bottom player bar: ~60px, HUD: ~100px = ~220px total
+    const reservedHeight = 220;
     
-    // Calculate available space with minimum bounds
-    const maxWidth = Math.max(200, Math.min(viewportWidth - 40, CANVAS_WIDTH));
+    // Calculate available space for canvas (use full width, minimal margins)
+    const maxWidth = Math.max(200, Math.min(viewportWidth, CANVAS_WIDTH));
     const maxHeight = Math.max(100, viewportHeight - reservedHeight);
     
     // Calculate scaled size maintaining 2:1 aspect ratio
@@ -261,6 +300,11 @@ function startGame() {
     // Hide login, show game
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'flex';
+    
+    // Show scroll instruction for mobile/tablet users
+    setTimeout(() => {
+        showScrollInstruction();
+    }, 500);
     
     // Set up bet slider event listener
     const betSlider = document.getElementById('betSlider');

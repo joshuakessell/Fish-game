@@ -13,20 +13,24 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            min-height: 100vh;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            background: black;
+            background: #001f3f;
             color: white;
-            overflow-y: auto;
+            overflow: hidden;
             user-select: none;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
 
         #gameContainer {
             position: relative;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -79,11 +83,10 @@
             display: none;
             width: 100%;
             height: 100%;
-            padding: 20px 0;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            justify-content: space-between;
+            overflow: hidden;
         }
 
         .player-info-bar {
@@ -93,11 +96,11 @@
             align-items: center;
             width: 100%;
             max-width: 1800px;
-            min-height: 60px;
-            padding: 10px 20px;
+            min-height: 50px;
+            padding: 5px 15px;
             background: rgba(0, 31, 63, 0.6);
             border: 2px solid #00ffff;
-            border-radius: 10px;
+            border-radius: 8px;
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
         }
 
@@ -152,12 +155,12 @@
             justify-content: space-between;
             width: 100%;
             max-width: 1800px;
-            padding: 20px 30px;
+            padding: 12px 20px;
             background: rgba(0, 31, 63, 0.9);
             border: 3px solid #00ffff;
-            border-radius: 15px;
+            border-radius: 12px;
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-            gap: 30px;
+            gap: 20px;
         }
 
         .hud-section {
@@ -432,6 +435,50 @@
             color: #ffff00;
             text-shadow: 0 0 15px #ffff00;
         }
+
+        #scrollInstruction {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 255, 255, 0.95);
+            color: #001f3f;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 8888;
+            box-shadow: 0 -5px 20px rgba(0, 255, 255, 0.5);
+            animation: slideUpDown 2s ease-in-out infinite;
+        }
+
+        @keyframes slideUpDown {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        #scrollInstruction .swipe-icon {
+            font-size: 24px;
+            display: inline-block;
+            margin-left: 10px;
+            animation: swipeUp 1.5s ease-in-out infinite;
+        }
+
+        @keyframes swipeUp {
+            0%, 100% {
+                transform: translateY(5px);
+                opacity: 0.5;
+            }
+            50% {
+                transform: translateY(-5px);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -507,6 +554,10 @@
                 Please rotate your device to landscape mode
                 <strong>↻ Turn your device sideways</strong>
             </div>
+        </div>
+
+        <div id="scrollInstruction">
+            Swipe up to hide browser bars for full screen <span class="swipe-icon">☝️</span>
         </div>
     </div>
 

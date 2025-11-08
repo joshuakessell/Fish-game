@@ -1,6 +1,15 @@
 # Ocean King 3 - Casino Betting Table Game
 
-## Recent Changes (November 7, 2025) - Major UI/UX Redesign
+## Recent Changes (November 8, 2025)
+- **Mobile/Tablet Landscape Requirement** (November 8, 2025):
+  - Added landscape orientation requirement for mobile and tablet devices
+  - Portrait mode displays full-screen overlay with rotation prompt message
+  - Animated rotating phone icon (📱) guides users to rotate device
+  - Automatic detection of mobile/tablet devices via user agent, touch capability, and screen size
+  - Event listeners for orientationchange and resize ensure responsive behavior
+  - Desktop users unaffected - overlay never shows on non-mobile devices
+
+## Previous Changes (November 7, 2025) - Major UI/UX Redesign
 - **Complete Layout Overhaul**: Redesigned game from margins-based to centered HTML-based UI
   - Canvas reduced from 2400×1400 to pure 1800×900 play area (no more margin offsets)
   - All player UI moved from canvas rendering to HTML elements
