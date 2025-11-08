@@ -1,6 +1,16 @@
 # Ocean King 3 - Casino Betting Table Game
 
 ## Recent Changes (November 8, 2025)
+- **Full-Screen Layout** (November 8, 2025):
+  - Removed all black space - game now fills entire viewport
+  - Changed background from black to ocean blue (#001f3f) theme
+  - Body set to position: fixed with overflow: hidden for true full-screen experience
+  - Compact UI elements: reduced padding on player bars (5px/15px) and HUD (12px/20px)
+  - Canvas resizing optimized with 220px reserved height for compact layout
+  - Mobile/tablet scroll instruction overlay: "Swipe up to hide browser bars for full screen"
+  - Scroll instruction appears once per session (localStorage), auto-hides after 5s or on interaction
+  - Works in all scenarios: landscape start, portrait-to-landscape rotation
+
 - **Mobile/Tablet Landscape Requirement** (November 8, 2025):
   - Added landscape orientation requirement for mobile and tablet devices
   - Portrait mode displays full-screen overlay with rotation prompt message
