@@ -1,7 +1,23 @@
 # Ocean King 3 - Casino Betting Table Game
 
 ## Recent Changes (November 8, 2025)
-- **Canvas Overlay Control System** (November 8, 2025 - Latest):
+- **Authentication & Lobby System** (November 8, 2025 - Latest):
+  - Implemented JWT-based stateless authentication for guest sessions
+  - Created guest login endpoint (`/api/auth/guest`) returning JWT tokens with 1000 starting credits
+  - Built comprehensive lobby system with room management and pagination
+  - Added LobbyManager class for tracking rooms, auto-creation when >2 seats filled
+  - Lobby displays 4 rooms per page with pagination controls
+  - Solo/offline game mode for single-player practice
+  - Frontend login screen with "Play as Guest" button
+  - Lobby UI with room cards showing player count and status
+  - SignalR hub methods: GetRoomList, JoinRoom, CreateSoloGame
+  - MessagePack protocol integration for 30-50% smaller message payloads
+  - Security: All GameHub methods require JWT authorization via [Authorize] attribute
+  - Credits sync from JWT claims to MatchInstance game state
+  - Database optional for guest mode (JWT-only, no persistence required)
+  - Fixed DI issue: AuthController no longer requires OceanKingDbContext
+
+- **Canvas Overlay Control System** (November 8, 2025):
   - Removed all HTML UI bars (top/bottom player bars, bottom HUD) for pure fullscreen arcade experience
   - All controls now rendered as HTML overlays positioned dynamically via coordinate projection
   - Bet controls: ± buttons on either side of turret (increment by 10 credits)
@@ -100,16 +116,21 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 
 **Technical Implementations:**
 - **Server-Side:**
+    - **Authentication System:** JWT-based stateless auth via `JwtTokenService.cs` and `AuthController.cs`. Guest sessions issue tokens with embedded credits (1000). No database required for guests.
+    - **Lobby System:** `LobbyManager.cs` tracks active rooms, implements pagination (4 per page), and auto-creates new rooms when existing ones fill. Hub methods secured with [Authorize] attribute.
     - **Game Loop:** A core game loop runs at 30 TPS, managed by `MatchInstance.cs`, handling all game state, physics, and collisions.
     - **Authoritative Server:** All game logic, RNG, fish spawning, projectile validation, and collision resolution are server-authoritative.
     - **Fish Catalog:** A spreadsheet-driven `FishCatalog.cs` defines 29 fish types with properties like payout, capture probability, spawn weight, hitbox, and speed. It supports categorized fish (Small, Medium, Large, High-Value, Special Items, Boss Fish) and ensures specific types (Special Items, Boss Fish) are always present.
     - **Casino Mechanics:** Implements a 97% RTP system with dynamically calculated destruction odds and high-volatility payout multipliers (1x-20x). Bet values multiply rewards.
     - **Player Management:** `MatchManager.cs` orchestrates multiple matches, and `PlayerManager.cs` handles player states and turret assignments.
+    - **MessagePack Protocol:** Configured for SignalR to reduce message size by 30-50% compared to JSON.
 - **Client-Side:**
+    - **Authentication Flow:** Guest login via `/api/auth/guest` REST endpoint, stores JWT token, connects to SignalR with `accessTokenFactory`
+    - **Lobby UI:** Three-screen flow: Login → Lobby → Game. Lobby displays room list with pagination, player counts, and solo mode option
     - **HTML5 Canvas:** `game.js` renders the aquarium, fish animations, and turrets in a pure 1800×900 coordinate space
     - **HTML UI:** Player HUD and info bars rendered as HTML elements with real-time updates via `updateMyHud()` and `updateOtherPlayers()`
     - **Responsive Design:** `resizeCanvas()` scales canvas display while maintaining 2:1 aspect ratio and minimum dimensions (200×100)
-    - **Real-time Communication:** SignalR (`GameHub.cs`) facilitates real-time client-server communication for game state updates and player actions
+    - **Real-time Communication:** SignalR (`GameHub.cs`) with JWT authentication facilitates real-time client-server communication for game state updates and player actions
     - **Boundary Enforcement:** All interactions validated to 1800×900 play area boundaries
 - **Core Features:**
     - **29 Unique Fish Types:** Categorized with specific behaviors and values
