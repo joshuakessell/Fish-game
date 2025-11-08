@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Authorization;
 using OceanKing.Server;
+using OceanKing.Server.Managers;
+using System.Security.Claims;
 
 namespace OceanKing.Hubs;
 
+[Authorize] // Require JWT authentication for all hub methods
 public class GameHub : Hub
 {
     private readonly GameServerHost _gameServer;
@@ -13,11 +17,30 @@ public class GameHub : Hub
     {
         _gameServer = gameServer;
     }
+    
+    // Helper to get user info from JWT claims
+    private (string userId, string name, int credits) GetUserFromContext()
+    {
+        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var name = Context.User?.FindFirst(ClaimTypes.Name)?.Value ?? "Player";
+        var creditsStr = Context.User?.FindFirst("credits")?.Value;
+        int.TryParse(creditsStr, out int credits);
+        
+        return (userId, name, credits);
+    }
 
+    // DEPRECATED: Use JoinRoom or CreateSoloGame instead
+    // This method kept for backward compatibility but requires authentication
+    [Obsolete("Use JoinRoom or CreateSoloGame for proper lobby flow")]
     public async Task<object> JoinMatch(string displayName)
     {
         try
         {
+            var (userId, name, credits) = GetUserFromContext();
+            
+            // Use the actual name from JWT claims, not the passed displayName
+            var actualName = string.IsNullOrEmpty(name) ? displayName : name;
+            
             var matchManager = _gameServer.GetMatchManager();
             var match = matchManager.FindOrCreateMatch(Context.ConnectionId);
 
@@ -26,12 +49,15 @@ public class GameHub : Hub
                 return new { success = false, message = "No available matches" };
             }
 
-            var player = match.AddPlayer(Context.ConnectionId, displayName, Context.ConnectionId);
+            var player = match.AddPlayer(Context.ConnectionId, actualName, Context.ConnectionId);
             
             if (player == null)
             {
                 return new { success = false, message = "Match is full" };
             }
+            
+            // Sync credits from JWT to player state
+            player.Credits = credits;
 
             _connectionToMatch[Context.ConnectionId] = match.MatchId;
             _connectionToPlayer[Context.ConnectionId] = player.PlayerId;
@@ -40,7 +66,7 @@ public class GameHub : Hub
 
             var availableSlots = match.GetAvailableSlots();
             
-            Console.WriteLine($"Player {displayName} joined match {match.MatchId} - awaiting turret selection");
+            Console.WriteLine($"Player {actualName} (JWT user {userId}) joined match {match.MatchId} with {credits} credits");
 
             return new
             {
@@ -162,6 +188,112 @@ public class GameHub : Hub
         Console.WriteLine($"Player {playerId} submitted interaction {interactionId}");
     }
 
+    // Lobby system methods
+    public RoomListResponse GetRoomList(int page = 0)
+    {
+        var lobbyManager = _gameServer.GetLobbyManager();
+        return lobbyManager.GetRoomList(page);
+    }
+    
+    public async Task<object> JoinRoom(string roomId, string displayName)
+    {
+        try
+        {
+            var (userId, name, credits) = GetUserFromContext();
+            var actualName = string.IsNullOrEmpty(name) ? displayName : name;
+            
+            var lobbyManager = _gameServer.GetLobbyManager();
+            var match = lobbyManager.JoinRoom(roomId, Context.ConnectionId);
+            
+            if (match == null)
+            {
+                return new { success = false, message = "Room not available or full" };
+            }
+            
+            var player = match.AddPlayer(Context.ConnectionId, actualName, Context.ConnectionId);
+            
+            if (player == null)
+            {
+                return new { success = false, message = "Failed to join room" };
+            }
+            
+            // Sync credits from JWT to player state
+            player.Credits = credits;
+            
+            _connectionToMatch[Context.ConnectionId] = match.MatchId;
+            _connectionToPlayer[Context.ConnectionId] = player.PlayerId;
+            
+            await Groups.AddToGroupAsync(Context.ConnectionId, match.MatchId);
+            
+            var availableSlots = match.GetAvailableSlots();
+            
+            Console.WriteLine($"Player {actualName} (JWT user {userId}) joined room {roomId} with {credits} credits");
+            
+            return new
+            {
+                success = true,
+                matchId = match.MatchId,
+                playerId = player.PlayerId,
+                playerSlot = player.PlayerSlot,
+                credits = player.Credits,
+                availableSlots = availableSlots,
+                isSolo = match.IsSolo()
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in JoinRoom: {ex.Message}");
+            return new { success = false, message = ex.Message };
+        }
+    }
+    
+    public async Task<object> CreateSoloGame(string displayName)
+    {
+        try
+        {
+            var (userId, name, credits) = GetUserFromContext();
+            var actualName = string.IsNullOrEmpty(name) ? displayName : name;
+            
+            var lobbyManager = _gameServer.GetLobbyManager();
+            var match = lobbyManager.CreateSoloMatch(Context.ConnectionId, Context.GetHttpContext()!.RequestServices.GetRequiredService<IHubContext<GameHub>>());
+            
+            var player = match.AddPlayer(Context.ConnectionId, actualName, Context.ConnectionId);
+            
+            if (player == null)
+            {
+                return new { success = false, message = "Failed to create solo game" };
+            }
+            
+            // Sync credits from JWT to player state
+            player.Credits = credits;
+            
+            _connectionToMatch[Context.ConnectionId] = match.MatchId;
+            _connectionToPlayer[Context.ConnectionId] = player.PlayerId;
+            
+            await Groups.AddToGroupAsync(Context.ConnectionId, match.MatchId);
+            
+            var availableSlots = match.GetAvailableSlots();
+            
+            Console.WriteLine($"Player {actualName} (JWT user {userId}) created solo game {match.MatchId} with {credits} credits");
+            
+            return new
+            {
+                success = true,
+                matchId = match.MatchId,
+                playerId = player.PlayerId,
+                playerSlot = player.PlayerSlot,
+                credits = player.Credits,
+                availableSlots = availableSlots,
+                isSolo = true
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in CreateSoloGame: {ex.Message}");
+            return new { success = false, message = ex.Message };
+        }
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         if (_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
@@ -179,6 +311,13 @@ public class GameHub : Hub
                         Console.WriteLine($"Player {player.DisplayName} disconnected from match {matchId}");
                     }
                     match.RemovePlayer(playerId);
+                    
+                    // Clean up solo matches when player disconnects
+                    if (match.IsSolo())
+                    {
+                        var lobbyManager = _gameServer.GetLobbyManager();
+                        lobbyManager.RemoveSoloMatch(matchId);
+                    }
                 }
             }
 

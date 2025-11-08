@@ -12,6 +12,7 @@ public class MatchInstance
     public string MatchId { get; private set; }
     private readonly MatchManager _matchManager;
     private readonly IHubContext<GameHub> _hubContext;
+    private readonly bool _isSolo; // Solo/offline mode flag
     
     // Entity managers
     private readonly PlayerManager _playerManager;
@@ -46,11 +47,12 @@ public class MatchInstance
     private const int ARENA_WIDTH = 1800;
     private const int ARENA_HEIGHT = 900;
 
-    public MatchInstance(string matchId, MatchManager matchManager, IHubContext<GameHub> hubContext)
+    public MatchInstance(string matchId, MatchManager matchManager, IHubContext<GameHub> hubContext, bool isSolo = false)
     {
         MatchId = matchId;
         _matchManager = matchManager;
         _hubContext = hubContext;
+        _isSolo = isSolo;
         
         _playerManager = new PlayerManager();
         _fishManager = new FishManager();
@@ -62,7 +64,11 @@ public class MatchInstance
         _interactionManager = new InteractionManager();
     }
 
-    public bool CanJoin() => _playerManager.GetPlayerCount() < MatchManager.MAX_PLAYERS_PER_MATCH;
+    public bool CanJoin() => !_isSolo && _playerManager.GetPlayerCount() < MatchManager.MAX_PLAYERS_PER_MATCH;
+    
+    public int GetPlayerCount() => _playerManager.GetPlayerCount();
+    
+    public bool IsSolo() => _isSolo;
 
     public void Start()
     {
