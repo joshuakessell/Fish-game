@@ -113,6 +113,38 @@ function isWithinPlayArea(x, y) {
 
 let connection;
 
+// Orientation detection for mobile/tablet devices
+function isMobileOrTablet() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const isSmallScreen = window.innerWidth <= 1024 || window.innerHeight <= 1024;
+    return isMobile || (isTouch && isSmallScreen);
+}
+
+function checkOrientation() {
+    const rotationOverlay = document.getElementById('rotationOverlay');
+    if (!rotationOverlay) return;
+    
+    if (isMobileOrTablet()) {
+        const isPortrait = window.innerHeight > window.innerWidth;
+        if (isPortrait) {
+            rotationOverlay.style.display = 'flex';
+        } else {
+            rotationOverlay.style.display = 'none';
+        }
+    } else {
+        rotationOverlay.style.display = 'none';
+    }
+}
+
+// Listen for orientation changes
+window.addEventListener('orientationchange', checkOrientation);
+window.addEventListener('resize', checkOrientation);
+
+// Check orientation on page load
+window.addEventListener('DOMContentLoaded', checkOrientation);
+
 async function joinGame() {
     playerName = document.getElementById('playerName').value.trim();
     if (!playerName) {
