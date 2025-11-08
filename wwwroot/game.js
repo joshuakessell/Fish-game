@@ -498,13 +498,17 @@ function showTurretSelection(availableSlots) {
                     if (result.success) {
                         gameState.myPlayerSlot = i;
                         overlay.style.display = 'none';
-                        startGame();
                         
-                        // Initialize canvas for game
+                        // Initialize canvas BEFORE starting game (so scale factors are correct)
                         canvas = document.getElementById('gameCanvas');
                         ctx = canvas.getContext('2d');
                         resizeCanvas();
                         window.addEventListener('resize', resizeCanvas);
+                        
+                        // Now start game (which will use correct scale factors for overlay positioning)
+                        startGame();
+                        
+                        // Set up input handlers
                         canvas.addEventListener('click', handleClick);
                         canvas.addEventListener('mousedown', handleMouseDown);
                         canvas.addEventListener('mouseup', handleMouseUp);
