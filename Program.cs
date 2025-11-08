@@ -10,15 +10,25 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Database Context (required for auth system)
+// Add Database Context (optional - used for registered users only, not guests)
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
-if (string.IsNullOrEmpty(connectionString))
+if (!string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("DATABASE_URL environment variable is required for the application to run.");
+    try
+    {
+        builder.Services.AddDbContext<OceanKingDbContext>(options =>
+            options.UseNpgsql(connectionString));
+        Console.WriteLine("Database connected successfully");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database connection warning: {ex.Message}. Guest mode will work without database.");
+    }
 }
-
-builder.Services.AddDbContext<OceanKingDbContext>(options =>
-    options.UseNpgsql(connectionString));
+else
+{
+    Console.WriteLine("DATABASE_URL not set. Running in guest-only mode (no user registration).");
+}
 
 // Configure JWT Authentication
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "OceanKing3SecretKey2025MinLength32Chars!";

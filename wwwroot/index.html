@@ -79,6 +79,121 @@
             transform: scale(1.05);
         }
 
+        #lobbyScreen {
+            display: none;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        #lobbyScreen h1 {
+            font-size: 36px;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            margin-bottom: 30px;
+        }
+
+        .lobby-welcome {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #aaa;
+        }
+
+        .room-list {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .room-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .room-card:hover {
+            background: rgba(0, 255, 255, 0.1);
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+        }
+
+        .room-card h3 {
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+
+        .room-players {
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .room-status {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pagination button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: rgba(0, 255, 255, 0.4);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .lobby-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .lobby-actions button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #00ffff, #00cc99);
+            border: none;
+            border-radius: 5px;
+            color: #001f3f;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .lobby-actions button:hover {
+            transform: scale(1.05);
+        }
+
+        .solo-button {
+            background: linear-gradient(45deg, #ff9500, #ff6b00) !important;
+        }
+
         #gameScreen {
             display: none;
             width: 100%;
@@ -383,8 +498,26 @@
             <p style="margin-bottom: 20px; font-size: 18px;">Multiplayer Fishing Arena</p>
             <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
             <br>
-            <button onclick="joinGame()">Join Game</button>
-            <p style="margin-top: 20px; font-size: 14px; color: #aaa;">Up to 6 players can play together!</p>
+            <button onclick="guestLogin()">Play as Guest</button>
+            <p style="margin-top: 20px; font-size: 14px; color: #aaa;">Start with 1000 credits!</p>
+        </div>
+
+        <div id="lobbyScreen">
+            <h1>🎮 Game Lobby</h1>
+            <p class="lobby-welcome">Welcome, <span id="lobbyPlayerName"></span>! Credits: <span id="lobbyCredits"></span></p>
+            
+            <div id="roomListContainer" class="room-list"></div>
+            
+            <div class="pagination">
+                <button id="prevPageBtn" onclick="previousPage()">← Previous</button>
+                <span id="pageInfo" style="color: #00ffff; font-size: 18px; padding: 10px;">Page 1</span>
+                <button id="nextPageBtn" onclick="nextPage()">Next →</button>
+            </div>
+
+            <div class="lobby-actions">
+                <button class="solo-button" onclick="playSolo()">🎯 Play Solo</button>
+                <button onclick="backToLogin()">← Back</button>
+            </div>
         </div>
 
         <div id="gameScreen">

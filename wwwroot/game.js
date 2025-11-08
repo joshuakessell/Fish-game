@@ -13,6 +13,16 @@ const gameState = {
     pendingInteractions: []
 };
 
+// Authentication state
+let authToken = null;
+let userId = null;
+let userCredits = 0;
+
+// Lobby state
+let currentPage = 0;
+let totalPages = 1;
+let roomsData = [];
+
 let canvas, ctx;
 let betValue = 10;
 let playerName = '';
@@ -124,6 +134,259 @@ function isWithinPlayArea(x, y) {
 
 let connection;
 
+// ====================
+// AUTH & LOBBY SYSTEM
+// ====================
+
+async function guestLogin() {
+    const nameInput = document.getElementById('playerName');
+    const name = nameInput.value.trim();
+    
+    if (!name || name.length === 0) {
+        alert('Please enter your name');
+        return;
+    }
+    
+    if (name.length > 20) {
+        alert('Name must be 20 characters or less');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/auth/guest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            alert(error.message || 'Login failed');
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // Store auth data
+        authToken = data.token;
+        userId = data.userId;
+        playerName = data.name;
+        userCredits = data.credits;
+        
+        console.log(`Guest login successful: ${playerName} (${userId}) with ${userCredits} credits`);
+        
+        // Show lobby
+        showLobby();
+        
+    } catch (err) {
+        console.error('Guest login error:', err);
+        alert('Failed to connect to server. Please try again.');
+    }
+}
+
+function showLobby() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('lobbyScreen').style.display = 'block';
+    document.getElementById('gameScreen').style.display = 'none';
+    
+    document.getElementById('lobbyPlayerName').textContent = playerName;
+    document.getElementById('lobbyCredits').textContent = userCredits;
+    
+    // Connect to SignalR and load room list
+    connectToLobby();
+}
+
+function backToLogin() {
+    if (connection) {
+        connection.stop();
+        connection = null;
+    }
+    
+    authToken = null;
+    userId = null;
+    playerName = '';
+    userCredits = 0;
+    
+    document.getElementById('loginScreen').style.display = 'block';
+    document.getElementById('lobbyScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'none';
+}
+
+async function connectToLobby() {
+    try {
+        // Create SignalR connection with JWT auth
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl('/gamehub', {
+                accessTokenFactory: () => authToken
+            })
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+        
+        // Setup connection handlers
+        connection.onclose(() => {
+            console.log('Connection closed');
+        });
+        
+        // Start connection
+        await connection.start();
+        console.log('Connected to game server');
+        
+        // Load room list
+        loadRoomList(0);
+        
+    } catch (err) {
+        console.error('Failed to connect to game server:', err);
+        alert('Failed to connect to game server. Please try again.');
+        backToLogin();
+    }
+}
+
+async function loadRoomList(page) {
+    try {
+        const result = await connection.invoke('GetRoomList', page);
+        
+        roomsData = result.rooms;
+        currentPage = result.currentPage;
+        totalPages = result.totalPages;
+        
+        renderRoomList();
+        updatePagination();
+        
+    } catch (err) {
+        console.error('Failed to load room list:', err);
+        alert('Failed to load rooms. Please try again.');
+    }
+}
+
+function renderRoomList() {
+    const container = document.getElementById('roomListContainer');
+    container.innerHTML = '';
+    
+    if (roomsData.length === 0) {
+        container.innerHTML = '<p style="color: #aaa; padding: 20px;">No rooms available. Creating new room...</p>';
+        return;
+    }
+    
+    roomsData.forEach(room => {
+        const card = document.createElement('div');
+        card.className = 'room-card';
+        card.onclick = () => joinRoom(room.matchId);
+        
+        const seatsText = room.availableSeats === 0 ? 'FULL' : `${6 - room.availableSeats}/6 Players`;
+        const statusText = room.isRunning ? '🎮 In Progress' : '⏳ Waiting';
+        
+        card.innerHTML = `
+            <h3>🏆 Room ${room.matchId}</h3>
+            <p class="room-players">${seatsText}</p>
+            <p class="room-status">${statusText}</p>
+        `;
+        
+        if (room.availableSeats === 0) {
+            card.style.opacity = '0.5';
+            card.style.cursor = 'not-allowed';
+            card.onclick = null;
+        }
+        
+        container.appendChild(card);
+    });
+}
+
+function updatePagination() {
+    document.getElementById('pageInfo').textContent = `Page ${currentPage + 1} of ${totalPages}`;
+    document.getElementById('prevPageBtn').disabled = currentPage === 0;
+    document.getElementById('nextPageBtn').disabled = currentPage >= totalPages - 1;
+}
+
+function previousPage() {
+    if (currentPage > 0) {
+        loadRoomList(currentPage - 1);
+    }
+}
+
+function nextPage() {
+    if (currentPage < totalPages - 1) {
+        loadRoomList(currentPage + 1);
+    }
+}
+
+async function joinRoom(matchId) {
+    try {
+        const result = await connection.invoke('JoinRoom', matchId);
+        
+        if (result.success) {
+            console.log(`Joined room ${matchId}`);
+            startGame();
+        } else {
+            alert(result.message || 'Failed to join room');
+        }
+        
+    } catch (err) {
+        console.error('Failed to join room:', err);
+        alert('Failed to join room. Please try again.');
+    }
+}
+
+async function playSolo() {
+    try {
+        const result = await connection.invoke('CreateSoloGame');
+        
+        if (result.success) {
+            console.log('Solo game created');
+            startGame();
+        } else {
+            alert(result.message || 'Failed to create solo game');
+        }
+        
+    } catch (err) {
+        console.error('Failed to create solo game:', err);
+        alert('Failed to create solo game. Please try again.');
+    }
+}
+
+function startGame() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('lobbyScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+    
+    // Setup SignalR event handlers
+    setupGameEventHandlers();
+    
+    // Initialize canvas if not done yet
+    if (!canvas) {
+        canvas = document.getElementById('gameCanvas');
+        ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Set up click handler
+        canvas.addEventListener('click', handleClick);
+        
+        // Start rendering
+        requestAnimationFrame(render);
+    }
+}
+
+function setupGameEventHandlers() {
+    // Set up event handlers for game state updates
+    connection.on("StateDelta", handleStateDelta);
+    
+    connection.onreconnecting(() => {
+        console.log("Reconnecting...");
+    });
+    
+    connection.onclose(() => {
+        console.log("Disconnected from server");
+        alert("Lost connection to server");
+        backToLogin();
+    });
+}
+
+// ====================
+// END AUTH & LOBBY
+// ====================
+
 // Orientation detection for mobile/tablet devices
 function isMobileOrTablet() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -222,86 +485,8 @@ function showScrollInstruction() {
     }
 }
 
-async function joinGame() {
-    playerName = document.getElementById('playerName').value.trim();
-    if (!playerName) {
-        alert('Please enter your name');
-        return;
-    }
-
-    try {
-        // Initialize SignalR connection
-        connection = new signalR.HubConnectionBuilder()
-            .withUrl("/gamehub")
-            .withAutomaticReconnect()
-            .build();
-
-        // Set up event handlers
-        connection.on("StateDelta", handleStateDelta);
-
-        connection.onreconnecting(() => {
-            console.log("Reconnecting...");
-        });
-
-        connection.onreconnected(async () => {
-            // Rejoin the match after reconnection
-            try {
-                const result = await connection.invoke("JoinMatch", playerName);
-                if (result.success) {
-                    gameState.myPlayerId = result.playerId;
-                    gameState.myPlayerSlot = result.playerSlot;
-                    console.log("Rejoined match after reconnection");
-                }
-            } catch (error) {
-                console.error("Failed to rejoin match:", error);
-            }
-        });
-
-        connection.onclose(() => {
-            console.log("Disconnected from server");
-        });
-
-        // Connect
-        await connection.start();
-        console.log("Connected to server");
-
-        // Join match
-        const result = await connection.invoke("JoinMatch", playerName);
-        console.log("Join result:", result);
-
-        if (result.success) {
-            gameState.myPlayerId = result.playerId;
-            gameState.myPlayerSlot = result.playerSlot;
-            
-            // Show turret selection if not assigned yet
-            if (result.playerSlot === -1 && result.availableSlots && result.availableSlots.length > 0) {
-                showTurretSelection(result.availableSlots);
-            } else {
-                // Start game directly if slot already assigned
-                startGame();
-                
-                // Initialize canvas
-                canvas = document.getElementById('gameCanvas');
-                ctx = canvas.getContext('2d');
-                
-                // Set canvas size
-                resizeCanvas();
-                window.addEventListener('resize', resizeCanvas);
-                
-                // Set up click handler
-                canvas.addEventListener('click', handleClick);
-                
-                // Start rendering
-                requestAnimationFrame(render);
-            }
-        } else {
-            alert('Failed to join game: ' + result.message);
-        }
-    } catch (error) {
-        console.error('Connection error:', error);
-        alert('Failed to connect to server');
-    }
-}
+// OLD joinGame() - replaced with new auth & lobby system
+// This function is kept for reference but is no longer used
 
 function resizeCanvas() {
     const viewportWidth = window.innerWidth;

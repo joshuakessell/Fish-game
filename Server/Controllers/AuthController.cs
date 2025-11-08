@@ -11,49 +11,42 @@ namespace OceanKing.Server.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly JwtTokenService _tokenService;
-    private readonly OceanKingDbContext _dbContext;
     
-    public AuthController(JwtTokenService tokenService, OceanKingDbContext dbContext)
+    public AuthController(JwtTokenService tokenService)
     {
         _tokenService = tokenService;
-        _dbContext = dbContext;
     }
     
     [HttpPost("guest")]
-    public async Task<IActionResult> GuestLogin([FromBody] GuestLoginRequest request)
+    public IActionResult GuestLogin([FromBody] GuestLoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Length > 50)
         {
             return BadRequest(new { Message = "Name is required and must be under 50 characters" });
         }
         
-        // Create guest session in database (optional - for tracking)
-        var guestSession = new GuestSession
-        {
-            Name = request.Name.Trim(),
-            Credits = 1000,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddHours(24)
-        };
+        // Generate guest ID and create token (no database persistence - guests are ephemeral)
+        var guestId = Guid.NewGuid();
+        var guestName = request.Name.Trim();
+        var guestCredits = 1000;
         
-        _dbContext.GuestSessions.Add(guestSession);
-        await _dbContext.SaveChangesAsync();
-        
-        // Generate JWT token
+        // Generate JWT token with all guest data embedded
         var token = _tokenService.GenerateToken(
-            guestSession.Id.ToString(),
-            guestSession.Name,
-            guestSession.Credits,
+            guestId.ToString(),
+            guestName,
+            guestCredits,
             isGuest: true,
             role: "Guest"
         );
         
+        Console.WriteLine($"Guest '{guestName}' created with ID {guestId} and {guestCredits} credits");
+        
         return Ok(new
         {
             Token = token,
-            UserId = guestSession.Id,
-            Name = guestSession.Name,
-            Credits = guestSession.Credits,
+            UserId = guestId,
+            Name = guestName,
+            Credits = guestCredits,
             IsGuest = true,
             Message = "Guest session created successfully"
         });
