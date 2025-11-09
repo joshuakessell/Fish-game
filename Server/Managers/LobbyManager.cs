@@ -52,11 +52,11 @@ public class LobbyManager
             });
         }
         
-        // Ensure at least 4 rooms are available
-        EnsureMinimumRooms(allMatches);
+        // Ensure at least 16 rooms are available for 4x4 grid
+        EnsureMinimumRooms(allMatches, 16);
         
-        // Paginate (4 per page)
-        const int roomsPerPage = 4;
+        // Paginate (16 per page for 4x4 grid)
+        const int roomsPerPage = 16;
         var totalRooms = allMatches.Count;
         var totalPages = (int)Math.Ceiling(totalRooms / (double)roomsPerPage);
         var roomsOnPage = allMatches
@@ -73,13 +73,13 @@ public class LobbyManager
         };
     }
     
-    private void EnsureMinimumRooms(List<RoomInfo> existingRooms)
+    private void EnsureMinimumRooms(List<RoomInfo> existingRooms, int minimumRooms = 16)
     {
         // Auto-create new rooms if:
-        // 1. Less than 4 available rooms exist, OR
+        // 1. Less than minimum available rooms exist, OR
         // 2. All existing rooms have >2 players
         
-        var roomsNeeded = 4 - existingRooms.Count;
+        var roomsNeeded = minimumRooms - existingRooms.Count;
         var allRoomsBusy = existingRooms.All(r => r.PlayerCount >= 2);
         
         if (allRoomsBusy && existingRooms.Count > 0)
