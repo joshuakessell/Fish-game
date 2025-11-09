@@ -291,12 +291,9 @@ function renderRoomList() {
             <div class="room-header">
                 <div class="room-number">${roomNumberText}</div>
             </div>
-            <div class="table-visual">
-                <div class="table-shape"></div>
-            </div>
-            <div class="room-info">
-                <p class="room-players">${seatsText}</p>
-                <p class="room-status">${statusText}</p>
+            <div class="room-info" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1vh;">
+                <p class="room-players" style="font-size: 2.5vh; margin: 0;">${seatsText}</p>
+                <p class="room-status" style="margin: 0;">${statusText}</p>
             </div>
         `;
         
@@ -313,12 +310,8 @@ function renderRoomList() {
             <div class="room-header">
                 <div class="room-number">-</div>
             </div>
-            <div class="table-visual">
-                <div class="table-shape"></div>
-            </div>
-            <div class="room-info">
-                <p class="room-players">-</p>
-                <p class="room-status">Empty</p>
+            <div class="room-info" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p class="room-status" style="margin: 0;">Empty</p>
             </div>
         `;
         container.appendChild(emptyCard);
