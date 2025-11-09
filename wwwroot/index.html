@@ -197,10 +197,10 @@
         }
 
         .table-shape {
-            width: 85%;
-            height: 75%;
+            width: 90%;
+            height: 85%;
             background: linear-gradient(135deg, #2a5f7f, #1a3f5f);
-            border-radius: 50%;
+            border-radius: 15px;
             border: 3px solid rgba(0, 255, 255, 0.5);
             position: relative;
             box-shadow: inset 0 3px 15px rgba(0, 0, 0, 0.6);
@@ -208,12 +208,18 @@
 
         .player-slot {
             position: absolute;
-            width: 2.5vh;
-            height: 2.5vh;
+            width: 3vh;
+            height: 3vh;
             border-radius: 50%;
-            background: rgba(100, 100, 100, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(100, 100, 100, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2vh;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.6);
         }
 
         .player-slot.filled {
@@ -221,19 +227,20 @@
             border-color: #00ff88;
             box-shadow: 0 0 12px rgba(0, 255, 136, 0.7);
             animation: pulse 2s infinite;
+            color: #001f3f;
         }
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.15); }
         }
 
-        .player-slot.top-left { top: 10%; left: 15%; }
-        .player-slot.top-center { top: 5%; left: 50%; transform: translateX(-50%); }
-        .player-slot.top-right { top: 10%; right: 15%; }
-        .player-slot.bottom-left { bottom: 10%; left: 15%; }
-        .player-slot.bottom-center { bottom: 5%; left: 50%; transform: translateX(-50%); }
-        .player-slot.bottom-right { bottom: 10%; right: 15%; }
+        .player-slot.top-left { top: -12%; left: 10%; }
+        .player-slot.top-center { top: -12%; left: 50%; transform: translateX(-50%); }
+        .player-slot.top-right { top: -12%; right: 10%; }
+        .player-slot.bottom-left { bottom: -12%; left: 10%; }
+        .player-slot.bottom-center { bottom: -12%; left: 50%; transform: translateX(-50%); }
+        .player-slot.bottom-right { bottom: -12%; right: 10%; }
 
         .room-info {
             width: 100%;

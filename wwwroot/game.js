@@ -22,6 +22,8 @@ let userCredits = 0;
 let currentPage = 0;
 let totalPages = 1;
 let roomsData = [];
+let selectedRoom = null;
+let isSelectingSeat = false;
 
 let canvas, ctx;
 let betValue = 10;
@@ -277,7 +279,7 @@ function renderRoomList() {
         if (isFull) {
             card.classList.add('full');
         } else {
-            card.onclick = () => joinRoom(room.roomId);
+            card.onclick = () => selectRoom(room);
         }
         
         // Create player slots (6 positions around table)
