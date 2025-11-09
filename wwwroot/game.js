@@ -282,15 +282,9 @@ function renderRoomList() {
             card.onclick = () => selectRoom(room);
         }
         
-        // Create player slots (6 positions around table)
-        const playerSlots = [];
-        for (let i = 0; i < 6; i++) {
-            const slotClass = i < playerCount ? 'player-slot filled' : 'player-slot';
-            const positionClass = ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'][i];
-            playerSlots.push(`<div class="${slotClass} ${positionClass}"></div>`);
-        }
-        
+        const openSeats = maxPlayers - playerCount;
         const statusText = isFull ? '🔒 FULL' : playerCount > 0 ? '🎮 Active' : '⏳ Open';
+        const seatsText = isFull ? 'Full' : `${openSeats} ${openSeats === 1 ? 'Seat' : 'Seats'} Open`;
         const roomNumberText = `Table ${index + 1}`;
         
         card.innerHTML = `
@@ -298,12 +292,10 @@ function renderRoomList() {
                 <div class="room-number">${roomNumberText}</div>
             </div>
             <div class="table-visual">
-                <div class="table-shape">
-                    ${playerSlots.join('')}
-                </div>
+                <div class="table-shape"></div>
             </div>
             <div class="room-info">
-                <p class="room-players">${playerCount}/${maxPlayers} Players</p>
+                <p class="room-players">${seatsText}</p>
                 <p class="room-status">${statusText}</p>
             </div>
         `;
@@ -494,7 +486,7 @@ function startGame() {
 
 function setupGameEventHandlers() {
     // Set up event handlers for game state updates
-    connection.on("StateDelta", handleStateDelta);
+    connection.on("statedelta", handleStateDelta);
     
     connection.onreconnecting(() => {
         console.log("Reconnecting...");
