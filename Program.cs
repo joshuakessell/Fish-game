@@ -81,11 +81,10 @@ builder.Services.AddSingleton<JwtTokenService>();
 // Add SignalR with optimizations for performance
 builder.Services.AddSignalR(options =>
 {
-    options.EnableDetailedErrors = false; // Disable in production
+    options.EnableDetailedErrors = true; // Enable for debugging
     options.MaximumReceiveMessageSize = 32768; // 32KB default
     options.StatefulReconnectBufferSize = 100000; // Enable stateful reconnect for mobile
-})
-.AddMessagePackProtocol(); // Binary protocol for 30-50% smaller messages
+});
 
 // Register game server as singleton
 builder.Services.AddSingleton<GameServerHost>();

@@ -216,12 +216,11 @@ function backToLogin() {
 
 async function connectToLobby() {
     try {
-        // Create SignalR connection with JWT auth and MessagePack protocol
+        // Create SignalR connection with JWT auth
         connection = new signalR.HubConnectionBuilder()
             .withUrl('/gamehub', {
                 accessTokenFactory: () => authToken
             })
-            .withHubProtocol(new signalR.protocols.msgpack.MessagePackHubProtocol())
             .configureLogging(signalR.LogLevel.Information)
             .build();
         
