@@ -1,10 +1,23 @@
 # Ocean King 3 - Casino Betting Table Game
 
 ## Recent Changes (November 9, 2025)
-- **2x2 Lobby Grid Redesign** (November 9, 2025 - Latest):
+- **Seat Selection System** (November 9, 2025 - Latest):
+  - Implemented complete seat selection flow for joining tables
+  - Click room card → other rooms fade out → selected room moves to center
+  - Shows 6 seat buttons positioned around enlarged table visualization
+  - Seats display: "Seat X - Empty" (green) or player name (gray/disabled)
+  - Back button returns to 2x2 room grid with reverse animation
+  - Backend: LobbyManager.JoinRoom validates seat availability before joining
+  - Backend: RoomInfo includes SeatOccupancy array (6 seats with playerId/displayName)
+  - Backend: JoinRoom hub method accepts matchId and seatIndex parameters
+  - Backend: MatchInstance.AddPlayer assigns players to specific seats
+  - Fixed: All "NaN" displays now show "0" with proper null-safety fallbacks
+  - Fixed: Table visualization changed from circular to rectangular with visible seats outside border
+
+- **2x2 Lobby Grid Redesign** (November 9, 2025):
   - Redesigned lobby from linear list to modern 2x2 grid layout
   - Displays 4 tables simultaneously in a fixed viewport with no scrolling
-  - Each table card features circular table visualization with 6 player slot positions
+  - Each table card features rectangular table visualization with 6 player slot positions
   - Player slots show filled (green, pulsing) vs unfilled (gray) indicators
   - Modern UI: Gradients, shadows, hover animations, and polished styling
   - Full-screen lobby: Fixed viewport (100vw × 100vh) with ocean blue background
