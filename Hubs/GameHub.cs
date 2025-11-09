@@ -201,9 +201,12 @@ public class GameHub : Hub
         {
             var (userId, name, credits) = GetUserFromContext();
             
+            Console.WriteLine($"[JoinRoom] User {name} (ID: {userId}) attempting to join room {matchId} at seat {seatIndex}");
+            
             // Validate seatIndex
             if (seatIndex < 0 || seatIndex > 5)
             {
+                Console.WriteLine($"[JoinRoom] Invalid seat index: {seatIndex}");
                 return new { success = false, message = "Invalid seat index. Must be 0-5." };
             }
             
@@ -212,15 +215,19 @@ public class GameHub : Hub
             
             if (match == null)
             {
+                Console.WriteLine($"[JoinRoom] Failed to join room {matchId} - room not available or seat {seatIndex} occupied");
                 return new { success = false, message = "Room not available, full, or seat already occupied" };
             }
+            
+            Console.WriteLine($"[JoinRoom] Room validated, adding player to match...");
             
             // Add player with specific seat (playerId, displayName, connectionId, seatIndex)
             var player = match.AddPlayer(userId, name, Context.ConnectionId, seatIndex);
             
             if (player == null)
             {
-                return new { success = false, message = "Failed to join room" };
+                Console.WriteLine($"[JoinRoom] Failed to add player {name} to match {matchId} at seat {seatIndex}");
+                return new { success = false, message = "Failed to join room - seat may have been taken" };
             }
             
             // Sync credits from JWT to player state

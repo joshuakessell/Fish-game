@@ -413,9 +413,9 @@ function showSeatSelection(room) {
         const isOccupied = seat && seat.playerId;
         const seatLabel = isOccupied ? seat.displayName : `Seat ${i + 1} - Empty`;
         const seatClass = isOccupied ? 'seat-button occupied' : 'seat-button available';
-        const onclick = isOccupied ? '' : `onclick="joinRoomWithSeat(${i})"`;
+        const dataAttr = isOccupied ? '' : `data-seat-index="${i}"`;
         
-        seatButtonsHTML += `<button class="${seatClass}" ${onclick} ${isOccupied ? 'disabled' : ''}>${seatLabel}</button>`;
+        seatButtonsHTML += `<button class="${seatClass}" ${dataAttr} ${isOccupied ? 'disabled' : ''}>${seatLabel}</button>`;
     }
     
     seatSelectionView.innerHTML = `
@@ -431,6 +431,15 @@ function showSeatSelection(room) {
             <button class="back-to-rooms-btn" onclick="backToRooms()">← Back to Rooms</button>
         </div>
     `;
+    
+    //  Add event listeners to seat buttons (better than onclick for touch events)
+    seatSelectionView.querySelectorAll('.seat-button[data-seat-index]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const seatIndex = parseInt(this.getAttribute('data-seat-index'));
+            console.log(`Attempting to join seat ${seatIndex}`);
+            joinRoomWithSeat(seatIndex);
+        });
+    });
     
     seatSelectionView.style.display = 'flex';
 }
@@ -578,7 +587,7 @@ window.addEventListener('DOMContentLoaded', checkOrientation);
         const touchYDelta = touchY - lastTouchY;
         lastTouchY = touchY;
         
-        // If at the top of the page and trying to scroll up, prevent it
+        // If at the top of the page and trying to scroll down (pull to refresh), prevent it
         if (preventPullToRefresh) {
             if (touchYDelta > 0) {
                 e.preventDefault();
@@ -588,17 +597,11 @@ window.addEventListener('DOMContentLoaded', checkOrientation);
         }
     }, { passive: false });
     
-    // Additional safety: prevent scrolling on body completely
-    document.body.addEventListener('touchmove', function(e) {
-        e.preventDefault();
-    }, { passive: false });
-    
-    // Prevent default touch behavior on game elements
-    const preventTouchElements = ['gameContainer', 'gameScreen', 'lobbyScreen', 'gameCanvas'];
-    preventTouchElements.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('touchmove', function(e) {
+    // Only prevent touchmove on the canvas itself (not on UI elements like buttons)
+    document.addEventListener('DOMContentLoaded', function() {
+        const gameCanvas = document.getElementById('gameCanvas');
+        if (gameCanvas) {
+            gameCanvas.addEventListener('touchmove', function(e) {
                 e.preventDefault();
             }, { passive: false });
         }
