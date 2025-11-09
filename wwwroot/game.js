@@ -805,20 +805,6 @@ function updateOverlayPositions() {
     }
 }
 
-function startGame() {
-    // Hide login, show game
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('gameScreen').style.display = 'block';
-    
-    // Show scroll instruction for mobile/tablet users
-    setTimeout(() => {
-        showScrollInstruction();
-    }, 500);
-    
-    // Initialize overlay displays
-    updateOverlayDisplays();
-    updateOverlayPositions();
-}
 
 function showTurretSelection(availableSlots) {
     // Hide login screen
