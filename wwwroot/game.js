@@ -561,6 +561,50 @@ window.addEventListener('resize', debouncedCheckOrientation);
 // Check orientation on page load
 window.addEventListener('DOMContentLoaded', checkOrientation);
 
+// Prevent pull-to-refresh and accidental page reload
+(function preventPullToRefresh() {
+    let lastTouchY = 0;
+    let preventPullToRefresh = false;
+    
+    // Prevent pull-to-refresh on the entire document
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length !== 1) return;
+        lastTouchY = e.touches[0].clientY;
+        preventPullToRefresh = window.pageYOffset === 0;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', function(e) {
+        const touchY = e.touches[0].clientY;
+        const touchYDelta = touchY - lastTouchY;
+        lastTouchY = touchY;
+        
+        // If at the top of the page and trying to scroll up, prevent it
+        if (preventPullToRefresh) {
+            if (touchYDelta > 0) {
+                e.preventDefault();
+                return false;
+            }
+            preventPullToRefresh = false;
+        }
+    }, { passive: false });
+    
+    // Additional safety: prevent scrolling on body completely
+    document.body.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+    }, { passive: false });
+    
+    // Prevent default touch behavior on game elements
+    const preventTouchElements = ['gameContainer', 'gameScreen', 'lobbyScreen', 'gameCanvas'];
+    preventTouchElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+        }
+    });
+})();
+
 // Scroll instruction for mobile/tablet devices
 function showScrollInstruction() {
     const scrollInstruction = document.getElementById('scrollInstruction');
