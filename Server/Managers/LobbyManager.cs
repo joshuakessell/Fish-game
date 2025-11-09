@@ -132,12 +132,25 @@ public class LobbyManager
         }
     }
     
-    public MatchInstance? JoinRoom(string roomId, string playerId)
+    public MatchInstance? JoinRoom(string matchId, string playerId, int seatIndex)
     {
-        var match = _matchManager.GetMatch(roomId);
+        var match = _matchManager.GetMatch(matchId);
         if (match == null || !match.CanJoin())
         {
             return null;
+        }
+        
+        // Validate seat index
+        if (seatIndex < 0 || seatIndex >= MatchManager.MAX_PLAYERS_PER_MATCH)
+        {
+            return null;
+        }
+        
+        // Check if seat is available
+        var availableSlots = match.GetAvailableSlots();
+        if (!availableSlots.Contains(seatIndex))
+        {
+            return null; // Seat already occupied
         }
         
         return match;

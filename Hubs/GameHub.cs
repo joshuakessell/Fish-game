@@ -208,18 +208,11 @@ public class GameHub : Hub
             }
             
             var lobbyManager = _gameServer.GetLobbyManager();
-            var match = lobbyManager.JoinRoom(matchId, Context.ConnectionId);
+            var match = lobbyManager.JoinRoom(matchId, Context.ConnectionId, seatIndex);
             
             if (match == null)
             {
-                return new { success = false, message = "Room not available or full" };
-            }
-            
-            // Check if seat is available
-            var availableSlots = match.GetAvailableSlots();
-            if (!availableSlots.Contains(seatIndex))
-            {
-                return new { success = false, message = $"Seat {seatIndex} is already occupied. Please select another seat." };
+                return new { success = false, message = "Room not available, full, or seat already occupied" };
             }
             
             // Add player with specific seat (playerId, displayName, connectionId, seatIndex)
