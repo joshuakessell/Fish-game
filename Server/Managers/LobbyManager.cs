@@ -52,11 +52,11 @@ public class LobbyManager
             });
         }
         
-        // Ensure at least 16 rooms are available for 4x4 grid
-        EnsureMinimumRooms(allMatches, 16);
+        // Ensure at least 4 rooms are available for 2x2 grid
+        EnsureMinimumRooms(allMatches, 4);
         
-        // Paginate (16 per page for 4x4 grid)
-        const int roomsPerPage = 16;
+        // Paginate (4 per page for 2x2 grid)
+        const int roomsPerPage = 4;
         var totalRooms = allMatches.Count;
         var totalPages = (int)Math.Ceiling(totalRooms / (double)roomsPerPage);
         var roomsOnPage = allMatches
@@ -73,7 +73,7 @@ public class LobbyManager
         };
     }
     
-    private void EnsureMinimumRooms(List<RoomInfo> existingRooms, int minimumRooms = 16)
+    private void EnsureMinimumRooms(List<RoomInfo> existingRooms, int minimumRooms = 4)
     {
         // Auto-create new rooms if:
         // 1. Less than minimum available rooms exist, OR

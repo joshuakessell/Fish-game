@@ -259,36 +259,76 @@ async function loadRoomList(page) {
 }
 
 function renderRoomList() {
-    const container = document.getElementById('roomListContainer');
+    const container = document.getElementById('roomGridContainer');
     container.innerHTML = '';
     
     if (roomsData.length === 0) {
-        container.innerHTML = '<p style="color: #aaa; padding: 20px;">No rooms available. Creating new room...</p>';
+        container.innerHTML = '<p style="color: #aaa; padding: 20px; grid-column: 1 / -1;">No rooms available...</p>';
         return;
     }
     
-    roomsData.forEach(room => {
+    roomsData.forEach((room, index) => {
         const card = document.createElement('div');
-        card.className = 'room-card';
-        card.onclick = () => joinRoom(room.matchId);
+        const playerCount = room.playerCount || 0;
+        const maxPlayers = room.maxPlayers || 6;
+        const isFull = playerCount >= maxPlayers;
         
-        const seatsText = room.availableSeats === 0 ? 'FULL' : `${6 - room.availableSeats}/6 Players`;
-        const statusText = room.isRunning ? '🎮 In Progress' : '⏳ Waiting';
+        card.className = 'room-card';
+        if (isFull) {
+            card.classList.add('full');
+        } else {
+            card.onclick = () => joinRoom(room.roomId);
+        }
+        
+        // Create player slots (6 positions around table)
+        const playerSlots = [];
+        for (let i = 0; i < 6; i++) {
+            const slotClass = i < playerCount ? 'player-slot filled' : 'player-slot';
+            const positionClass = ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'][i];
+            playerSlots.push(`<div class="${slotClass} ${positionClass}"></div>`);
+        }
+        
+        const statusText = isFull ? '🔒 FULL' : playerCount > 0 ? '🎮 Active' : '⏳ Open';
+        const roomNumberText = `Table ${index + 1}`;
         
         card.innerHTML = `
-            <h3>🏆 Room ${room.matchId}</h3>
-            <p class="room-players">${seatsText}</p>
-            <p class="room-status">${statusText}</p>
+            <div class="room-header">
+                <div class="room-number">${roomNumberText}</div>
+            </div>
+            <div class="table-visual">
+                <div class="table-shape">
+                    ${playerSlots.join('')}
+                </div>
+            </div>
+            <div class="room-info">
+                <p class="room-players">${playerCount}/${maxPlayers} Players</p>
+                <p class="room-status">${statusText}</p>
+            </div>
         `;
-        
-        if (room.availableSeats === 0) {
-            card.style.opacity = '0.5';
-            card.style.cursor = 'not-allowed';
-            card.onclick = null;
-        }
         
         container.appendChild(card);
     });
+    
+    // Fill remaining slots to maintain 2x2 grid
+    while (container.children.length < 4) {
+        const emptyCard = document.createElement('div');
+        emptyCard.className = 'room-card';
+        emptyCard.style.opacity = '0.3';
+        emptyCard.style.cursor = 'default';
+        emptyCard.innerHTML = `
+            <div class="room-header">
+                <div class="room-number">-</div>
+            </div>
+            <div class="table-visual">
+                <div class="table-shape"></div>
+            </div>
+            <div class="room-info">
+                <p class="room-players">-</p>
+                <p class="room-status">Empty</p>
+            </div>
+        `;
+        container.appendChild(emptyCard);
+    }
 }
 
 function updatePagination() {
