@@ -384,7 +384,15 @@ async function joinRoomWithSeat(seatIndex) {
             // Store player slot
             gameState.myPlayerSlot = result.playerSlot;
             gameState.myPlayerId = result.playerId;
-            startGame();
+            
+            try {
+                startGame();
+            } catch (gameErr) {
+                console.error('Error starting game:', gameErr);
+                console.error('Error stack:', gameErr.stack);
+                alert('Game screen error: ' + (gameErr.message || JSON.stringify(gameErr)));
+                throw gameErr;
+            }
         } else {
             alert(result.message || 'Failed to join room');
         }
@@ -466,20 +474,26 @@ async function playSolo() {
 }
 
 function startGame() {
+    console.log('[startGame] Starting game initialization...');
+    
+    console.log('[startGame] Hiding screens...');
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('lobbyScreen').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'block';
+    console.log('[startGame] Game screen is now visible');
     
     // Note: setupGameEventHandlers() is already called in showLobby(), so we don't need to call it again here
     
     // Initialize canvas if not done yet
     if (!canvas) {
+        console.log('[startGame] Initializing canvas for the first time...');
         canvas = document.getElementById('gameCanvas');
         if (!canvas) {
             console.error('Game canvas element not found!');
             alert('Game canvas not found. Please refresh the page.');
             return;
         }
+        console.log('[startGame] Canvas element found:', canvas);
         
         ctx = canvas.getContext('2d');
         if (!ctx) {
@@ -487,17 +501,29 @@ function startGame() {
             alert('Failed to initialize game canvas. Please try a different browser.');
             return;
         }
+        console.log('[startGame] Canvas context obtained');
         
         // Set canvas size
+        console.log('[startGame] Calling resizeCanvas()...');
         resizeCanvas();
+        console.log('[startGame] Canvas resized');
+        
         window.addEventListener('resize', resizeCanvas);
+        console.log('[startGame] Resize listener added');
         
         // Set up click handler
         canvas.addEventListener('click', handleClick);
+        console.log('[startGame] Click handler added');
         
         // Start rendering
+        console.log('[startGame] Starting render loop...');
         requestAnimationFrame(render);
+        console.log('[startGame] Render loop started');
+    } else {
+        console.log('[startGame] Canvas already initialized, skipping setup');
     }
+    
+    console.log('[startGame] Game initialization complete');
 }
 
 function setupGameEventHandlers() {
