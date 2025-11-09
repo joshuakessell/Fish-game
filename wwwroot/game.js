@@ -475,7 +475,18 @@ function startGame() {
     // Initialize canvas if not done yet
     if (!canvas) {
         canvas = document.getElementById('gameCanvas');
+        if (!canvas) {
+            console.error('Game canvas element not found!');
+            alert('Game canvas not found. Please refresh the page.');
+            return;
+        }
+        
         ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.error('Failed to get 2D rendering context');
+            alert('Failed to initialize game canvas. Please try a different browser.');
+            return;
+        }
         
         // Set canvas size
         resizeCanvas();
