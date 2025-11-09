@@ -195,22 +195,35 @@ public class GameHub : Hub
         return lobbyManager.GetRoomList(page);
     }
     
-    public async Task<object> JoinRoom(string roomId, string displayName)
+    public async Task<object> JoinRoom(string matchId, int seatIndex)
     {
         try
         {
             var (userId, name, credits) = GetUserFromContext();
-            var actualName = string.IsNullOrEmpty(name) ? displayName : name;
+            
+            // Validate seatIndex
+            if (seatIndex < 0 || seatIndex > 5)
+            {
+                return new { success = false, message = "Invalid seat index. Must be 0-5." };
+            }
             
             var lobbyManager = _gameServer.GetLobbyManager();
-            var match = lobbyManager.JoinRoom(roomId, Context.ConnectionId);
+            var match = lobbyManager.JoinRoom(matchId, Context.ConnectionId);
             
             if (match == null)
             {
                 return new { success = false, message = "Room not available or full" };
             }
             
-            var player = match.AddPlayer(Context.ConnectionId, actualName, Context.ConnectionId);
+            // Check if seat is available
+            var availableSlots = match.GetAvailableSlots();
+            if (!availableSlots.Contains(seatIndex))
+            {
+                return new { success = false, message = $"Seat {seatIndex} is already occupied. Please select another seat." };
+            }
+            
+            // Add player with specific seat (playerId, displayName, connectionId, seatIndex)
+            var player = match.AddPlayer(userId, name, Context.ConnectionId, seatIndex);
             
             if (player == null)
             {
@@ -225,9 +238,7 @@ public class GameHub : Hub
             
             await Groups.AddToGroupAsync(Context.ConnectionId, match.MatchId);
             
-            var availableSlots = match.GetAvailableSlots();
-            
-            Console.WriteLine($"Player {actualName} (JWT user {userId}) joined room {roomId} with {credits} credits");
+            Console.WriteLine($"Player {name} (JWT user {userId}) joined room {matchId} at seat {seatIndex} with {credits} credits");
             
             return new
             {
@@ -236,7 +247,7 @@ public class GameHub : Hub
                 playerId = player.PlayerId,
                 playerSlot = player.PlayerSlot,
                 credits = player.Credits,
-                availableSlots = availableSlots,
+                availableSlots = match.GetAvailableSlots(),
                 isSolo = match.IsSolo()
             };
         }

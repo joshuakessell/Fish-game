@@ -192,7 +192,7 @@ function showLobby() {
     document.getElementById('gameScreen').style.display = 'none';
     
     document.getElementById('lobbyPlayerName').textContent = playerName;
-    document.getElementById('lobbyCredits').textContent = userCredits;
+    document.getElementById('lobbyCredits').textContent = userCredits || 0;
     
     // Connect to SignalR and load room list
     connectToLobby();
@@ -351,12 +351,50 @@ function nextPage() {
     }
 }
 
-async function joinRoom(matchId) {
+function selectRoom(room) {
+    selectedRoom = room;
+    isSelectingSeat = true;
+    
+    // Hide pagination and action buttons
+    document.querySelector('.pagination').style.display = 'none';
+    document.querySelector('.lobby-actions').style.display = 'none';
+    
+    // Show seat selection overlay
+    showSeatSelection(room);
+}
+
+function backToRooms() {
+    selectedRoom = null;
+    isSelectingSeat = false;
+    
+    // Hide seat selection overlay
+    const seatSelectionView = document.getElementById('seatSelectionView');
+    if (seatSelectionView) {
+        seatSelectionView.style.display = 'none';
+    }
+    
+    // Show pagination and action buttons
+    document.querySelector('.pagination').style.display = 'flex';
+    document.querySelector('.lobby-actions').style.display = 'flex';
+    
+    // Show room grid
+    document.getElementById('roomGridContainer').style.display = 'grid';
+}
+
+async function joinRoomWithSeat(seatIndex) {
+    if (!selectedRoom) {
+        alert('No room selected');
+        return;
+    }
+    
     try {
-        const result = await connection.invoke('JoinRoom', matchId);
+        const result = await connection.invoke('JoinRoom', selectedRoom.matchId, seatIndex);
         
         if (result.success) {
-            console.log(`Joined room ${matchId}`);
+            console.log(`Joined room ${selectedRoom.matchId} at seat ${seatIndex}`);
+            // Store player slot
+            gameState.myPlayerSlot = result.playerSlot;
+            gameState.myPlayerId = result.playerId;
             startGame();
         } else {
             alert(result.message || 'Failed to join room');
@@ -366,6 +404,50 @@ async function joinRoom(matchId) {
         console.error('Failed to join room:', err);
         alert('Failed to join room. Please try again.');
     }
+}
+
+function showSeatSelection(room) {
+    // Create or show seat selection view
+    let seatSelectionView = document.getElementById('seatSelectionView');
+    
+    if (!seatSelectionView) {
+        seatSelectionView = document.createElement('div');
+        seatSelectionView.id = 'seatSelectionView';
+        document.getElementById('lobbyScreen').appendChild(seatSelectionView);
+    }
+    
+    // Hide room grid
+    document.getElementById('roomGridContainer').style.display = 'none';
+    
+    // Build seat selection UI
+    const seatOccupancy = room.seatOccupancy || [];
+    let seatButtonsHTML = '';
+    
+    for (let i = 0; i < 6; i++) {
+        const seat = seatOccupancy[i];
+        const isOccupied = seat && seat.playerId;
+        const seatLabel = isOccupied ? seat.displayName : `Seat ${i + 1} - Empty`;
+        const seatClass = isOccupied ? 'seat-button occupied' : 'seat-button available';
+        const onclick = isOccupied ? '' : `onclick="joinRoomWithSeat(${i})"`;
+        
+        seatButtonsHTML += `<button class="${seatClass}" ${onclick} ${isOccupied ? 'disabled' : ''}>${seatLabel}</button>`;
+    }
+    
+    seatSelectionView.innerHTML = `
+        <div class="seat-selection-container">
+            <h2>Select Your Seat</h2>
+            <p>Room: ${room.matchId}</p>
+            <div class="table-container">
+                <div class="central-table"></div>
+                <div class="seat-buttons-grid">
+                    ${seatButtonsHTML}
+                </div>
+            </div>
+            <button class="back-to-rooms-btn" onclick="backToRooms()">← Back to Rooms</button>
+        </div>
+    `;
+    
+    seatSelectionView.style.display = 'flex';
 }
 
 async function playSolo() {
@@ -880,7 +962,8 @@ function updateOverlayDisplays() {
     // Update credits display
     const creditsValue = document.getElementById('creditsValue');
     if (creditsValue) {
-        creditsValue.textContent = Math.floor(myPlayer.credits);
+        const credits = myPlayer.credits || 0;
+        creditsValue.textContent = Math.floor(credits);
     }
 }
 
@@ -915,8 +998,8 @@ function handleStateDelta(delta) {
             }
             
             // If this fish was killed by the current player, add credit popup
-            if (oldPlayer && newPlayer && newPlayer.credits > oldPlayer.credits) {
-                const creditsEarned = Math.floor(newPlayer.credits - oldPlayer.credits);
+            if (oldPlayer && newPlayer && (newPlayer.credits || 0) > (oldPlayer.credits || 0)) {
+                const creditsEarned = Math.floor((newPlayer.credits || 0) - (oldPlayer.credits || 0));
                 creditPopups.push({
                     x: oldFish.x,
                     y: oldFish.y,

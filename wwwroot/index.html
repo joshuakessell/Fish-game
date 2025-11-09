@@ -338,6 +338,131 @@
             background: linear-gradient(135deg, #555, #777) !important;
         }
 
+        #seatSelectionView {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 2vh;
+        }
+
+        .seat-selection-container {
+            background: linear-gradient(145deg, rgba(30, 60, 90, 0.9), rgba(10, 30, 50, 0.95));
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            padding: 3vh 3vw;
+            max-width: 90vw;
+            max-height: 90vh;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        .seat-selection-container h2 {
+            font-size: 3.5vh;
+            color: #FFD700;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+            margin-bottom: 1vh;
+        }
+
+        .seat-selection-container p {
+            font-size: 2vh;
+            color: #00ffff;
+            margin-bottom: 2vh;
+        }
+
+        .table-container {
+            position: relative;
+            width: 70vw;
+            height: 50vh;
+            margin: 2vh auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .central-table {
+            width: 50%;
+            height: 60%;
+            background: linear-gradient(135deg, #2a5f7f, #1a3f5f);
+            border-radius: 20px;
+            border: 4px solid rgba(0, 255, 255, 0.6);
+            box-shadow: inset 0 5px 20px rgba(0, 0, 0, 0.7);
+        }
+
+        .seat-buttons-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .seat-button {
+            position: absolute;
+            padding: 1.5vh 2vw;
+            font-size: 1.8vh;
+            font-weight: bold;
+            border: 3px solid;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            min-width: 12vw;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .seat-button.available {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.3), rgba(0, 204, 102, 0.3));
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .seat-button.available:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.6), rgba(0, 204, 102, 0.6));
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(0, 255, 136, 0.6);
+        }
+
+        .seat-button.occupied {
+            background: linear-gradient(135deg, rgba(128, 128, 128, 0.5), rgba(100, 100, 100, 0.5));
+            border-color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.5);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .seat-button:nth-child(1) { top: 0; left: 10%; transform: translateY(-50%); }
+        .seat-button:nth-child(2) { top: 0; left: 50%; transform: translate(-50%, -50%); }
+        .seat-button:nth-child(3) { top: 0; right: 10%; transform: translateY(-50%); }
+        .seat-button:nth-child(4) { bottom: 0; left: 10%; transform: translateY(50%); }
+        .seat-button:nth-child(5) { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+        .seat-button:nth-child(6) { bottom: 0; right: 10%; transform: translateY(50%); }
+
+        .back-to-rooms-btn {
+            padding: 1.5vh 3vw;
+            font-size: 1.8vh;
+            background: linear-gradient(135deg, #555, #777);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 2vh;
+        }
+
+        .back-to-rooms-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+        }
+
         #gameScreen {
             display: none;
             width: 100%;

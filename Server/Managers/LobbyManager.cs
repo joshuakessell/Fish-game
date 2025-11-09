@@ -44,11 +44,33 @@ public class LobbyManager
             if (playerCount >= MatchManager.MAX_PLAYERS_PER_MATCH)
                 continue;
             
+            // Build seat occupancy array (6 seats, indexed 0-5)
+            var seatOccupancy = new SeatOccupancy[6];
+            for (int i = 0; i < 6; i++)
+            {
+                seatOccupancy[i] = new SeatOccupancy { PlayerId = null, DisplayName = null };
+            }
+            
+            // Populate seat occupancy from match players
+            var players = match.GetAllPlayers();
+            foreach (var player in players)
+            {
+                if (player.PlayerSlot >= 0 && player.PlayerSlot < 6)
+                {
+                    seatOccupancy[player.PlayerSlot] = new SeatOccupancy
+                    {
+                        PlayerId = player.PlayerId,
+                        DisplayName = player.DisplayName
+                    };
+                }
+            }
+            
             allMatches.Add(new RoomInfo
             {
-                RoomId = match.MatchId,
+                MatchId = match.MatchId,
                 PlayerCount = playerCount,
-                MaxPlayers = MatchManager.MAX_PLAYERS_PER_MATCH
+                MaxPlayers = MatchManager.MAX_PLAYERS_PER_MATCH,
+                SeatOccupancy = seatOccupancy
             });
         }
         
@@ -93,11 +115,18 @@ public class LobbyManager
             var placeholderMatch = _matchManager.FindOrCreateMatch($"_placeholder_{Guid.NewGuid()}");
             if (placeholderMatch != null)
             {
+                var seatOccupancy = new SeatOccupancy[6];
+                for (int j = 0; j < 6; j++)
+                {
+                    seatOccupancy[j] = new SeatOccupancy { PlayerId = null, DisplayName = null };
+                }
+                
                 existingRooms.Add(new RoomInfo
                 {
-                    RoomId = placeholderMatch.MatchId,
+                    MatchId = placeholderMatch.MatchId,
                     PlayerCount = 0,
-                    MaxPlayers = MatchManager.MAX_PLAYERS_PER_MATCH
+                    MaxPlayers = MatchManager.MAX_PLAYERS_PER_MATCH,
+                    SeatOccupancy = seatOccupancy
                 });
             }
         }
@@ -139,11 +168,18 @@ public class LobbyManager
     }
 }
 
+public class SeatOccupancy
+{
+    public string? PlayerId { get; set; }
+    public string? DisplayName { get; set; }
+}
+
 public class RoomInfo
 {
-    public string RoomId { get; set; } = string.Empty;
+    public string MatchId { get; set; } = string.Empty;
     public int PlayerCount { get; set; }
     public int MaxPlayers { get; set; }
+    public SeatOccupancy[] SeatOccupancy { get; set; } = new SeatOccupancy[6];
 }
 
 public class RoomListResponse

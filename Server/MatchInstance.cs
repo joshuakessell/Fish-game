@@ -437,9 +437,22 @@ public class MatchInstance
         _commandQueue.Enqueue(command);
     }
 
-    public Player? AddPlayer(string playerId, string displayName, string connectionId)
+    public Player? AddPlayer(string playerId, string displayName, string connectionId, int seatIndex = -1)
     {
-        return _playerManager.AddPlayer(playerId, displayName, connectionId);
+        var player = _playerManager.AddPlayer(playerId, displayName, connectionId);
+        
+        if (player != null && seatIndex >= 0 && seatIndex <= 5)
+        {
+            // Assign specific seat immediately
+            if (!_playerManager.AssignPlayerSlot(playerId, seatIndex))
+            {
+                // Seat assignment failed, remove player and return null
+                _playerManager.RemovePlayer(playerId);
+                return null;
+            }
+        }
+        
+        return player;
     }
 
     public void RemovePlayer(string playerId)
@@ -450,6 +463,11 @@ public class MatchInstance
     public Player? GetPlayer(string playerId)
     {
         return _playerManager.GetPlayer(playerId);
+    }
+
+    public List<Player> GetAllPlayers()
+    {
+        return _playerManager.GetAllPlayers();
     }
 
     public List<int> GetAvailableSlots()
