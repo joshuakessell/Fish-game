@@ -233,6 +233,10 @@ async function connectToLobby() {
         await connection.start();
         console.log('Connected to game server');
         
+        // Setup game event handlers immediately after connection
+        setupGameEventHandlers();
+        console.log('Game event handlers registered');
+        
         // Load room list
         loadRoomList(0);
         
@@ -466,8 +470,7 @@ function startGame() {
     document.getElementById('lobbyScreen').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'block';
     
-    // Setup SignalR event handlers
-    setupGameEventHandlers();
+    // Note: setupGameEventHandlers() is already called in showLobby(), so we don't need to call it again here
     
     // Initialize canvas if not done yet
     if (!canvas) {
