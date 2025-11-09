@@ -1,15 +1,28 @@
 # Ocean King 3 - Casino Betting Table Game
 
-## Recent Changes (November 8, 2025)
-- **Authentication & Lobby System** (November 8, 2025 - Latest):
+## Recent Changes (November 9, 2025)
+- **2x2 Lobby Grid Redesign** (November 9, 2025 - Latest):
+  - Redesigned lobby from linear list to modern 2x2 grid layout
+  - Displays 4 tables simultaneously in a fixed viewport with no scrolling
+  - Each table card features circular table visualization with 6 player slot positions
+  - Player slots show filled (green, pulsing) vs unfilled (gray) indicators
+  - Modern UI: Gradients, shadows, hover animations, and polished styling
+  - Full-screen lobby: Fixed viewport (100vw × 100vh) with ocean blue background
+  - Responsive sizing: All elements use vh/vw units for consistent scaling
+  - Pagination controls at bottom for navigating between pages of tables
+  - LobbyManager ensures minimum 4 joinable rooms always available
+  - Backend returns 4 rooms per page (matching 2x2 grid)
+  - Visual feedback: Full tables marked with opacity and disabled interaction
+  - Solo mode and back buttons integrated into footer layout
+  - Table numbering: "Table 1", "Table 2", etc. for clear identification
+
+- **Authentication & Lobby System** (November 8, 2025):
   - Implemented JWT-based stateless authentication for guest sessions
   - Created guest login endpoint (`/api/auth/guest`) returning JWT tokens with 1000 starting credits
   - Built comprehensive lobby system with room management and pagination
   - Added LobbyManager class for tracking rooms, auto-creation when >2 seats filled
-  - Lobby displays 4 rooms per page with pagination controls
   - Solo/offline game mode for single-player practice
   - Frontend login screen with "Play as Guest" button
-  - Lobby UI with room cards showing player count and status
   - SignalR hub methods: GetRoomList, JoinRoom, CreateSoloGame
   - MessagePack protocol integration for 30-50% smaller message payloads
   - Security: All GameHub methods require JWT authorization via [Authorize] attribute
