@@ -1,8 +1,12 @@
 import Phaser from 'phaser';
+import { GameState } from '../systems/GameState';
 
 export default class LobbyScene extends Phaser.Scene {
+  private gameState: GameState;
+  
   constructor() {
     super({ key: 'LobbyScene' });
+    this.gameState = GameState.getInstance();
   }
 
   create() {
@@ -46,11 +50,22 @@ export default class LobbyScene extends Phaser.Scene {
     });
   }
   
-  private handleJoinGame() {
+  private async handleJoinGame() {
     console.log('LobbyScene: Joining game...');
     
-    // TODO: Connect to SignalR, join room, select seat
-    // For now, transition directly to game scene
+    // For now, join room "match_1" at seat 0 (solo mode)
+    const roomId = 'match_1';
+    const seat = 0;
+    
+    const joined = await this.gameState.joinRoom(roomId, seat);
+    
+    if (!joined) {
+      console.error('LobbyScene: Failed to join room');
+      // TODO: Show error message to user
+      return;
+    }
+    
+    console.log('LobbyScene: Successfully joined room, starting game');
     this.scene.start('GameScene');
     this.scene.launch('UIScene'); // Launch UI overlay
   }

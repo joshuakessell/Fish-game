@@ -59,19 +59,31 @@ export default class LoginScene extends Phaser.Scene {
   private async handleGuestLogin() {
     console.log('LoginScene: Guest login clicked');
     
-    // TODO: Call backend API for JWT token
-    // For now, simulate successful login
     const guestName = 'Player' + Math.floor(Math.random() * 1000);
     
-    // Store auth data globally (will add proper state management later)
-    (window as any).playerAuth = {
-      name: guestName,
-      userId: 'guest-' + Date.now(),
-      credits: 1000,
-      isGuest: true,
-    };
+    // Import GameState
+    const { GameState } = await import('../systems/GameState');
+    const gameState = GameState.getInstance();
     
-    console.log('LoginScene: Login successful, transitioning to Lobby');
+    // Perform guest login via backend API
+    const loginSuccess = await gameState.guestLogin(guestName);
+    
+    if (!loginSuccess) {
+      console.error('LoginScene: Guest login failed');
+      // TODO: Show error message to user
+      return;
+    }
+    
+    // Connect to SignalR
+    const connected = await gameState.connectToSignalR();
+    
+    if (!connected) {
+      console.error('LoginScene: SignalR connection failed');
+      // TODO: Show error message to user
+      return;
+    }
+    
+    console.log('LoginScene: Login and SignalR connection successful');
     this.scene.start('LobbyScene');
   }
 }
