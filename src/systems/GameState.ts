@@ -20,6 +20,12 @@ export class GameState {
   public myPlayerSlot: number | null = null;
   public currentRoomId: string | null = null;
   
+  // Betting system
+  public currentBet: number = 10;
+  public readonly MIN_BET: number = 10;
+  public readonly MAX_BET: number = 200;
+  public readonly BET_INCREMENT: number = 10;
+  
   // Game state
   public fish: Map<number, FishData> = new Map();
   public bullets: Map<number, BulletData> = new Map();
@@ -228,5 +234,21 @@ export class GameState {
   public removeFish(fishId: number) {
     this.fish.delete(fishId);
     this.fishPathManager.removeFish(fishId);
+  }
+  
+  public increaseBet(): boolean {
+    if (this.currentBet + this.BET_INCREMENT <= this.MAX_BET) {
+      this.currentBet += this.BET_INCREMENT;
+      return true;
+    }
+    return false;
+  }
+  
+  public decreaseBet(): boolean {
+    if (this.currentBet - this.BET_INCREMENT >= this.MIN_BET) {
+      this.currentBet -= this.BET_INCREMENT;
+      return true;
+    }
+    return false;
   }
 }

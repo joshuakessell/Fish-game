@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GameState } from '../systems/GameState';
 import { FishSpriteManager } from '../systems/FishSpriteManager';
+import { BettingUI } from '../entities/BettingUI';
 
 interface ClientBullet {
   id: number;
@@ -29,6 +30,7 @@ export default class GameScene extends Phaser.Scene {
   private myTurret!: Phaser.GameObjects.Container;
   private turretBarrel!: Phaser.GameObjects.Graphics;
   private turretPosition!: { x: number; y: number };
+  private bettingUI!: BettingUI;
   
   private readonly BULLET_SPEED = 800;
   private readonly MAX_BULLETS_PER_PLAYER = 30;
@@ -249,6 +251,21 @@ export default class GameScene extends Phaser.Scene {
     this.myTurret.setDepth(100);
     
     console.log(`GameScene: Created turret at seat ${seat}, position (${this.turretPosition.x}, ${this.turretPosition.y})`);
+    
+    this.createBettingUI(seat);
+  }
+  
+  private createBettingUI(seat: number) {
+    const isBottomSeat = seat < 3;
+    const offsetY = isBottomSeat ? -60 : 60;
+    
+    this.bettingUI = new BettingUI(
+      this,
+      this.turretPosition.x,
+      this.turretPosition.y + offsetY
+    );
+    
+    console.log(`GameScene: Created betting UI at seat ${seat}`);
   }
   
   private rotateTurretToPointer(x: number, y: number) {
