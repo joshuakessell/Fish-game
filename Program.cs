@@ -1,6 +1,7 @@
 using OceanKing.Server;
 using OceanKing.Server.Data;
 using OceanKing.Server.Services;
+using OceanKing.Server.Managers;
 using OceanKing.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;

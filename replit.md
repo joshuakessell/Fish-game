@@ -72,8 +72,17 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - **SignalR Client:** @microsoft/signalr for real-time server communication.
 
 ## Recent Changes (2025-11-12)
-- **Migrated to Phaser 3:** Replaced vanilla Canvas with Phaser framework for better sprite/animation management.
-- **Implemented Parametric Path System:** Fish movement now uses deterministic path functions (Linear, Sine, Bezier, Circular).
-- **Bandwidth Optimization:** PathData sent only on fish spawn (IsNewSpawn=true), reducing network traffic by ~90%.
-- **Deterministic Client-Server Sync:** SeededRandom and 30 TPS tick rate ensure identical fish positions across client/server.
-- **TypeScript Path Port:** Created exact TypeScript mirrors of C# path implementations with determinism validation tests.
+- **Repository Reorganization:** Cleaned up file structure for better maintainability:
+  - Moved `MatchManager.cs` and `MatchInstance.cs` to `Server/Managers/` directory
+  - Updated namespaces to `OceanKing.Server.Managers` for consistency
+  - Removed temporary/legacy files (`temp.json`, old `wwwroot` files)
+  - Added `.gitignore` entry for `temp.json`
+  - Vite build now properly outputs to `wwwroot/` for ASP.NET static file serving
+- **Code Quality Improvements:** Applied Prettier and ESLint formatting to entire codebase
+- **MessagePack Serialization:** Added contract attributes to all DTOs (KillPayoutEvent, StateDelta, PathData) for proper serialization
+- **Payout System:** Implemented server-authoritative payout with credit popup animations
+- **Betting UI:** Added bet adjustment controls (±buttons), bank display, and real-time credit updates
+- **Migrated to Phaser 3:** Replaced vanilla Canvas with Phaser framework for better sprite/animation management
+- **Implemented Parametric Path System:** Fish movement uses deterministic path functions (Linear, Sine, Bezier, Circular)
+- **Bandwidth Optimization:** PathData sent only on fish spawn (IsNewSpawn=true), reducing network traffic by ~90%
+- **Deterministic Client-Server Sync:** SeededRandom and 30 TPS tick rate ensure identical fish positions across client/server

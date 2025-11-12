@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using OceanKing.Hubs;
 
-namespace OceanKing.Server;
+namespace OceanKing.Server.Managers;
 
 public class MatchManager
 {

@@ -2,12 +2,11 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using OceanKing.Server.Entities;
-using OceanKing.Server.Managers;
 using OceanKing.Server.Models;
 using OceanKing.Hubs;
 using MessagePack;
 
-namespace OceanKing.Server;
+namespace OceanKing.Server.Managers;
 
 public class MatchInstance
 {

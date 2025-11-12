@@ -120,7 +120,7 @@ export default class GameScene extends Phaser.Scene {
       this.fishSpriteManager.removeFish(fishId);
     };
 
-    this.gameState.onPayoutReceived = (fishId: string, payout: number) => {
+    this.gameState.onPayoutReceived = (fishId: number, payout: number) => {
       this.showCreditPopup(fishId, payout);
     };
 
@@ -398,9 +398,9 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  private showCreditPopup(fishId: string, payout: number) {
+  private showCreditPopup(fishId: number, payout: number) {
     const position = this.gameState.getFishPosition(
-      parseInt(fishId),
+      fishId,
       this.gameState.currentTick,
     );
 
@@ -411,7 +411,7 @@ export default class GameScene extends Phaser.Scene {
       x = position[0];
       y = position[1];
     } else {
-      const fishData = this.gameState.fish.get(parseInt(fishId));
+      const fishData = this.gameState.fish.get(fishId);
       if (fishData) {
         x = fishData.x;
         y = fishData.y;
