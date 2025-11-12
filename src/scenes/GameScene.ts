@@ -270,11 +270,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private createBettingUI(seat: number) {
-    // Position betting UI at turret position (bank will be to the left)
+    const offsetY = 60;
+
     this.bettingUI = new BettingUI(
       this,
       this.turretPosition.x,
-      this.turretPosition.y,
+      this.turretPosition.y + offsetY,
     );
 
     console.log(`GameScene: Created betting UI at seat ${seat}`);

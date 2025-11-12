@@ -26,50 +26,30 @@ export class BettingUI extends Phaser.GameObjects.Container {
   }
 
   private createUI() {
-    this.createGoldenCircularContainer();
+    this.createBankDisplay();
     this.createMinusButton();
     this.createBetDisplay();
     this.createPlusButton();
-    this.createBankDisplay();
     this.createPlayerNameDisplay();
-  }
-
-  private createGoldenCircularContainer() {
-    const container = this.scene.add.graphics();
-
-    // Position container to the right of turret
-    const offsetX = 200;
-
-    container.fillStyle(0xb8860b, 1);
-    container.fillEllipse(offsetX, 0, 280, 80);
-
-    container.fillStyle(0xdaa520, 0.8);
-    container.fillEllipse(offsetX, 0, 260, 70);
-
-    container.lineStyle(3, 0x8b6914, 1);
-    container.strokeEllipse(offsetX, 0, 280, 80);
-
-    this.add(container);
   }
 
   private createMinusButton() {
     this.minusButton = this.scene.add.graphics();
-    const offsetX = 200;
 
     this.minusButton.fillStyle(0x0066cc, 1);
-    this.minusButton.fillCircle(offsetX - 100, 0, 30);
+    this.minusButton.fillCircle(-70, 0, 25);
 
     this.minusButton.lineStyle(2, 0x004499, 1);
-    this.minusButton.strokeCircle(offsetX - 100, 0, 30);
+    this.minusButton.strokeCircle(-70, 0, 25);
 
-    const minusText = this.scene.add.text(offsetX - 100, 0, "-", {
+    const minusText = this.scene.add.text(-70, 0, "-", {
       fontSize: "48px",
       color: "#ffffff",
       fontStyle: "bold",
     });
     minusText.setOrigin(0.5, 0.5);
 
-    this.minusHitArea = this.scene.add.zone(offsetX - 100, 0, 60, 60);
+    this.minusHitArea = this.scene.add.zone(-70, 0, 50, 50);
     this.minusHitArea.setInteractive({ useHandCursor: true });
 
     this.minusHitArea.on("pointerdown", () => {
@@ -82,35 +62,41 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
     this.minusHitArea.on("pointerover", () => {
       if (this.gameState.currentBet > this.gameState.MIN_BET) {
-        const offsetX = 200;
         this.minusButton.clear();
         this.minusButton.fillStyle(0x0088ee, 1);
-        this.minusButton.fillCircle(offsetX - 100, 0, 30);
+        this.minusButton.fillCircle(-70, 0, 25);
         this.minusButton.lineStyle(2, 0x004499, 1);
-        this.minusButton.strokeCircle(offsetX - 100, 0, 30);
+        this.minusButton.strokeCircle(-70, 0, 25);
       }
     });
 
     this.minusHitArea.on("pointerout", () => {
-      const offsetX = 200;
       this.minusButton.clear();
       this.minusButton.fillStyle(0x0066cc, 1);
-      this.minusButton.fillCircle(offsetX - 100, 0, 30);
+      this.minusButton.fillCircle(-70, 0, 25);
       this.minusButton.lineStyle(2, 0x004499, 1);
-      this.minusButton.strokeCircle(offsetX - 100, 0, 30);
+      this.minusButton.strokeCircle(-70, 0, 25);
     });
 
     this.add([this.minusButton, minusText, this.minusHitArea]);
   }
 
   private createBetDisplay() {
-    const offsetX = 200;
+    // Create circular background for bet value
+    const betCircle = this.scene.add.graphics();
+    betCircle.fillStyle(0xb8860b, 1);
+    betCircle.fillCircle(0, 0, 45);
+    betCircle.fillStyle(0xdaa520, 0.8);
+    betCircle.fillCircle(0, 0, 40);
+    betCircle.lineStyle(3, 0x8b6914, 1);
+    betCircle.strokeCircle(0, 0, 45);
+
     this.betText = this.scene.add.text(
-      offsetX,
+      0,
       0,
       this.gameState.currentBet.toString(),
       {
-        fontSize: "56px",
+        fontSize: "40px",
         color: "#ffffff",
         fontStyle: "bold",
         stroke: "#8B6914",
@@ -119,27 +105,26 @@ export class BettingUI extends Phaser.GameObjects.Container {
     );
     this.betText.setOrigin(0.5, 0.5);
 
-    this.add(this.betText);
+    this.add([betCircle, this.betText]);
   }
 
   private createPlusButton() {
     this.plusButton = this.scene.add.graphics();
-    const offsetX = 200;
 
     this.plusButton.fillStyle(0x0066cc, 1);
-    this.plusButton.fillCircle(offsetX + 100, 0, 30);
+    this.plusButton.fillCircle(70, 0, 25);
 
     this.plusButton.lineStyle(2, 0x004499, 1);
-    this.plusButton.strokeCircle(offsetX + 100, 0, 30);
+    this.plusButton.strokeCircle(70, 0, 25);
 
-    const plusText = this.scene.add.text(offsetX + 100, 0, "+", {
+    const plusText = this.scene.add.text(70, 0, "+", {
       fontSize: "48px",
       color: "#ffffff",
       fontStyle: "bold",
     });
     plusText.setOrigin(0.5, 0.5);
 
-    this.plusHitArea = this.scene.add.zone(offsetX + 100, 0, 60, 60);
+    this.plusHitArea = this.scene.add.zone(70, 0, 50, 50);
     this.plusHitArea.setInteractive({ useHandCursor: true });
 
     this.plusHitArea.on("pointerdown", () => {
@@ -152,22 +137,20 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
     this.plusHitArea.on("pointerover", () => {
       if (this.gameState.currentBet < this.gameState.MAX_BET) {
-        const offsetX = 200;
         this.plusButton.clear();
         this.plusButton.fillStyle(0x0088ee, 1);
-        this.plusButton.fillCircle(offsetX + 100, 0, 30);
+        this.plusButton.fillCircle(70, 0, 25);
         this.plusButton.lineStyle(2, 0x004499, 1);
-        this.plusButton.strokeCircle(offsetX + 100, 0, 30);
+        this.plusButton.strokeCircle(70, 0, 25);
       }
     });
 
     this.plusHitArea.on("pointerout", () => {
-      const offsetX = 200;
       this.plusButton.clear();
       this.plusButton.fillStyle(0x0066cc, 1);
-      this.plusButton.fillCircle(offsetX + 100, 0, 30);
+      this.plusButton.fillCircle(70, 0, 25);
       this.plusButton.lineStyle(2, 0x004499, 1);
-      this.plusButton.strokeCircle(offsetX + 100, 0, 30);
+      this.plusButton.strokeCircle(70, 0, 25);
     });
 
     this.add([this.plusButton, plusText, this.plusHitArea]);
@@ -176,12 +159,12 @@ export class BettingUI extends Phaser.GameObjects.Container {
   private createBankDisplay() {
     const bankBg = this.scene.add.graphics();
     bankBg.fillStyle(0x000000, 0.6);
-    bankBg.fillRoundedRect(-190, -20, 150, 40, 5);
+    bankBg.fillRoundedRect(-260, -20, 150, 40, 5);
 
     const credits = this.gameState.playerAuth?.credits || 0;
     const formattedCredits = this.formatNumber(credits);
 
-    this.bankText = this.scene.add.text(-115, 0, `Bank: ${formattedCredits}`, {
+    this.bankText = this.scene.add.text(-185, 0, `Bank: ${formattedCredits}`, {
       fontSize: "20px",
       color: "#FFD700",
       fontStyle: "bold",
@@ -195,15 +178,14 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
   private createPlayerNameDisplay() {
     const playerName = this.gameState.playerAuth?.name || "Player";
-    const offsetX = 200;
 
     const nameBg = this.scene.add.graphics();
     nameBg.fillStyle(0x8b4513, 0.8);
-    nameBg.fillRoundedRect(offsetX + 140, -20, 120, 40, 5);
+    nameBg.fillRoundedRect(140, -20, 120, 40, 5);
     nameBg.lineStyle(2, 0xdaa520, 1);
-    nameBg.strokeRoundedRect(offsetX + 140, -20, 120, 40, 5);
+    nameBg.strokeRoundedRect(140, -20, 120, 40, 5);
 
-    this.playerNameText = this.scene.add.text(offsetX + 200, 0, playerName, {
+    this.playerNameText = this.scene.add.text(200, 0, playerName, {
       fontSize: "20px",
       color: "#ffffff",
       fontStyle: "bold",
@@ -250,8 +232,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
     x: number,
     _y: number,
   ) {
-    const offsetX = 200;
-    const adjustedX = x < 0 ? offsetX - 100 : offsetX + 100;
+    const adjustedX = x < 0 ? -70 : 70;
     
     this.scene.tweens.add({
       targets: button,
@@ -262,16 +243,16 @@ export class BettingUI extends Phaser.GameObjects.Container {
       onUpdate: () => {
         button.clear();
         button.fillStyle(0x0088ee, 1);
-        button.fillCircle(adjustedX, 0, 30);
+        button.fillCircle(adjustedX, 0, 25);
         button.lineStyle(2, 0x004499, 1);
-        button.strokeCircle(adjustedX, 0, 30);
+        button.strokeCircle(adjustedX, 0, 25);
       },
       onComplete: () => {
         button.clear();
         button.fillStyle(0x0066cc, 1);
-        button.fillCircle(adjustedX, 0, 30);
+        button.fillCircle(adjustedX, 0, 25);
         button.lineStyle(2, 0x004499, 1);
-        button.strokeCircle(adjustedX, 0, 30);
+        button.strokeCircle(adjustedX, 0, 25);
       },
     });
   }
