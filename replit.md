@@ -77,8 +77,9 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
   - Fixed room auto-creation: rooms now auto-create when joining if they don't exist  
   - Fixed turret positioning: turret now appears above bet controls for all seats (uniform +60px offset)
   - Removed duplicate bet controls from UIScene (red/green ±buttons)
-  - **Fixed fish rendering**: All fish in room now render on join (not just newly spawned fish after join)
-  - **Fixed bullet firing**: Bullets now create visual graphics when clicking to shoot
+  - **Fixed fish rendering on join**: Modified GameState.updateFish to spawn sprites for any new fish ID regardless of isNewSpawn flag, allowing existing room fish to render immediately when player joins
+  - **Fixed bullet firing visuals**: Added createBullet call in handleShoot to create yellow bullet graphics with bounce physics when clicking
+  - **Fixed fish disappearing bug**: Changed all fish paths (LinearPath, SinePath, BezierPath) from Loop=false to Loop=true, preventing fish from reaching out-of-bounds endpoints and being removed by cleanup logic. Fish now swim continuously in looping patterns.
 - **Repository Reorganization:** Cleaned up file structure for better maintainability:
   - Moved `MatchManager.cs` and `MatchInstance.cs` to `Server/Managers/` directory
   - Updated namespaces to `OceanKing.Server.Managers` for consistency
