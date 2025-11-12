@@ -6,6 +6,7 @@ namespace OceanKing.Server.Entities;
 public class Fish
 {
     public string FishId { get; set; } = Guid.NewGuid().ToString();
+    public int FishIdHash { get; set; } // Numeric ID for client compatibility
     public int TypeId { get; set; } // 0=small, 1=medium, 2=large, 3=boss
     public decimal BaseValue { get; set; }
     public float DestructionOdds { get; set; } // Probability (0-1) that a bullet destroys this fish
@@ -74,6 +75,7 @@ public class Fish
         var fish = new Fish
         {
             FishId = fishIdGuid,
+            FishIdHash = fishIdHash, // Numeric ID for client
             TypeId = typeId,
             X = startPos[0],
             Y = startPos[1],

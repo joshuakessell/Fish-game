@@ -405,15 +405,15 @@ public class MatchInstance
                 TotalKills = p.TotalKills
             }).ToList(),
             Fish = _fishManager.GetActiveFish().Select(f => {
-                bool isNewSpawn = (f.SpawnTick == _currentTick);
+                bool isNew = (f.SpawnTick == _currentTick);
                 return new FishState
                 {
-                    FishId = f.FishId,
-                    TypeId = f.TypeId,
-                    X = f.X, // Legacy fallback - will remove once path system verified
-                    Y = f.Y, // Legacy fallback - will remove once path system verified
-                    Path = isNewSpawn ? f.CachedPathData : null, // Only send path data on spawn
-                    IsNewSpawn = isNewSpawn
+                    id = f.FishIdHash,  // Use numeric hash for client
+                    type = f.TypeId,
+                    x = f.X, // Legacy fallback - will remove once path system verified
+                    y = f.Y, // Legacy fallback - will remove once path system verified
+                    path = isNew ? f.CachedPathData : null, // Only send path data on spawn
+                    isNewSpawn = isNew
                 };
             }).ToList(),
             Projectiles = _projectileManager.GetActiveProjectiles().Select(p => new ProjectileState
@@ -611,22 +611,22 @@ public class PlayerState
 public class FishState
 {
     [Key(0)]
-    public string FishId { get; set; } = string.Empty;
+    public int id { get; set; } // Numeric ID for client compatibility
     
     [Key(1)]
-    public int TypeId { get; set; }
+    public int type { get; set; } // TypeId renamed to match client
     
     [Key(2)]
-    public float X { get; set; }  // Only sent for legacy/fallback
+    public float x { get; set; }  // Only sent for legacy/fallback
     
     [Key(3)]
-    public float Y { get; set; }  // Only sent for legacy/fallback
+    public float y { get; set; }  // Only sent for legacy/fallback
     
     [Key(4)]
-    public Models.PathData? Path { get; set; }
+    public Models.PathData? path { get; set; }
     
     [Key(5)]
-    public bool IsNewSpawn { get; set; } // True if spawned this tick
+    public bool isNewSpawn { get; set; } // True if spawned this tick
 }
 
 [MessagePackObject]

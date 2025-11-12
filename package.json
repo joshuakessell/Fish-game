@@ -15,6 +15,7 @@
   "description": "",
   "dependencies": {
     "@microsoft/signalr": "^9.0.6",
+    "@microsoft/signalr-protocol-msgpack": "^9.0.6",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.46.4",

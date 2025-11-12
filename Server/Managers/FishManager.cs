@@ -12,13 +12,13 @@ public class FishManager
     
     // Spawn rate control
     private long _lastSpawnTick = 0;
-    private const int MIN_TICKS_BETWEEN_SPAWNS = 5; // Spawn every ~0.16 seconds
+    private const int MIN_TICKS_BETWEEN_SPAWNS = 3; // Spawn every ~0.1 seconds for more streaming
     
     // Special/Boss spawn cooldowns (prevent infinite spawning if fish dies immediately)
     private long _lastSpecialItemSpawnTick = 0;
     private long _lastBossSpawnTick = 0;
-    private const int MIN_TICKS_BETWEEN_SPECIAL_SPAWNS = 90; // 3 seconds cooldown at 30 TPS
-    private const int MIN_TICKS_BETWEEN_BOSS_SPAWNS = 90; // 3 seconds cooldown at 30 TPS
+    private const int MIN_TICKS_BETWEEN_SPECIAL_SPAWNS = 450; // 15 seconds between special spawns at 30 TPS
+    private const int MIN_TICKS_BETWEEN_BOSS_SPAWNS = 900; // 30 seconds between boss spawns at 30 TPS
     
     // Limit rare fish
     private const int MAX_LARGE_FISH = 3;
@@ -48,58 +48,66 @@ public class FishManager
 
     public void SpawnFishIfNeeded(long currentTick, List<int>? eligibleBosses = null)
     {
-        // CRITICAL: Always maintain exactly 1 Special Item (types 21-24) and 1 Boss Fish (types 25-28)
+        // Periodically spawn Special Items and Boss Fish (not constantly maintain 1)
         int specialItemCount = _activeFish.Values.Count(f => f.TypeId >= 21 && f.TypeId <= 24);
         int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 25 && f.TypeId <= 28);
         
-        // Spawn Special Item if missing (WITH COOLDOWN to prevent infinite spawning)
-        if (specialItemCount == 0 && (currentTick - _lastSpecialItemSpawnTick) >= MIN_TICKS_BETWEEN_SPECIAL_SPAWNS)
+        // Spawn Special Item periodically (max 2 at once)
+        if (specialItemCount < 2 && (currentTick - _lastSpecialItemSpawnTick) >= MIN_TICKS_BETWEEN_SPECIAL_SPAWNS)
         {
-            if (_activeFish.Count >= MAX_FISH_COUNT)
+            // 30% chance to spawn a special item when cooldown is ready
+            if (Random.Shared.Next(100) < 30)
             {
-                // Make room by removing lowest-value non-special/non-boss fish
-                var lowestValueFish = _activeFish.Values
-                    .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
-                    .OrderBy(f => f.BaseValue)
-                    .FirstOrDefault();
-                    
-                if (lowestValueFish != null)
+                if (_activeFish.Count >= MAX_FISH_COUNT)
                 {
-                    _activeFish.Remove(lowestValueFish.FishId);
-                    Console.WriteLine($"[SPECIAL] Removed low-value fish to make room for Special Item");
+                    // Make room by removing lowest-value non-special/non-boss fish
+                    var lowestValueFish = _activeFish.Values
+                        .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
+                        .OrderBy(f => f.BaseValue)
+                        .FirstOrDefault();
+                        
+                    if (lowestValueFish != null)
+                    {
+                        _activeFish.Remove(lowestValueFish.FishId);
+                        Console.WriteLine($"[SPECIAL] Removed low-value fish to make room for Special Item");
+                    }
                 }
+                
+                // Spawn random Special Item (21-24)
+                int specialTypeId = Random.Shared.Next(21, 25);
+                SpawnSingleFish(specialTypeId, currentTick);
+                _lastSpecialItemSpawnTick = currentTick;
+                Console.WriteLine($"[SPECIAL] Spawned Special Item type {specialTypeId}");
             }
-            
-            // Spawn random Special Item (21-24)
-            int specialTypeId = Random.Shared.Next(21, 25);
-            SpawnSingleFish(specialTypeId, currentTick);
-            _lastSpecialItemSpawnTick = currentTick;
-            Console.WriteLine($"[SPECIAL] Spawned Special Item type {specialTypeId}");
         }
         
-        // Spawn Boss Fish if missing (WITH COOLDOWN to prevent infinite spawning)
-        if (bossFishCount == 0 && (currentTick - _lastBossSpawnTick) >= MIN_TICKS_BETWEEN_BOSS_SPAWNS)
+        // Spawn Boss Fish periodically (max 1 at once)
+        if (bossFishCount < MAX_BOSS_FISH && (currentTick - _lastBossSpawnTick) >= MIN_TICKS_BETWEEN_BOSS_SPAWNS)
         {
-            if (_activeFish.Count >= MAX_FISH_COUNT)
+            // 20% chance to spawn a boss when cooldown is ready
+            if (Random.Shared.Next(100) < 20)
             {
-                // Make room by removing lowest-value non-special/non-boss fish
-                var lowestValueFish = _activeFish.Values
-                    .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
-                    .OrderBy(f => f.BaseValue)
-                    .FirstOrDefault();
-                    
-                if (lowestValueFish != null)
+                if (_activeFish.Count >= MAX_FISH_COUNT)
                 {
-                    _activeFish.Remove(lowestValueFish.FishId);
-                    Console.WriteLine($"[BOSS] Removed low-value fish to make room for Boss Fish");
+                    // Make room by removing lowest-value non-special/non-boss fish
+                    var lowestValueFish = _activeFish.Values
+                        .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
+                        .OrderBy(f => f.BaseValue)
+                        .FirstOrDefault();
+                        
+                    if (lowestValueFish != null)
+                    {
+                        _activeFish.Remove(lowestValueFish.FishId);
+                        Console.WriteLine($"[BOSS] Removed low-value fish to make room for Boss Fish");
+                    }
                 }
+                
+                // Spawn random Boss Fish (25-28)
+                int bossTypeId = Random.Shared.Next(25, 29);
+                SpawnSingleFish(bossTypeId, currentTick);
+                _lastBossSpawnTick = currentTick;
+                Console.WriteLine($"[BOSS] Spawned Boss Fish type {bossTypeId}");
             }
-            
-            // Spawn random Boss Fish (25-28)
-            int bossTypeId = Random.Shared.Next(25, 29);
-            SpawnSingleFish(bossTypeId, currentTick);
-            _lastBossSpawnTick = currentTick;
-            Console.WriteLine($"[BOSS] Spawned Boss Fish type {bossTypeId}");
         }
 
         if (_activeFish.Count >= MAX_FISH_COUNT)
@@ -118,7 +126,7 @@ public class FishManager
         {
             if (currentTick - _lastSpawnTick >= MIN_TICKS_BETWEEN_SPAWNS)
             {
-                if (Random.Shared.Next(10) < 4) // 40% chance
+                if (Random.Shared.Next(10) < 7) // 70% chance for more streaming
                 {
                     SpawnRandomFish(currentTick);
                     _lastSpawnTick = currentTick;

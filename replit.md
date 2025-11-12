@@ -72,6 +72,12 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - **SignalR Client:** @microsoft/signalr for real-time server communication.
 
 ## Recent Changes (2025-11-12)
+- **Fixed MessagePack client-server mismatch**: Added MessagePackHubProtocol to client SignalR configuration. Server was sending MessagePack data but client was expecting JSON, causing fish IDs to appear as "undefined". Now both use MessagePack protocol for efficient binary communication.
+- **Fixed fish spawning logic**: Changed from "maintain exactly 1 boss/special" to periodic spawning with cooldowns (15s for special items, 30s for bosses) to prevent infinite respawn loops when fish died immediately
+- **Fixed path boundaries**: Corrected fish spawn points from 50 units outside arena to exactly at edges, constrained Bezier control points within bounds, ensured circular paths stay within arena
+- **Increased regular fish spawn rate**: Reduced spawn interval from 5 to 3 ticks, increased probability from 40% to 70% for continuous fish streaming effect
+
+## Recent Changes (2025-11-12)
 - **Critical Bug Fixes:**
   - **Fixed tick synchronization data race**: Eliminated erratic fish movement by implementing proper client-server tick synchronization. Added `isSynced` flag to GameState to prevent tick advancement before first server update. Client now freezes at tick 0 until first StateDelta arrives, then snaps to server tick and resets accumulator. For large drift (>5 ticks), client snaps immediately. For minor drift (1-5 ticks), gentle correction applies ±1 per frame to gradually converge. This ensures smooth fish movement with accumulator staying in 0-33ms range and tick drift near 0.
   - Fixed infinite boss fish spawning crash by adding cooldown mechanism (90 ticks/3 seconds between boss spawns)

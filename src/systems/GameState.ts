@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+import { MessagePackHubProtocol } from "@microsoft/signalr-protocol-msgpack";
 import { FishData, PlayerData, BulletData } from "../types/GameTypes";
 import { FishPathManager } from "./FishPathManager";
 
@@ -112,6 +113,7 @@ export class GameState {
         .withUrl("/gamehub", {
           accessTokenFactory: () => this.playerAuth!.token,
         })
+        .withHubProtocol(new MessagePackHubProtocol())
         .withAutomaticReconnect()
         .configureLogging(signalR.LogLevel.Information)
         .build();

@@ -74,17 +74,17 @@ public class PathGenerator
         // Generate start and end points on edges
         var (start, end) = GenerateEdgeToEdgePoints(rng);
         
-        // Generate control points for smooth curve
+        // Generate control points for smooth curve - KEEP WITHIN BOUNDS
         float[] p1 = new[]
         {
-            start[0] + rng.NextFloat(-200f, 200f),
-            start[1] + rng.NextFloat(-200f, 200f)
+            MathF.Max(100f, MathF.Min(CANVAS_WIDTH - 100f, start[0] + rng.NextFloat(-200f, 200f))),
+            MathF.Max(100f, MathF.Min(CANVAS_HEIGHT - 100f, start[1] + rng.NextFloat(-200f, 200f)))
         };
         
         float[] p2 = new[]
         {
-            end[0] + rng.NextFloat(-200f, 200f),
-            end[1] + rng.NextFloat(-200f, 200f)
+            MathF.Max(100f, MathF.Min(CANVAS_WIDTH - 100f, end[0] + rng.NextFloat(-200f, 200f))),
+            MathF.Max(100f, MathF.Min(CANVAS_HEIGHT - 100f, end[1] + rng.NextFloat(-200f, 200f)))
         };
         
         return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, p1, p2, end);
@@ -98,15 +98,20 @@ public class PathGenerator
             return GenerateBezierPath(fishId, seed, startTick, fishType, rng);
         }
         
-        // Circular path
+        // Circular path - ensure entire circle stays within bounds
+        float maxRadiusX = MathF.Min(250f, CANVAS_WIDTH / 3f);
+        float maxRadiusY = MathF.Min(200f, CANVAS_HEIGHT / 3f);
+        
+        float radiusX = rng.NextFloat(100f, maxRadiusX);
+        float radiusY = rng.NextFloat(80f, maxRadiusY);
+        
+        // Center must keep entire circle within bounds
         float[] center = new[]
         {
-            rng.NextFloat(300f, CANVAS_WIDTH - 300f),
-            rng.NextFloat(200f, CANVAS_HEIGHT - 200f)
+            rng.NextFloat(radiusX + 50f, CANVAS_WIDTH - radiusX - 50f),
+            rng.NextFloat(radiusY + 50f, CANVAS_HEIGHT - radiusY - 50f)
         };
         
-        float radiusX = rng.NextFloat(100f, 250f);
-        float radiusY = rng.NextFloat(80f, 200f);
         float startAngle = rng.NextFloat(0f, MathF.PI * 2);
         bool clockwise = rng.NextFloat() > 0.5f;
         
@@ -118,17 +123,17 @@ public class PathGenerator
         // Bosses get dramatic curved paths
         var (start, end) = GenerateEdgeToEdgePoints(rng);
         
-        // Large, sweeping Bezier curves
+        // Large, sweeping Bezier curves - KEEP WITHIN BOUNDS
         float[] p1 = new[]
         {
-            rng.NextFloat(300f, CANVAS_WIDTH - 300f),
-            rng.NextFloat(100f, CANVAS_HEIGHT - 100f)
+            MathF.Max(200f, MathF.Min(CANVAS_WIDTH - 200f, rng.NextFloat(300f, CANVAS_WIDTH - 300f))),
+            MathF.Max(100f, MathF.Min(CANVAS_HEIGHT - 100f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f)))
         };
         
         float[] p2 = new[]
         {
-            rng.NextFloat(300f, CANVAS_WIDTH - 300f),
-            rng.NextFloat(100f, CANVAS_HEIGHT - 100f)
+            MathF.Max(200f, MathF.Min(CANVAS_WIDTH - 200f, rng.NextFloat(300f, CANVAS_WIDTH - 300f))),
+            MathF.Max(100f, MathF.Min(CANVAS_HEIGHT - 100f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f)))
         };
         
         return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed * 0.7f, start, p1, p2, end);
@@ -152,10 +157,10 @@ public class PathGenerator
     {
         return edge switch
         {
-            0 => new[] { -50f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Left
-            1 => new[] { CANVAS_WIDTH + 50f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Right
-            2 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), -50f }, // Top
-            3 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), CANVAS_HEIGHT + 50f }, // Bottom
+            0 => new[] { 0f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Left - spawn AT edge
+            1 => new[] { CANVAS_WIDTH, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Right - spawn AT edge
+            2 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), 0f }, // Top - spawn AT edge
+            3 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), CANVAS_HEIGHT }, // Bottom - spawn AT edge
             _ => new[] { 0f, 0f }
         };
     }
