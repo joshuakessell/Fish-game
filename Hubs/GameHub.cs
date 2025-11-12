@@ -210,6 +210,22 @@ public class GameHub : Hub
                 return new { success = false, message = "Invalid seat index. Must be 0-5." };
             }
             
+            // Auto-create match if it doesn't exist
+            var matchManager = _gameServer.GetMatchManager();
+            var existingMatch = matchManager.GetMatch(matchId);
+            
+            if (existingMatch == null)
+            {
+                Console.WriteLine($"[JoinRoom] Match {matchId} does not exist, creating it...");
+                existingMatch = matchManager.CreateMatchWithId(matchId);
+                
+                if (existingMatch == null)
+                {
+                    Console.WriteLine($"[JoinRoom] Failed to create match {matchId}");
+                    return new { success = false, message = "Failed to create match room" };
+                }
+            }
+            
             var lobbyManager = _gameServer.GetLobbyManager();
             var match = lobbyManager.JoinRoom(matchId, Context.ConnectionId, seatIndex);
             

@@ -58,6 +58,27 @@ public class MatchManager
         return null;
     }
 
+    public MatchInstance? CreateMatchWithId(string matchId)
+    {
+        // Check if match already exists
+        if (_activeMatches.ContainsKey(matchId))
+        {
+            return _activeMatches[matchId];
+        }
+
+        // Create new match with specific ID
+        var newMatch = new MatchInstance(matchId, this, _hubContext);
+        
+        if (_activeMatches.TryAdd(matchId, newMatch))
+        {
+            newMatch.Start();
+            Console.WriteLine($"Created match with specific ID: {matchId}");
+            return newMatch;
+        }
+
+        return null;
+    }
+
     public MatchInstance? GetMatch(string matchId)
     {
         _activeMatches.TryGetValue(matchId, out var match);
