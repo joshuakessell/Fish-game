@@ -75,7 +75,7 @@ public class SinePath : IPath
                 new[] { _amplitude, _frequency } // Store wave parameters
             },
             Duration = distance / _speed,
-            Loop = false
+            Loop = true
         };
     }
 }

@@ -50,7 +50,7 @@ public class LinearPath : IPath
             Speed = _speed,
             ControlPoints = new[] { _start, _end },
             Duration = distance / _speed,
-            Loop = false
+            Loop = true
         };
     }
 }
