@@ -5,24 +5,19 @@ namespace OceanKing.Server.Managers;
 public class FishManager
 {
     private readonly Dictionary<string, Fish> _activeFish = new();
-    private const int MIN_FISH_COUNT = 30;
-    private const int MAX_FISH_COUNT = 50;
+    private const int MIN_FISH_COUNT = 18;
+    private const int MAX_FISH_COUNT = 24;
     private const int ARENA_WIDTH = 1800;
-    private const int ARENA_HEIGHT = 900; // Billiards table proportions (2:1)
+    private const int ARENA_HEIGHT = 900;
     
     // Spawn rate control
     private long _lastSpawnTick = 0;
-    private const int MIN_TICKS_BETWEEN_SPAWNS = 3; // Spawn every ~0.1 seconds for more streaming
+    private const int MIN_TICKS_BETWEEN_SPAWNS = 2;
     
-    // Special/Boss spawn cooldowns (prevent infinite spawning if fish dies immediately)
-    private long _lastSpecialItemSpawnTick = 0;
-    private long _lastBossSpawnTick = 0;
-    private const int MIN_TICKS_BETWEEN_SPECIAL_SPAWNS = 450; // 15 seconds between special spawns at 30 TPS
-    private const int MIN_TICKS_BETWEEN_BOSS_SPAWNS = 900; // 30 seconds between boss spawns at 30 TPS
-    
-    // Limit rare fish
-    private const int MAX_LARGE_FISH = 3;
-    private const int MAX_BOSS_FISH = 1;
+    // Wave Rider bonus fish spawn control
+    private long _lastWaveRiderSpawnTick = 0;
+    private const int WAVE_RIDER_SPAWN_INTERVAL = 150;
+    private bool _waveRiderSpawnFromLeft = true;
 
     public void UpdateFish(float deltaTime, long currentTick)
     {
@@ -32,7 +27,6 @@ public class FishManager
         {
             fish.UpdatePosition(deltaTime, currentTick);
 
-            // Remove fish immediately when they exit the play area boundaries
             if (fish.X < 0 || fish.X > ARENA_WIDTH ||
                 fish.Y < 0 || fish.Y > ARENA_HEIGHT)
             {
@@ -48,72 +42,10 @@ public class FishManager
 
     public void SpawnFishIfNeeded(long currentTick, List<int>? eligibleBosses = null)
     {
-        // Periodically spawn Special Items and Boss Fish (not constantly maintain 1)
-        int specialItemCount = _activeFish.Values.Count(f => f.TypeId >= 21 && f.TypeId <= 24);
-        int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 25 && f.TypeId <= 28);
-        
-        // Spawn Special Item periodically (max 2 at once)
-        if (specialItemCount < 2 && (currentTick - _lastSpecialItemSpawnTick) >= MIN_TICKS_BETWEEN_SPECIAL_SPAWNS)
-        {
-            // 30% chance to spawn a special item when cooldown is ready
-            if (Random.Shared.Next(100) < 30)
-            {
-                if (_activeFish.Count >= MAX_FISH_COUNT)
-                {
-                    // Make room by removing lowest-value non-special/non-boss fish
-                    var lowestValueFish = _activeFish.Values
-                        .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
-                        .OrderBy(f => f.BaseValue)
-                        .FirstOrDefault();
-                        
-                    if (lowestValueFish != null)
-                    {
-                        _activeFish.Remove(lowestValueFish.FishId);
-                        Console.WriteLine($"[SPECIAL] Removed low-value fish to make room for Special Item");
-                    }
-                }
-                
-                // Spawn random Special Item (21-24)
-                int specialTypeId = Random.Shared.Next(21, 25);
-                SpawnSingleFish(specialTypeId, currentTick);
-                _lastSpecialItemSpawnTick = currentTick;
-                Console.WriteLine($"[SPECIAL] Spawned Special Item type {specialTypeId}");
-            }
-        }
-        
-        // Spawn Boss Fish periodically (max 1 at once)
-        if (bossFishCount < MAX_BOSS_FISH && (currentTick - _lastBossSpawnTick) >= MIN_TICKS_BETWEEN_BOSS_SPAWNS)
-        {
-            // 20% chance to spawn a boss when cooldown is ready
-            if (Random.Shared.Next(100) < 20)
-            {
-                if (_activeFish.Count >= MAX_FISH_COUNT)
-                {
-                    // Make room by removing lowest-value non-special/non-boss fish
-                    var lowestValueFish = _activeFish.Values
-                        .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
-                        .OrderBy(f => f.BaseValue)
-                        .FirstOrDefault();
-                        
-                    if (lowestValueFish != null)
-                    {
-                        _activeFish.Remove(lowestValueFish.FishId);
-                        Console.WriteLine($"[BOSS] Removed low-value fish to make room for Boss Fish");
-                    }
-                }
-                
-                // Spawn random Boss Fish (25-28)
-                int bossTypeId = Random.Shared.Next(25, 29);
-                SpawnSingleFish(bossTypeId, currentTick);
-                _lastBossSpawnTick = currentTick;
-                Console.WriteLine($"[BOSS] Spawned Boss Fish type {bossTypeId}");
-            }
-        }
-
         if (_activeFish.Count >= MAX_FISH_COUNT)
             return;
             
-        // Regular spawning for normal fish
+        // Regular spawning for normal fish (types 0-2, 6, 9, 12, 14)
         if (_activeFish.Count < MIN_FISH_COUNT)
         {
             while (_activeFish.Count < MIN_FISH_COUNT && _activeFish.Count < MAX_FISH_COUNT)
@@ -126,13 +58,92 @@ public class FishManager
         {
             if (currentTick - _lastSpawnTick >= MIN_TICKS_BETWEEN_SPAWNS)
             {
-                if (Random.Shared.Next(10) < 7) // 70% chance for more streaming
+                if (Random.Shared.Next(10) < 7)
                 {
                     SpawnRandomFish(currentTick);
                     _lastSpawnTick = currentTick;
                 }
             }
         }
+        
+        // Wave Rider bonus fish - spawns every 150 ticks (~5 seconds at 30 TPS)
+        if (currentTick - _lastWaveRiderSpawnTick >= WAVE_RIDER_SPAWN_INTERVAL)
+        {
+            SpawnWaveRider(currentTick);
+            _lastWaveRiderSpawnTick = currentTick;
+        }
+    }
+
+    private void SpawnWaveRider(long currentTick)
+    {
+        var fishDef = Entities.FishCatalog.GetFish(21);
+        if (fishDef == null) return;
+
+        // Generate stable fish ID hash for path generation
+        var fishIdGuid = Guid.NewGuid().ToString();
+        var fishIdHash = Math.Abs(fishIdGuid.GetHashCode());
+        
+        // Determine start and end points based on spawn direction
+        float[] start, end;
+        float y = Random.Shared.Next(200, ARENA_HEIGHT - 200);
+        
+        if (_waveRiderSpawnFromLeft)
+        {
+            // Spawn from left edge, exit on right edge
+            start = new[] { 0f, (float)y };
+            end = new[] { (float)ARENA_WIDTH, (float)Random.Shared.Next(200, ARENA_HEIGHT - 200) };
+        }
+        else
+        {
+            // Spawn from right edge, exit on left edge
+            start = new[] { (float)ARENA_WIDTH, (float)y };
+            end = new[] { 0f, (float)Random.Shared.Next(200, ARENA_HEIGHT - 200) };
+        }
+        
+        _waveRiderSpawnFromLeft = !_waveRiderSpawnFromLeft;
+        
+        // Generate sine wave path with specific start/end points
+        var path = Systems.Paths.PathGenerator.GenerateSinePathWithPoints(
+            fishIdHash,
+            fishIdHash,
+            (int)currentTick,
+            fishDef.BaseSpeed,
+            start,
+            end
+        );
+        
+        // Get initial position from path
+        var startPos = path.GetPosition(0f);
+        
+        // Cache path data to avoid per-tick allocations
+        var pathData = path.GetPathData();
+        
+        // Create the Wave Rider fish with sine wave path
+        var fish = new Fish
+        {
+            FishId = fishIdGuid,
+            FishIdHash = fishIdHash,
+            TypeId = 21,
+            X = startPos[0],
+            Y = startPos[1],
+            SpawnTick = currentTick,
+            DespawnTick = currentTick + 1800, // 60 seconds
+            MovementPatternId = 0,
+            VelocityX = 0,
+            VelocityY = 0,
+            BaseSpeed = fishDef.BaseSpeed,
+            CurrentSpeed = 0f,
+            AccelerationProgress = 0f,
+            HitboxRadius = fishDef.HitboxRadius,
+            BaseValue = fishDef.PayoutMultiplier,
+            DestructionOdds = fishDef.CaptureProbability,
+            Path = path,
+            CachedPathData = pathData
+        };
+        
+        _activeFish[fish.FishId] = fish;
+        
+        Console.WriteLine($"[WAVE RIDER] Spawned from {(_waveRiderSpawnFromLeft ? "right" : "left")} side with sine wave pattern");
     }
 
     private void SpawnSingleFish(int typeId, long currentTick)
@@ -140,55 +151,54 @@ public class FishManager
         var fishDef = Entities.FishCatalog.GetFish(typeId);
         if (fishDef == null) return;
 
-        // Choose spawn direction (8 possibilities for varied movement)
         int spawnDirection = Random.Shared.Next(8);
         float x, y, velocityX, velocityY;
         
         switch (spawnDirection)
         {
-            case 0: // Left to right (horizontal)
+            case 0:
                 x = 0;
                 y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = fishDef.BaseSpeed;
                 velocityY = 0;
                 break;
-            case 1: // Right to left (horizontal)
+            case 1:
                 x = ARENA_WIDTH;
                 y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = -fishDef.BaseSpeed;
                 velocityY = 0;
                 break;
-            case 2: // Top to bottom (vertical)
+            case 2:
                 x = Random.Shared.Next(100, ARENA_WIDTH - 100);
                 y = 0;
                 velocityX = 0;
                 velocityY = fishDef.BaseSpeed;
                 break;
-            case 3: // Bottom to top (vertical)
+            case 3:
                 x = Random.Shared.Next(100, ARENA_WIDTH - 100);
                 y = ARENA_HEIGHT;
                 velocityX = 0;
                 velocityY = -fishDef.BaseSpeed;
                 break;
-            case 4: // Top-left to bottom-right (diagonal)
+            case 4:
                 x = 0;
                 y = 0;
                 velocityX = fishDef.BaseSpeed * 0.707f;
                 velocityY = fishDef.BaseSpeed * 0.707f;
                 break;
-            case 5: // Top-right to bottom-left (diagonal)
+            case 5:
                 x = ARENA_WIDTH;
                 y = 0;
                 velocityX = -fishDef.BaseSpeed * 0.707f;
                 velocityY = fishDef.BaseSpeed * 0.707f;
                 break;
-            case 6: // Bottom-left to top-right (diagonal)
+            case 6:
                 x = 0;
                 y = ARENA_HEIGHT;
                 velocityX = fishDef.BaseSpeed * 0.707f;
                 velocityY = -fishDef.BaseSpeed * 0.707f;
                 break;
-            default: // Bottom-right to top-left (diagonal)
+            default:
                 x = ARENA_WIDTH;
                 y = ARENA_HEIGHT;
                 velocityX = -fishDef.BaseSpeed * 0.707f;
@@ -202,24 +212,21 @@ public class FishManager
 
     private void SpawnRandomFish(long currentTick)
     {
-        // Use weight-based spawning for regular fish (types 0-20)
-        // Special Items (21-24) and Boss Fish (25-28) are handled separately
-        
-        // Build weighted list from catalog (only regular fish: Small, Medium, Large, High-Value)
         var spawnableFish = new List<(int typeId, int weight)>();
         int totalWeight = 0;
         
-        for (int typeId = 0; typeId <= 20; typeId++)
+        int[] validFishTypes = { 0, 1, 2, 6, 9, 12, 14 };
+        
+        foreach (int typeId in validFishTypes)
         {
             var fishDef = Entities.FishCatalog.GetFish(typeId);
-            if (fishDef != null)
+            if (fishDef != null && fishDef.SpawnWeight > 0)
             {
                 spawnableFish.Add((typeId, fishDef.SpawnWeight));
                 totalWeight += fishDef.SpawnWeight;
             }
         }
         
-        // Pick random fish based on weights
         int randomValue = Random.Shared.Next(totalWeight);
         int cumulativeWeight = 0;
         int selectedTypeId = 0;
@@ -234,95 +241,91 @@ public class FishManager
             }
         }
         
-        // Small fish (types 0-5) spawn in groups
-        if (selectedTypeId <= 5)
+        if (selectedTypeId <= 2)
         {
             SpawnFishGroup(selectedTypeId, currentTick, 3, 6);
         }
         else
         {
-            // Medium, Large, and High-Value fish spawn solo
             SpawnSingleFish(selectedTypeId, currentTick);
         }
     }
 
     private void SpawnFishGroup(int typeId, long currentTick, int minCount = -1, int maxCount = -1)
     {
-        // Determine group size based on fish type
         int groupSize;
         if (minCount > 0 && maxCount > 0)
         {
             groupSize = Random.Shared.Next(minCount, maxCount + 1);
         }
-        else if (typeId == 0) // Small fish in groups of 3-5
+        else if (typeId == 0)
         {
             groupSize = Random.Shared.Next(3, 6);
         }
-        else if (typeId == 1) // Medium fish usually solo, sometimes pairs
+        else if (typeId == 1)
         {
             groupSize = 1;
         }
-        else // Large and boss always solo
+        else
         {
             groupSize = 1;
         }
         
-        // Choose spawn direction (8 possibilities for varied movement)
         int spawnDirection = Random.Shared.Next(8);
         float baseX, baseY, velocityX, velocityY;
         
         switch (spawnDirection)
         {
-            case 0: // Left to right (horizontal)
+            case 0:
                 baseX = 0;
                 baseY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = GetSpeedForType(typeId);
                 velocityY = (Random.Shared.NextSingle() - 0.5f) * 20f;
                 break;
                 
-            case 1: // Right to left (horizontal)
+            case 1:
                 baseX = ARENA_WIDTH;
                 baseY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = -GetSpeedForType(typeId);
                 velocityY = (Random.Shared.NextSingle() - 0.5f) * 20f;
                 break;
                 
-            case 2: // Top to bottom (vertical)
+            case 2:
                 baseX = Random.Shared.Next(100, ARENA_WIDTH - 100);
                 baseY = 0;
                 velocityX = (Random.Shared.NextSingle() - 0.5f) * 30f;
                 velocityY = GetSpeedForType(typeId) * 0.7f;
                 break;
                 
-            case 3: // Bottom to top (vertical)
+            case 3:
                 baseX = Random.Shared.Next(100, ARENA_WIDTH - 100);
                 baseY = ARENA_HEIGHT;
                 velocityX = (Random.Shared.NextSingle() - 0.5f) * 30f;
                 velocityY = -GetSpeedForType(typeId) * 0.7f;
                 break;
                 
-            case 4: // Top-left to bottom-right (diagonal)
+            case 4:
                 baseX = 0;
                 baseY = 0;
                 velocityX = GetSpeedForType(typeId) * 0.8f;
                 velocityY = GetSpeedForType(typeId) * 0.6f;
                 break;
                 
-            case 5: // Top-right to bottom-left (diagonal)
+            case 5:
                 baseX = ARENA_WIDTH;
                 baseY = 0;
                 velocityX = -GetSpeedForType(typeId) * 0.8f;
                 velocityY = GetSpeedForType(typeId) * 0.6f;
                 break;
                 
-            case 6: // Complex path: top to center then to bottom-right corner
+            case 6:
                 baseX = Random.Shared.Next(200, ARENA_WIDTH - 200);
                 baseY = 0;
                 velocityX = GetSpeedForType(typeId) * 0.4f;
                 velocityY = GetSpeedForType(typeId) * 0.8f;
                 break;
                 
-            case 7: // Complex path: left to center then to top-right corner
+            case 7:
                 baseX = 0;
                 baseY = Random.Shared.Next(200, ARENA_HEIGHT - 200);
                 velocityX = GetSpeedForType(typeId) * 0.9f;
@@ -337,31 +340,25 @@ public class FishManager
                 break;
         }
         
-        // Choose group pattern for small fish groups
-        int groupPattern = 0; // 0=none
+        int groupPattern = 0;
         if (groupSize >= 3 && typeId == 0)
         {
-            groupPattern = Random.Shared.Next(1, 4); // 1=blooming, 2=symmetrical, 3=circle
+            groupPattern = Random.Shared.Next(1, 4);
         }
         
-        // Choose movement pattern variation
         int movementPattern = Random.Shared.Next(0, 4);
         
-        // Formation offset for groups
         float spacing = typeId == 0 ? 40f : 60f;
         string groupId = Guid.NewGuid().ToString();
         
         for (int i = 0; i < groupSize; i++)
         {
-            // Don't exceed maximum fish count
             if (_activeFish.Count >= MAX_FISH_COUNT)
                 break;
                 
-            // Vary position slightly for natural formation
             float offsetX = (i % 3) * spacing - spacing;
             float offsetY = (i / 3) * spacing;
             
-            // Add some randomness
             offsetX += Random.Shared.NextSingle() * 20 - 10;
             offsetY += Random.Shared.NextSingle() * 20 - 10;
             
@@ -370,7 +367,6 @@ public class FishManager
             
             var fish = Fish.CreateFish(typeId, spawnX, spawnY, currentTick, velocityX, velocityY, movementPattern);
             
-            // Set group information for synchronized patterns
             if (groupSize > 1)
             {
                 fish.GroupId = groupId;
@@ -387,23 +383,13 @@ public class FishManager
     {
         return typeId switch
         {
-            0 => 100f + Random.Shared.NextSingle() * 20f,  // Small: fast
-            1 => 60f + Random.Shared.NextSingle() * 10f,   // Medium: moderate
-            2 => 45f + Random.Shared.NextSingle() * 10f,   // Large: slow
-            3 => 30f + Random.Shared.NextSingle() * 8f,    // Boss: very slow
-            4 => 35f + Random.Shared.NextSingle() * 5f,    // Sea Turtle: slow graceful
-            5 => 50f + Random.Shared.NextSingle() * 8f,    // Manta Ray: moderate glide
-            6 => 25f + Random.Shared.NextSingle() * 5f,    // Jellyfish: very slow drift
-            7 => 55f + Random.Shared.NextSingle() * 10f,   // Hammerhead: moderate hunting
-            8 => 40f + Random.Shared.NextSingle() * 8f,    // Nautilus: slow spiral
-            20 => 42f + Random.Shared.NextSingle() * 7f,   // Lantern Fish: moderate
-            21 => 38f + Random.Shared.NextSingle() * 6f,   // Sea Turtle: slow graceful
-            22 => 52f + Random.Shared.NextSingle() * 9f,   // Saw Shark: moderate-fast
-            23 => 48f + Random.Shared.NextSingle() * 8f,   // Devilfish: moderate
-            24 => 40f + Random.Shared.NextSingle() * 8f,   // Jumbo Fish: slow-moderate
-            25 => 58f + Random.Shared.NextSingle() * 10f,  // Shark: fast
-            26 => 50f + Random.Shared.NextSingle() * 8f,   // Killer Whale: moderate
-            27 => 35f + Random.Shared.NextSingle() * 7f,   // Golden Dragon: slow
+            0 => 100f + Random.Shared.NextSingle() * 20f,
+            1 => 100f + Random.Shared.NextSingle() * 20f,
+            2 => 100f + Random.Shared.NextSingle() * 20f,
+            6 => 60f + Random.Shared.NextSingle() * 10f,
+            9 => 60f + Random.Shared.NextSingle() * 10f,
+            12 => 100f + Random.Shared.NextSingle() * 20f,
+            14 => 81.25f + Random.Shared.NextSingle() * 15f,
             _ => 80f
         };
     }

@@ -109,23 +109,14 @@ public class Fish
             case FishCategory.LargeFish:
                 fish.DespawnTick = currentTick + 1200; // 40 seconds
                 break;
-            case FishCategory.HighValueFish:
-                fish.DespawnTick = currentTick + 1500; // 50 seconds
-                break;
-            case FishCategory.SpecialItems:
+            case FishCategory.BonusFish:
                 fish.DespawnTick = currentTick + 1800; // 60 seconds
-                break;
-            case FishCategory.BossFish:
-                fish.DespawnTick = currentTick + 2400; // 80 seconds
-                fish.IsExplosive = true; // Boss fish trigger events
                 break;
         }
         
-        // Large fish, high-value fish, special items, and bosses get curved paths
+        // Large fish and bonus fish get curved paths
         if (fishDef.Category == FishCategory.LargeFish ||
-            fishDef.Category == FishCategory.HighValueFish ||
-            fishDef.Category == FishCategory.SpecialItems ||
-            fishDef.Category == FishCategory.BossFish)
+            fishDef.Category == FishCategory.BonusFish)
         {
             fish.PathCurveIntensity = 0.3f + (Random.Shared.NextSingle() * 0.2f); // 0.3 to 0.5
             fish.PathCurveDirection = Random.Shared.Next(2) == 0 ? 1f : -1f;

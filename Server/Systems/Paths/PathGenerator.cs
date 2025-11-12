@@ -28,9 +28,7 @@ public class PathGenerator
             FishCategory.SmallFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
             FishCategory.MediumFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
             FishCategory.LargeFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng),
-            FishCategory.HighValueFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng),
-            FishCategory.SpecialItems => GenerateCircularOrComplexPath(fishId, seed, currentTick, fishType, rng),
-            FishCategory.BossFish => GenerateBossPath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.BonusFish => GenerateSinePath(fishId, seed, currentTick, fishType, rng),
             _ => GenerateLinearPath(fishId, seed, currentTick, fishType, rng)
         };
     }
@@ -67,6 +65,24 @@ public class PathGenerator
     {
         var (start, end) = GenerateEdgeToEdgePoints(rng);
         return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, end);
+    }
+    
+    private static IPath GenerateSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
+    {
+        var (start, end) = GenerateEdgeToEdgePoints(rng);
+        float amplitude = rng.NextFloat(40f, 80f);
+        float frequency = rng.NextFloat(3f, 6f);
+        return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, amplitude, frequency);
+    }
+    
+    /// <summary>
+    /// Generate a sine wave path with specific start and end points (for Wave Rider bonus fish)
+    /// </summary>
+    public static IPath GenerateSinePathWithPoints(int fishId, int seed, int startTick, float speed, float[] start, float[] end)
+    {
+        float amplitude = 40f + ((seed % 41) * (80f - 40f) / 40f);
+        float frequency = 3f + ((seed % 4) * (6f - 3f) / 3f);
+        return new SinePath(fishId, seed, startTick, speed, start, end, amplitude, frequency);
     }
     
     private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)

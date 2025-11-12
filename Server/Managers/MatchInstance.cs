@@ -392,6 +392,7 @@ public class MatchInstance
         var delta = new StateDelta
         {
             TickId = _currentTick,
+            Tick = _currentTick,
             RoundNumber = roundState.RoundNumber,
             TimeRemainingTicks = _roundManager.GetTimeRemainingTicks(_currentTick),
             IsRoundTransitioning = false,
@@ -551,6 +552,9 @@ public class StateDelta
     
     [Key(9)]
     public List<KillPayoutEvent> PayoutEvents { get; set; } = new();
+    
+    [Key(10)]
+    public long Tick { get; set; }
 }
 
 [MessagePackObject]

@@ -71,6 +71,34 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - **Vite:** Fast development server and build tool (port 5000).
 - **SignalR Client:** @microsoft/signalr for real-time server communication.
 
+## Recent Changes (2025-11-12 - Current Session)
+- **Fixed Critical Fish Spawning Bug:**
+  - Added `Tick` field to StateDelta DTO alongside `TickId` to fix client-server synchronization
+  - Client was expecting `tick` but server only sent `TickId`, causing all fish updates to be ignored
+  - Fish now spawn and render correctly with proper tick synchronization
+- **Simplified Fish Catalog:**
+  - Reduced from 29 fish types to only 8 types per user request
+  - Small fish (3 types): Clownfish (25%), Neon Tetra (25%), Butterflyfish (20%) - 70% total
+  - Medium fish (2 types): Lionfish (10%), Triggerfish (10%) - 20% total  
+  - Large fish (2 types): Hammerhead Shark (5%), Giant Manta Ray (5%) - 10% total
+  - Bonus fish (1 type): Wave Rider - spawns every ~5 seconds with sine wave pattern
+- **Adjusted Spawn Rates:**
+  - MIN_FISH_COUNT reduced from 30 to 18
+  - MAX_FISH_COUNT reduced from 50 to 24
+  - MIN_TICKS_BETWEEN_SPAWNS reduced from 3 to 2 for faster spawning
+  - Target: ~20 fish visible on screen at any given time
+- **Wave Rider Bonus Fish Implementation:**
+  - TypeId 21 (repurposed from Pearl Oyster)
+  - Spawns automatically every 150 ticks (~5 seconds at 30 TPS)
+  - Alternates between left and right edges each spawn
+  - Uses sine wave path with amplitude 40-80 and frequency 3-6
+  - Higher speed (125 pixels/sec) for quick screen crossing
+  - Deterministic sine parameters using clamped modulo arithmetic
+- **Removed Complexity:**
+  - Eliminated boss fish spawn logic and special item timers
+  - Removed unused fish categories: HighValueFish, SpecialItems, BossFish
+  - Streamlined spawn logic to focus on regular fish and Wave Rider bonus
+
 ## Recent Changes (2025-11-12 - Latest Session)
 - **Visual Effects System:**
   - Added hit effects when bullets collide with fish: white flash circle + 12-particle burst radiating outward
