@@ -72,6 +72,11 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - **SignalR Client:** @microsoft/signalr for real-time server communication.
 
 ## Recent Changes (2025-11-12)
+- **Critical Bug Fixes:**
+  - Fixed infinite boss fish spawning crash by adding cooldown mechanism (90 ticks/3 seconds between boss spawns)
+  - Fixed room auto-creation: rooms now auto-create when joining if they don't exist  
+  - Fixed turret positioning: turret now appears above bet controls for all seats (uniform +60px offset)
+  - Removed duplicate bet controls from UIScene (red/green ±buttons)
 - **Repository Reorganization:** Cleaned up file structure for better maintainability:
   - Moved `MatchManager.cs` and `MatchInstance.cs` to `Server/Managers/` directory
   - Updated namespaces to `OceanKing.Server.Managers` for consistency
