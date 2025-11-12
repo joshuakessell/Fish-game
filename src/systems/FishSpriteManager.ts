@@ -18,14 +18,22 @@ export class FishSpriteManager {
       return;
     }
 
-    // Use server tick for initial spawn position
-    const initialPosition = this.gameState.getFishPosition(
+    // Try to get path-based position first
+    let initialPosition = this.gameState.getFishPosition(
       fishId,
       this.gameState.currentTick,
     );
+    
+    // Fall back to server-provided x/y if path not yet available
     if (!initialPosition) {
-      console.warn(`Cannot spawn fish ${fishId}: no position available`);
-      return;
+      const fishData = this.gameState.fish.get(fishId);
+      if (fishData) {
+        initialPosition = [fishData.x, fishData.y];
+        console.log(`Fish ${fishId} spawning with server position (path not yet ready)`);
+      } else {
+        console.warn(`Cannot spawn fish ${fishId}: no position data available at all`);
+        return;
+      }
     }
 
     const sprite = new FishSprite(
@@ -72,5 +80,9 @@ export class FishSpriteManager {
 
   public getActiveFishCount(): number {
     return this.fishSprites.size;
+  }
+
+  public getFishSprites(): Map<number, FishSprite> {
+    return this.fishSprites;
   }
 }

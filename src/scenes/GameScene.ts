@@ -41,10 +41,16 @@ export default class GameScene extends Phaser.Scene {
     this.gameState = GameState.getInstance();
   }
 
+  preload() {
+    // Load real fish images
+    this.load.image("fish-small", "/assets/fish/Small_clownfish_sprite_226a82aa.png");
+    this.load.image("fish-medium", "/assets/fish/Medium_lionfish_sprite_96d7f97c.png");
+    this.load.image("fish-large", "/assets/fish/Large_shark_sprite_e30aab34.png");
+    this.load.image("fish-boss", "/assets/fish/Boss_whale_sprite_7a904894.png");
+  }
+
   create() {
     console.log("GameScene: Creating game world");
-
-    this.generatePlaceholderFishGraphics();
 
     const graphics = this.add.graphics();
     graphics.fillGradientStyle(0x001a33, 0x001a33, 0x004d7a, 0x004d7a, 1);
@@ -76,29 +82,6 @@ export default class GameScene extends Phaser.Scene {
     console.log("GameScene: Initialization complete");
   }
 
-  private generatePlaceholderFishGraphics() {
-    const fishTypes = [
-      { key: "fish-small", size: 20, color: 0x00ff00 },
-      { key: "fish-medium", size: 40, color: 0x00aaff },
-      { key: "fish-large", size: 60, color: 0xaa00ff },
-      { key: "fish-boss", size: 100, color: 0xffaa00 },
-    ];
-
-    fishTypes.forEach(({ key, size, color }) => {
-      const graphics = this.add.graphics();
-
-      graphics.fillStyle(color, 1);
-      graphics.fillCircle(size / 2, size / 2, size / 2);
-
-      graphics.fillStyle(0xffffff, 0.8);
-      graphics.fillCircle(size / 2 + size / 4, size / 2 - size / 6, size / 8);
-
-      graphics.generateTexture(key, size, size);
-      graphics.destroy();
-
-      console.log(`Generated texture: ${key} (${size}px)`);
-    });
-  }
 
   private createDebugOverlay() {
     this.debugText = this.add.text(10, 10, "", {
@@ -113,10 +96,12 @@ export default class GameScene extends Phaser.Scene {
 
   private setupFishLifecycleCallbacks() {
     this.gameState.onFishSpawned = (fishId: number, typeId: number) => {
+      console.log(`🐟 Fish spawned callback: fishId=${fishId}, typeId=${typeId}`);
       this.fishSpriteManager.spawnFish(fishId, typeId);
     };
 
     this.gameState.onFishRemoved = (fishId: number) => {
+      console.log(`🐟 Fish removed callback: fishId=${fishId}`);
       this.fishSpriteManager.removeFish(fishId);
     };
 
@@ -384,6 +369,28 @@ export default class GameScene extends Phaser.Scene {
     this.clientBullets.forEach((bullet, id) => {
       bullet.x += bullet.velocityX * deltaSeconds;
       bullet.y += bullet.velocityY * deltaSeconds;
+
+      // Check collision with fish
+      const fishSprites = this.fishSpriteManager.getFishSprites();
+      fishSprites.forEach((fishSprite, fishId) => {
+        const distance = Phaser.Math.Distance.Between(
+          bullet.x,
+          bullet.y,
+          fishSprite.x,
+          fishSprite.y
+        );
+        
+        // Hit detection radius (adjust based on fish size)
+        const hitRadius = 40;
+        
+        if (distance < hitRadius) {
+          console.log(`💥 Bullet ${id} hit fish ${fishId}!`);
+          // Server will handle the actual hit, just remove bullet locally
+          bullet.graphics.destroy();
+          this.clientBullets.delete(id);
+          return;
+        }
+      });
 
       if (bullet.x < 0) {
         bullet.x = 0;

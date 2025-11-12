@@ -65,11 +65,17 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
   }
 
   private static getTextureForType(typeId: number): string {
-    if (typeId >= 90) {
+    // Based on FishCatalog.cs:
+    // 0-5: Small fish
+    // 6-11: Medium fish
+    // 12-20: Large/High value fish
+    // 21-24: Special items (render as medium)
+    // 25-28: Boss fish
+    if (typeId >= 25) {
       return "fish-boss";
-    } else if (typeId >= 50) {
+    } else if (typeId >= 12) {
       return "fish-large";
-    } else if (typeId >= 20) {
+    } else if (typeId >= 6) {
       return "fish-medium";
     } else {
       return "fish-small";

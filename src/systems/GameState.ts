@@ -198,6 +198,7 @@ export class GameState {
       }
 
       if (update.fish) {
+        console.log(`📦 Received ${update.fish.length} fish in StateDelta`);
         const currentFishIds = new Set(this.fish.keys());
         const incomingFishIds = new Set<number>();
 
@@ -265,6 +266,10 @@ export class GameState {
 
   private updateFish(fishData: FishData) {
     const isNew = !this.fish.has(fishData.id);
+    console.log(`🔄 Updating fish ${fishData.id} (type ${fishData.type}), isNew=${isNew}, hasPath=${!!fishData.path}, pos=(${fishData.x}, ${fishData.y})`);
+
+    // Store fish data BEFORE triggering spawn callback
+    this.fish.set(fishData.id, fishData);
 
     if (fishData.path) {
       this.fishPathManager.registerFishPath(fishData.id, fishData.path);
@@ -274,10 +279,11 @@ export class GameState {
     }
 
     if (isNew && this.onFishSpawned) {
+      console.log(`🎯 Calling onFishSpawned for fish ${fishData.id}, type ${fishData.type}`);
       this.onFishSpawned(fishData.id, fishData.type);
+    } else if (isNew && !this.onFishSpawned) {
+      console.warn(`⚠️ New fish ${fishData.id} but no onFishSpawned callback set!`);
     }
-
-    this.fish.set(fishData.id, fishData);
   }
 
   public getFishPosition(
