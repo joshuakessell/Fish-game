@@ -329,4 +329,13 @@ export class GameState {
     }
     return false;
   }
+
+  public deductShotCost(): void {
+    if (this.playerAuth) {
+      this.playerAuth.credits -= this.currentBet;
+      if (this.onCreditsChanged) {
+        this.onCreditsChanged();
+      }
+    }
+  }
 }

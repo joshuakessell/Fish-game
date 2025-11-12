@@ -270,12 +270,11 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private createBettingUI(seat: number) {
-    const offsetY = 60;
-
+    // Position betting UI at turret position (bank will be to the left)
     this.bettingUI = new BettingUI(
       this,
       this.turretPosition.x,
-      this.turretPosition.y + offsetY,
+      this.turretPosition.y,
     );
 
     console.log(`GameScene: Created betting UI at seat ${seat}`);
@@ -300,6 +299,15 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
+    // Check if player has enough credits to shoot
+    const shotCost = this.gameState.currentBet;
+    const currentCredits = this.gameState.playerAuth?.credits || 0;
+    
+    if (currentCredits < shotCost) {
+      console.warn("Not enough credits to shoot");
+      return;
+    }
+
     const dx = x - this.turretPosition.x;
     const dy = y - this.turretPosition.y;
 
@@ -310,6 +318,12 @@ export default class GameScene extends Phaser.Scene {
     const dirY = dy / length;
 
     if (this.gameState.connection && this.gameState.isConnected) {
+      // Deduct shot cost locally (server will sync)
+      this.gameState.deductShotCost();
+      
+      // Create firing effect
+      this.createFiringEffect(dirX, dirY);
+      
       this.createBullet(
         this.turretPosition.x,
         this.turretPosition.y,
@@ -385,6 +399,10 @@ export default class GameScene extends Phaser.Scene {
         
         if (distance < hitRadius) {
           console.log(`💥 Bullet ${id} hit fish ${fishId}!`);
+          
+          // Create hit effect
+          this.createHitEffect(bullet.x, bullet.y);
+          
           // Server will handle the actual hit, just remove bullet locally
           bullet.graphics.destroy();
           this.clientBullets.delete(id);
@@ -461,5 +479,110 @@ export default class GameScene extends Phaser.Scene {
     });
 
     console.log(`Credit popup: +${payout} at fish ${fishId}`);
+  }
+
+  private createHitEffect(x: number, y: number) {
+    // Create flash circle
+    const flash = this.add.circle(x, y, 30, 0xffffff, 0.8);
+    flash.setDepth(150);
+
+    this.tweens.add({
+      targets: flash,
+      scaleX: 2,
+      scaleY: 2,
+      alpha: 0,
+      duration: 300,
+      ease: "Cubic.easeOut",
+      onComplete: () => {
+        flash.destroy();
+      },
+    });
+
+    // Create particle burst
+    const particleCount = 12;
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2;
+      const speed = 100 + Math.random() * 50;
+      
+      const particle = this.add.circle(x, y, 4, 0xffaa00, 1);
+      particle.setDepth(140);
+
+      this.tweens.add({
+        targets: particle,
+        x: x + Math.cos(angle) * speed,
+        y: y + Math.sin(angle) * speed,
+        alpha: 0,
+        duration: 400 + Math.random() * 200,
+        ease: "Cubic.easeOut",
+        onComplete: () => {
+          particle.destroy();
+        },
+      });
+    }
+  }
+
+  private createFiringEffect(dirX: number, dirY: number) {
+    if (!this.turretPosition) return;
+
+    const angle = Math.atan2(dirY, dirX);
+    const barrelLength = 50;
+    const muzzleX = this.turretPosition.x + Math.cos(angle) * barrelLength;
+    const muzzleY = this.turretPosition.y + Math.sin(angle) * barrelLength;
+
+    // Muzzle flash
+    const flash = this.add.circle(muzzleX, muzzleY, 25, 0xffff00, 0.9);
+    flash.setDepth(110);
+
+    this.tweens.add({
+      targets: flash,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      alpha: 0,
+      duration: 150,
+      ease: "Cubic.easeOut",
+      onComplete: () => {
+        flash.destroy();
+      },
+    });
+
+    // Recoil animation
+    const originalX = this.myTurret.x;
+    const originalY = this.myTurret.y;
+    const recoilDistance = 5;
+
+    this.tweens.add({
+      targets: this.myTurret,
+      x: originalX - dirX * recoilDistance,
+      y: originalY - dirY * recoilDistance,
+      duration: 50,
+      yoyo: true,
+      ease: "Cubic.easeOut",
+    });
+
+    // Smoke puff
+    for (let i = 0; i < 3; i++) {
+      const smoke = this.add.circle(
+        muzzleX + (Math.random() - 0.5) * 10,
+        muzzleY + (Math.random() - 0.5) * 10,
+        5 + Math.random() * 5,
+        0x888888,
+        0.4
+      );
+      smoke.setDepth(105);
+
+      this.tweens.add({
+        targets: smoke,
+        scaleX: 2,
+        scaleY: 2,
+        alpha: 0,
+        x: smoke.x + dirX * 20 + (Math.random() - 0.5) * 20,
+        y: smoke.y + dirY * 20 - 20,
+        duration: 500 + Math.random() * 300,
+        ease: "Cubic.easeOut",
+        onComplete: () => {
+          smoke.destroy();
+        },
+      });
+    }
   }
 }

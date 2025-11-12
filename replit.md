@@ -71,7 +71,28 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - **Vite:** Fast development server and build tool (port 5000).
 - **SignalR Client:** @microsoft/signalr for real-time server communication.
 
-## Recent Changes (2025-11-12)
+## Recent Changes (2025-11-12 - Latest Session)
+- **Visual Effects System:**
+  - Added hit effects when bullets collide with fish: white flash circle + 12-particle burst radiating outward
+  - Added firing effects when cannon shoots: yellow muzzle flash, turret recoil animation, 3 smoke puffs
+  - All effects use Phaser tweens with proper cleanup to prevent memory leaks
+- **UI Improvements:**
+  - Repositioned bank balance display from below turret to left side of turret for better visibility
+  - Bank display now shows at turret center with gold styling matching bet display
+  - Betting controls (bet value, +/- buttons) positioned to the right of turret
+  - All UI elements horizontally aligned with turret center across all 6 seat positions
+- **Shot Cost System:**
+  - Implemented automatic credit deduction when firing cannon
+  - Shot cost equals current bet value (10-200 credits)
+  - Added credit check to prevent shooting with insufficient balance
+  - Real-time bank display updates via onCreditsChanged callback
+- **Fish Graphics Documentation:**
+  - Created comprehensive specification document (`FISH_GRAPHICS_SPECS.md`) for all 29 fish types
+  - Includes dimensions, descriptions, visual characteristics, and file naming conventions
+  - Organized by category: Small (0-5), Medium (6-11), Large (12-20), Special Items (21-24), Boss (25-28)
+  - Recommended sizes range from 64x64px (small fish) to 280x280px (boss fish)
+
+## Recent Changes (2025-11-12 - Earlier)
 - **Fixed MessagePack client-server mismatch**: Added MessagePackHubProtocol to client SignalR configuration. Server was sending MessagePack data but client was expecting JSON, causing fish IDs to appear as "undefined". Now both use MessagePack protocol for efficient binary communication.
 - **Fixed fish spawning logic**: Changed from "maintain exactly 1 boss/special" to periodic spawning with cooldowns (15s for special items, 30s for bosses) to prevent infinite respawn loops when fish died immediately
 - **Fixed path boundaries**: Corrected fish spawn points from 50 units outside arena to exactly at edges, constrained Bezier control points within bounds, ensured circular paths stay within arena
