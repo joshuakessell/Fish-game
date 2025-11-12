@@ -3,6 +3,9 @@ import { GameState } from '../systems/GameState';
 
 export default class LobbyScene extends Phaser.Scene {
   private gameState: GameState;
+  private selectedSeat: number | null = null;
+  private occupiedSeats: Set<number> = new Set();
+  private seatBoxes: Map<number, Phaser.GameObjects.Rectangle> = new Map();
   
   constructor() {
     super({ key: 'LobbyScene' });
@@ -18,55 +21,176 @@ export default class LobbyScene extends Phaser.Scene {
     graphics.fillRect(0, 0, 1800, 900);
     
     // Title
-    const title = this.add.text(900, 80, 'SELECT A ROOM', {
-      fontSize: '48px',
+    const title = this.add.text(900, 100, 'SELECT YOUR SEAT', {
+      fontSize: '56px',
       color: '#FFD700',
       fontStyle: 'bold',
     });
     title.setOrigin(0.5);
     
-    // TODO: Display room grid (2x2 layout showing 4 rooms)
-    // For now, create a single "Join Game" button
-    const joinButton = this.add.rectangle(900, 450, 400, 100, 0x0066cc);
-    joinButton.setInteractive({ useHandCursor: true });
+    const subtitle = this.add.text(900, 160, 'Room: match_1', {
+      fontSize: '28px',
+      color: '#FFFFFF',
+    });
+    subtitle.setOrigin(0.5);
     
-    const joinText = this.add.text(900, 450, 'Join Game (Solo)', {
-      fontSize: '36px',
-      color: '#FFF',
+    // Draw seat selection UI
+    this.createSeatSelection();
+    
+    // Join button (initially disabled)
+    const joinButton = this.add.rectangle(900, 750, 400, 80, 0x666666);
+    const joinText = this.add.text(900, 750, 'SELECT A SEAT', {
+      fontSize: '32px',
+      color: '#999999',
       fontStyle: 'bold',
     });
     joinText.setOrigin(0.5);
     
-    joinButton.on('pointerover', () => {
-      joinButton.setFillStyle(0x0088ff);
-    });
+    // Store references for later updates
+    (this as any).joinButton = joinButton;
+    (this as any).joinText = joinText;
+  }
+  
+  private createSeatSelection() {
+    // Seat positions matching game layout
+    const seatPositions = [
+      { seat: 0, x: 0.12 * 1800, y: 550, label: 'Bottom Left' },
+      { seat: 1, x: 0.5 * 1800, y: 550, label: 'Bottom Center' },
+      { seat: 2, x: 0.88 * 1800, y: 550, label: 'Bottom Right' },
+      { seat: 3, x: 0.12 * 1800, y: 350, label: 'Top Left' },
+      { seat: 4, x: 0.5 * 1800, y: 350, label: 'Top Center' },
+      { seat: 5, x: 0.88 * 1800, y: 350, label: 'Top Right' },
+    ];
     
-    joinButton.on('pointerout', () => {
-      joinButton.setFillStyle(0x0066cc);
-    });
-    
-    joinButton.on('pointerdown', () => {
-      this.handleJoinGame();
+    seatPositions.forEach(({ seat, x, y, label }) => {
+      const isOccupied = this.occupiedSeats.has(seat);
+      const isSelected = this.selectedSeat === seat;
+      
+      // Seat container
+      let color = 0x0066cc; // Available (blue)
+      if (isOccupied) color = 0x666666; // Occupied (gray)
+      if (isSelected) color = 0x00ff00; // Selected (green)
+      
+      const seatBox = this.add.rectangle(x, y, 200, 120, color, 0.8);
+      seatBox.setStrokeStyle(3, 0xFFD700);
+      
+      if (!isOccupied) {
+        this.seatBoxes.set(seat, seatBox);
+        
+        seatBox.setInteractive({ useHandCursor: true });
+        
+        seatBox.on('pointerover', () => {
+          if (this.selectedSeat !== seat) {
+            seatBox.setFillStyle(0x0088ff, 0.8);
+          }
+        });
+        
+        seatBox.on('pointerout', () => {
+          if (this.selectedSeat !== seat) {
+            seatBox.setFillStyle(0x0066cc, 0.8);
+          }
+        });
+        
+        seatBox.on('pointerdown', () => {
+          this.selectSeat(seat);
+        });
+      }
+      
+      // Seat number
+      const seatNumber = this.add.text(x, y - 20, `SEAT ${seat}`, {
+        fontSize: '28px',
+        color: '#FFD700',
+        fontStyle: 'bold',
+      });
+      seatNumber.setOrigin(0.5);
+      
+      // Status text
+      const statusText = isOccupied ? 'OCCUPIED' : 'AVAILABLE';
+      const statusColor = isOccupied ? '#FF6666' : '#66FF66';
+      const status = this.add.text(x, y + 20, statusText, {
+        fontSize: '18px',
+        color: statusColor,
+      });
+      status.setOrigin(0.5);
+      
+      // Position label
+      const posLabel = this.add.text(x, y + 45, label, {
+        fontSize: '14px',
+        color: '#AAAAAA',
+      });
+      posLabel.setOrigin(0.5);
     });
   }
   
+  private selectSeat(seat: number) {
+    console.log(`LobbyScene: Selected seat ${seat}`);
+    
+    // Update previously selected seat back to blue
+    if (this.selectedSeat !== null && this.selectedSeat !== seat) {
+      const previousSeatBox = this.seatBoxes.get(this.selectedSeat);
+      if (previousSeatBox) {
+        previousSeatBox.setFillStyle(0x0066cc, 0.8);
+      }
+    }
+    
+    // Update newly selected seat to green
+    const newSeatBox = this.seatBoxes.get(seat);
+    if (newSeatBox) {
+      newSeatBox.setFillStyle(0x00ff00, 0.8);
+    }
+    
+    // Track selected seat
+    this.selectedSeat = seat;
+    
+    // Enable join button
+    this.enableJoinButton();
+  }
+  
+  private enableJoinButton() {
+    const joinButton = (this as any).joinButton as Phaser.GameObjects.Rectangle;
+    const joinText = (this as any).joinText as Phaser.GameObjects.Text;
+    
+    if (joinButton && joinText && this.selectedSeat !== null) {
+      joinButton.setFillStyle(0x00cc00);
+      
+      joinButton.removeInteractive();
+      joinButton.setInteractive({ useHandCursor: true });
+      
+      joinText.setText('JOIN GAME');
+      joinText.setColor('#FFFFFF');
+      
+      joinButton.on('pointerover', () => {
+        joinButton.setFillStyle(0x00ff00);
+      });
+      
+      joinButton.on('pointerout', () => {
+        joinButton.setFillStyle(0x00cc00);
+      });
+      
+      joinButton.on('pointerdown', () => {
+        this.handleJoinGame();
+      });
+    }
+  }
+  
   private async handleJoinGame() {
-    console.log('LobbyScene: Joining game...');
+    if (this.selectedSeat === null) {
+      console.error('LobbyScene: No seat selected');
+      return;
+    }
     
-    // For now, join room "match_1" at seat 0 (solo mode)
+    console.log(`LobbyScene: Joining game at seat ${this.selectedSeat}...`);
+    
     const roomId = 'match_1';
-    const seat = 0;
-    
-    const joined = await this.gameState.joinRoom(roomId, seat);
+    const joined = await this.gameState.joinRoom(roomId, this.selectedSeat);
     
     if (!joined) {
       console.error('LobbyScene: Failed to join room');
-      // TODO: Show error message to user
       return;
     }
     
     console.log('LobbyScene: Successfully joined room, starting game');
     this.scene.start('GameScene');
-    this.scene.launch('UIScene'); // Launch UI overlay
+    this.scene.launch('UIScene');
   }
 }
