@@ -111,9 +111,9 @@ public class LobbyManager
         
         for (int i = 0; i < roomsNeeded; i++)
         {
-            // Create new match by calling FindOrCreateMatch with a placeholder player ID
-            var placeholderMatch = _matchManager.FindOrCreateMatch($"_placeholder_{Guid.NewGuid()}");
-            if (placeholderMatch != null)
+            // Create new empty match without any placeholder players
+            var emptyMatch = _matchManager.CreateEmptyMatch();
+            if (emptyMatch != null)
             {
                 var seatOccupancy = new SeatOccupancy[6];
                 for (int j = 0; j < 6; j++)
@@ -123,7 +123,7 @@ public class LobbyManager
                 
                 existingRooms.Add(new RoomInfo
                 {
-                    MatchId = placeholderMatch.MatchId,
+                    MatchId = emptyMatch.MatchId,
                     PlayerCount = 0,
                     MaxPlayers = MatchManager.MAX_PLAYERS_PER_MATCH,
                     SeatOccupancy = seatOccupancy

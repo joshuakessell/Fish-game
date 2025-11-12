@@ -42,6 +42,22 @@ public class MatchManager
         return null;
     }
 
+    public MatchInstance? CreateEmptyMatch()
+    {
+        // Create new match without adding any players
+        var matchId = $"match_{Interlocked.Increment(ref _matchIdCounter)}";
+        var newMatch = new MatchInstance(matchId, this, _hubContext);
+        
+        if (_activeMatches.TryAdd(matchId, newMatch))
+        {
+            newMatch.Start();
+            Console.WriteLine($"Created empty match: {matchId}");
+            return newMatch;
+        }
+
+        return null;
+    }
+
     public MatchInstance? GetMatch(string matchId)
     {
         _activeMatches.TryGetValue(matchId, out var match);
