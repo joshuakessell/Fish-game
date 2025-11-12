@@ -13,6 +13,9 @@ export class BettingUI extends Phaser.GameObjects.Container {
   private minusHitArea!: Phaser.GameObjects.Zone;
   private plusHitArea!: Phaser.GameObjects.Zone;
   
+  private debounceTimer: number | null = null;
+  private readonly DEBOUNCE_MS = 90;
+  
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y);
     this.gameState = GameState.getInstance();
@@ -69,6 +72,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
       if (this.gameState.decreaseBet()) {
         this.updateBetDisplay();
         this.playButtonFeedback(this.minusButton, -100, 0);
+        this.sendBetValueToServer();
       }
     });
     
@@ -129,6 +133,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
       if (this.gameState.increaseBet()) {
         this.updateBetDisplay();
         this.playButtonFeedback(this.plusButton, 100, 0);
+        this.sendBetValueToServer();
       }
     });
     
@@ -202,6 +207,22 @@ export class BettingUI extends Phaser.GameObjects.Container {
   
   private formatNumber(num: number): string {
     return num.toLocaleString('en-US');
+  }
+  
+  private sendBetValueToServer() {
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+    }
+    
+    this.debounceTimer = window.setTimeout(() => {
+      if (this.gameState.connection && this.gameState.isConnected) {
+        this.gameState.connection.invoke('SetBetValue', this.gameState.currentBet).catch((err) => {
+          console.error('Failed to send bet value to server:', err);
+        });
+        console.log(`Sent bet value to server: ${this.gameState.currentBet}`);
+      }
+      this.debounceTimer = null;
+    }, this.DEBOUNCE_MS);
   }
   
   private playButtonFeedback(button: Phaser.GameObjects.Graphics, x: number, y: number) {

@@ -119,6 +119,16 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.onFishRemoved = (fishId: number) => {
       this.fishSpriteManager.removeFish(fishId);
     };
+    
+    this.gameState.onPayoutReceived = (fishId: string, payout: number) => {
+      this.showCreditPopup(fishId, payout);
+    };
+    
+    this.gameState.onCreditsChanged = () => {
+      if (this.bettingUI) {
+        this.bettingUI.updateBankDisplay();
+      }
+    };
   }
   
   private cleanupSignalR() {
@@ -129,6 +139,8 @@ export default class GameScene extends Phaser.Scene {
     
     this.gameState.onFishSpawned = null;
     this.gameState.onFishRemoved = null;
+    this.gameState.onPayoutReceived = null;
+    this.gameState.onCreditsChanged = null;
     
     if (this.fishSpriteManager) {
       this.fishSpriteManager.clear();
@@ -282,34 +294,27 @@ export default class GameScene extends Phaser.Scene {
   }
   
   private handleShoot(x: number, y: number) {
-    if (this.clientBullets.size >= this.MAX_BULLETS_PER_PLAYER) {
-      console.log('GameScene: Max bullets reached, cannot shoot');
-      return;
-    }
-    
     if (!this.turretPosition) {
       console.error('GameScene: Turret position not set');
       return;
     }
     
-    const angle = Phaser.Math.Angle.Between(
-      this.turretPosition.x,
-      this.turretPosition.y,
-      x,
-      y
-    );
+    const dx = x - this.turretPosition.x;
+    const dy = y - this.turretPosition.y;
     
-    const velocityX = Math.cos(angle) * this.BULLET_SPEED;
-    const velocityY = Math.sin(angle) * this.BULLET_SPEED;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    if (length === 0) return;
     
-    this.createBullet(
-      this.turretPosition.x,
-      this.turretPosition.y,
-      velocityX,
-      velocityY
-    );
+    const dirX = dx / length;
+    const dirY = dy / length;
     
-    console.log(`GameScene: Fired bullet at angle ${angle.toFixed(2)} rad`);
+    if (this.gameState.connection && this.gameState.isConnected) {
+      this.gameState.connection.invoke('Fire', this.turretPosition.x, this.turretPosition.y, dirX, dirY)
+        .catch((err) => {
+          console.error('Failed to send Fire command:', err);
+        });
+      console.log(`Fired from (${this.turretPosition.x}, ${this.turretPosition.y}) in direction (${dirX.toFixed(2)}, ${dirY.toFixed(2)})`);
+    }
   }
   
   private createBullet(x: number, y: number, velocityX: number, velocityY: number) {
@@ -368,5 +373,46 @@ export default class GameScene extends Phaser.Scene {
         this.clientBullets.delete(id);
       }
     });
+  }
+  
+  private showCreditPopup(fishId: string, payout: number) {
+    const position = this.gameState.getFishPosition(parseInt(fishId), this.gameState.currentTick);
+    
+    let x = 900;
+    let y = 450;
+    
+    if (position) {
+      x = position[0];
+      y = position[1];
+    } else {
+      const fishData = this.gameState.fish.get(parseInt(fishId));
+      if (fishData) {
+        x = fishData.x;
+        y = fishData.y;
+      }
+    }
+    
+    const popupText = this.add.text(x, y, `+${payout}`, {
+      fontSize: '32px',
+      color: '#FFD700',
+      fontStyle: 'bold',
+      stroke: '#8B6914',
+      strokeThickness: 4,
+    });
+    popupText.setOrigin(0.5, 0.5);
+    popupText.setDepth(200);
+    
+    this.tweens.add({
+      targets: popupText,
+      y: y - 100,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        popupText.destroy();
+      },
+    });
+    
+    console.log(`Credit popup: +${payout} at fish ${fishId}`);
   }
 }

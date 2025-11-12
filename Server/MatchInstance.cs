@@ -5,6 +5,7 @@ using OceanKing.Server.Entities;
 using OceanKing.Server.Managers;
 using OceanKing.Server.Models;
 using OceanKing.Hubs;
+using MessagePack;
 
 namespace OceanKing.Server;
 
@@ -47,6 +48,9 @@ public class MatchInstance
     // Play area boundaries (must match FishManager)
     private const int ARENA_WIDTH = 1800;
     private const int ARENA_HEIGHT = 900;
+    
+    // Payout events for broadcasting
+    private List<KillPayoutEvent> _payoutEvents = new();
 
     public MatchInstance(string matchId, MatchManager matchManager, IHubContext<GameHub> hubContext, bool isSolo = false)
     {
@@ -132,6 +136,9 @@ public class MatchInstance
 
     private void ExecuteTick(float deltaTime)
     {
+        // Clear payout events from previous tick
+        _payoutEvents.Clear();
+        
         // Step 1: Process all pending commands
         while (_commandQueue.TryDequeue(out var command))
         {
@@ -287,6 +294,13 @@ public class MatchInstance
         player.TotalKills++;
 
         _fishManager.RemoveFish(kill.FishId);
+        
+        _payoutEvents.Add(new KillPayoutEvent
+        {
+            FishId = kill.FishId,
+            Payout = (int)payout,
+            PlayerSlot = player.PlayerSlot
+        });
 
         Console.WriteLine($"Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits (bet: {projectile.BetValue}, x{multiplier})");
     }
@@ -417,7 +431,8 @@ public class MatchInstance
                 BossTypeId = s.BossTypeId,
                 EffectType = s.EffectType.ToString(),
                 CurrentStep = s.CurrentStep
-            }).ToList()
+            }).ToList(),
+            PayoutEvents = _payoutEvents.ToList()
         };
 
         foreach (var player in _playerManager.GetAllPlayers())
@@ -505,63 +520,132 @@ public enum CommandType
     SetBetValue
 }
 
+[MessagePackObject]
 public class StateDelta
 {
+    [Key(0)]
     public long TickId { get; set; }
+    
+    [Key(1)]
     public int RoundNumber { get; set; }
+    
+    [Key(2)]
     public long TimeRemainingTicks { get; set; }
+    
+    [Key(3)]
     public bool IsRoundTransitioning { get; set; }
+    
+    [Key(4)]
     public List<PlayerState> Players { get; set; } = new();
+    
+    [Key(5)]
     public List<FishState> Fish { get; set; } = new();
+    
+    [Key(6)]
     public List<ProjectileState> Projectiles { get; set; } = new();
+    
+    [Key(7)]
     public List<BossSequenceState> ActiveBossSequences { get; set; } = new();
+    
+    [Key(8)]
     public List<InteractionState> PendingInteractions { get; set; } = new();
+    
+    [Key(9)]
+    public List<KillPayoutEvent> PayoutEvents { get; set; } = new();
 }
 
+[MessagePackObject]
 public class BossSequenceState
 {
+    [Key(0)]
     public string SequenceId { get; set; } = string.Empty;
+    
+    [Key(1)]
     public int BossTypeId { get; set; }
+    
+    [Key(2)]
     public string EffectType { get; set; } = string.Empty;
+    
+    [Key(3)]
     public int CurrentStep { get; set; }
 }
 
+[MessagePackObject]
 public class InteractionState
 {
+    [Key(0)]
     public string InteractionId { get; set; } = string.Empty;
+    
+    [Key(1)]
     public string PlayerId { get; set; } = string.Empty;
+    
+    [Key(2)]
     public string InteractionType { get; set; } = string.Empty;
+    
+    [Key(3)]
     public Dictionary<string, object> InteractionData { get; set; } = new();
 }
 
+[MessagePackObject]
 public class PlayerState
 {
+    [Key(0)]
     public string PlayerId { get; set; } = string.Empty;
+    
+    [Key(1)]
     public string DisplayName { get; set; } = string.Empty;
+    
+    [Key(2)]
     public decimal Credits { get; set; }
+    
+    [Key(3)]
     public int CannonLevel { get; set; }
+    
+    [Key(4)]
     public int PlayerSlot { get; set; }
+    
+    [Key(5)]
     public int TotalKills { get; set; }
 }
 
+[MessagePackObject]
 public class FishState
 {
+    [Key(0)]
     public string FishId { get; set; } = string.Empty;
+    
+    [Key(1)]
     public int TypeId { get; set; }
+    
+    [Key(2)]
     public float X { get; set; }  // Only sent for legacy/fallback
+    
+    [Key(3)]
     public float Y { get; set; }  // Only sent for legacy/fallback
     
-    // Path-based movement data (sent once on spawn)
+    [Key(4)]
     public Models.PathData? Path { get; set; }
+    
+    [Key(5)]
     public bool IsNewSpawn { get; set; } // True if spawned this tick
 }
 
+[MessagePackObject]
 public class ProjectileState
 {
+    [Key(0)]
     public string ProjectileId { get; set; } = string.Empty;
+    
+    [Key(1)]
     public float X { get; set; }
+    
+    [Key(2)]
     public float Y { get; set; }
+    
+    [Key(3)]
     public float DirectionX { get; set; }
+    
+    [Key(4)]
     public float DirectionY { get; set; }
 }
 
@@ -569,4 +653,17 @@ public class KillEvent
 {
     public string FishId { get; set; } = string.Empty;
     public string ProjectileId { get; set; } = string.Empty;
+}
+
+[MessagePackObject]
+public class KillPayoutEvent
+{
+    [Key(0)]
+    public string FishId { get; set; } = string.Empty;
+    
+    [Key(1)]
+    public int Payout { get; set; }
+    
+    [Key(2)]
+    public int PlayerSlot { get; set; }
 }

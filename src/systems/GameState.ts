@@ -42,6 +42,8 @@ export class GameState {
   
   public onFishSpawned: ((fishId: number, typeId: number) => void) | null = null;
   public onFishRemoved: ((fishId: number) => void) | null = null;
+  public onPayoutReceived: ((fishId: string, payout: number) => void) | null = null;
+  public onCreditsChanged: (() => void) | null = null;
   
   private constructor() {}
   
@@ -194,6 +196,26 @@ export class GameState {
       if (update.players) {
         for (const playerData of update.players) {
           this.players.set(playerData.slot, playerData);
+          
+          if (playerData.slot === this.myPlayerSlot && this.playerAuth) {
+            const oldCredits = this.playerAuth.credits;
+            const newCredits = playerData.credits;
+            
+            if (oldCredits !== newCredits) {
+              this.playerAuth.credits = newCredits;
+              if (this.onCreditsChanged) {
+                this.onCreditsChanged();
+              }
+            }
+          }
+        }
+      }
+      
+      if (update.payoutEvents) {
+        for (const event of update.payoutEvents) {
+          if (event.playerSlot === this.myPlayerSlot && this.onPayoutReceived) {
+            this.onPayoutReceived(event.fishId, event.payout);
+          }
         }
       }
     });
