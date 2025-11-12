@@ -1,5 +1,5 @@
-import { PathData } from './paths/PathData';
-import { PathComputer } from './paths/PathComputer';
+import { PathData } from "./paths/PathData";
+import { PathComputer } from "./paths/PathComputer";
 
 /**
  * Manages fish paths and computes positions per frame
@@ -28,7 +28,10 @@ export class FishPathManager {
    * @param currentTick Current game tick
    * @returns Position [x, y] or null if no path or unable to compute
    */
-  getFishPosition(fishId: number, currentTick: number): [number, number] | null {
+  getFishPosition(
+    fishId: number,
+    currentTick: number,
+  ): [number, number] | null {
     const pathData = this.fishPaths.get(fishId);
     if (!pathData) {
       return null;

@@ -1,4 +1,4 @@
-import { PathData, PathType } from './PathData';
+import { PathData, PathType } from "./PathData";
 
 /**
  * Sinusoidal wave pattern - fish moves in a wave
@@ -22,7 +22,7 @@ export class SinePath {
     start: [number, number],
     end: [number, number],
     amplitude: number,
-    frequency: number
+    frequency: number,
   ) {
     this.fishId = fishId;
     this.seed = seed;
@@ -68,7 +68,7 @@ export class SinePath {
   getPathData(): PathData {
     const distance = Math.sqrt(
       Math.pow(this.end[0] - this.start[0], 2) +
-      Math.pow(this.end[1] - this.start[1], 2)
+        Math.pow(this.end[1] - this.start[1], 2),
     );
 
     return {
@@ -77,13 +77,9 @@ export class SinePath {
       seed: this.seed,
       startTick: this.startTick,
       speed: this.speed,
-      controlPoints: [
-        this.start,
-        this.end,
-        [this.amplitude, this.frequency]
-      ],
+      controlPoints: [this.start, this.end, [this.amplitude, this.frequency]],
       duration: distance / this.speed,
-      loop: false
+      loop: false,
     };
   }
 }

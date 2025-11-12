@@ -16,9 +16,9 @@ export interface PathData {
 }
 
 export enum PathType {
-  Linear = 0,      // Straight line movement
-  Sine = 1,        // Sinusoidal wave pattern
-  Bezier = 2,      // Cubic Bezier curve
-  Circular = 3,    // Circular/elliptical motion
-  MultiSegment = 4 // Multiple path segments chained together
+  Linear = 0, // Straight line movement
+  Sine = 1, // Sinusoidal wave pattern
+  Bezier = 2, // Cubic Bezier curve
+  Circular = 3, // Circular/elliptical motion
+  MultiSegment = 4, // Multiple path segments chained together
 }

@@ -1,4 +1,4 @@
-import { PathData } from '../systems/paths/PathData';
+import { PathData } from "../systems/paths/PathData";
 
 export interface FishData {
   id: number;

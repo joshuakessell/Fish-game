@@ -1,4 +1,4 @@
-import { PathData, PathType } from './PathData';
+import { PathData, PathType } from "./PathData";
 
 /**
  * Circular or elliptical movement pattern
@@ -24,7 +24,7 @@ export class CircularPath {
     radiusX: number,
     radiusY: number,
     startAngle: number,
-    clockwise: boolean
+    clockwise: boolean,
   ) {
     this.fishId = fishId;
     this.seed = seed;
@@ -42,9 +42,9 @@ export class CircularPath {
    * Matches C# CircularPath.GetPosition (lines 32-43)
    */
   getPosition(t: number): [number, number] {
-    let angle = this.startAngle + (t * Math.PI * 2);
+    let angle = this.startAngle + t * Math.PI * 2;
     if (this.clockwise) {
-      angle = this.startAngle - (t * Math.PI * 2);
+      angle = this.startAngle - t * Math.PI * 2;
     }
 
     const x = this.center[0] + Math.cos(angle) * this.radiusX;
@@ -64,7 +64,8 @@ export class CircularPath {
   getPathData(): PathData {
     const a = this.radiusX;
     const b = this.radiusY;
-    const circumference = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+    const circumference =
+      Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
 
     return {
       fishId: this.fishId,
@@ -75,10 +76,10 @@ export class CircularPath {
       controlPoints: [
         this.center,
         [this.radiusX, this.radiusY],
-        [this.startAngle, this.clockwise ? 1 : 0]
+        [this.startAngle, this.clockwise ? 1 : 0],
       ],
       duration: circumference / this.speed,
-      loop: true
+      loop: true,
     };
   }
 }

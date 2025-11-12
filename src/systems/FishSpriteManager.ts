@@ -1,6 +1,6 @@
-import Phaser from 'phaser';
-import { FishSprite } from '../entities/FishSprite';
-import { GameState } from './GameState';
+import Phaser from "phaser";
+import { FishSprite } from "../entities/FishSprite";
+import { GameState } from "./GameState";
 
 export class FishSpriteManager {
   private fishSprites: Map<number, FishSprite> = new Map();
@@ -19,7 +19,10 @@ export class FishSpriteManager {
     }
 
     // Use server tick for initial spawn position
-    const initialPosition = this.gameState.getFishPosition(fishId, this.gameState.currentTick);
+    const initialPosition = this.gameState.getFishPosition(
+      fishId,
+      this.gameState.currentTick,
+    );
     if (!initialPosition) {
       console.warn(`Cannot spawn fish ${fishId}: no position available`);
       return;
@@ -30,19 +33,21 @@ export class FishSpriteManager {
       fishId,
       typeId,
       initialPosition[0],
-      initialPosition[1]
+      initialPosition[1],
     );
 
     this.fishSprites.set(fishId, sprite);
-    console.log(`Spawned fish ${fishId} (type ${typeId}) at (${initialPosition[0]}, ${initialPosition[1]})`);
+    console.log(
+      `Spawned fish ${fishId} (type ${typeId}) at (${initialPosition[0]}, ${initialPosition[1]})`,
+    );
   }
 
   public updateAllFish(tick: number): void {
-    for (const [fishId, sprite] of this.fishSprites) {
+    for (const sprite of this.fishSprites.values()) {
       sprite.updatePosition(tick);
     }
   }
-  
+
   public renderAllFish(alpha: number): void {
     for (const sprite of this.fishSprites.values()) {
       sprite.render(alpha);

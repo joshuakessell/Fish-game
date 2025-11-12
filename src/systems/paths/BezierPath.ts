@@ -1,4 +1,4 @@
-import { PathData, PathType } from './PathData';
+import { PathData, PathType } from "./PathData";
 
 /**
  * Cubic Bezier curve for smooth, curved fish movement
@@ -22,7 +22,7 @@ export class BezierPath {
     p0: [number, number],
     p1: [number, number],
     p2: [number, number],
-    p3: [number, number]
+    p3: [number, number],
   ) {
     this.fishId = fishId;
     this.seed = seed;
@@ -46,15 +46,17 @@ export class BezierPath {
     const uuu = uu * u;
     const ttt = tt * t;
 
-    const x = uuu * this.p0[0] +
-              3 * uu * t * this.p1[0] +
-              3 * u * tt * this.p2[0] +
-              ttt * this.p3[0];
+    const x =
+      uuu * this.p0[0] +
+      3 * uu * t * this.p1[0] +
+      3 * u * tt * this.p2[0] +
+      ttt * this.p3[0];
 
-    const y = uuu * this.p0[1] +
-              3 * uu * t * this.p1[1] +
-              3 * u * tt * this.p2[1] +
-              ttt * this.p3[1];
+    const y =
+      uuu * this.p0[1] +
+      3 * uu * t * this.p1[1] +
+      3 * u * tt * this.p2[1] +
+      ttt * this.p3[1];
 
     return [x, y];
   }
@@ -78,7 +80,7 @@ export class BezierPath {
       speed: this.speed,
       controlPoints: [this.p0, this.p1, this.p2, this.p3],
       duration: arcLength / this.speed,
-      loop: false
+      loop: false,
     };
   }
 

@@ -1,13 +1,13 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
-    super({ key: 'BootScene' });
+    super({ key: "BootScene" });
   }
 
   preload() {
-    console.log('BootScene: Preloading assets...');
-    
+    console.log("BootScene: Preloading assets...");
+
     // TODO: Load sprite sheets, texture atlases, sounds
     // this.load.atlas('fish', 'assets/fish.png', 'assets/fish.json');
     // this.load.image('turret', 'assets/turret.png');
@@ -15,9 +15,9 @@ export default class BootScene extends Phaser.Scene {
   }
 
   create() {
-    console.log('BootScene: Assets loaded, transitioning to Login');
-    
+    console.log("BootScene: Assets loaded, transitioning to Login");
+
     // Transition to login scene
-    this.scene.start('LoginScene');
+    this.scene.start("LoginScene");
   }
 }

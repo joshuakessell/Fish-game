@@ -1,4 +1,4 @@
-import { PathData, PathType } from './PathData';
+import { PathData, PathType } from "./PathData";
 
 /**
  * Straight line movement from start to end point
@@ -18,7 +18,7 @@ export class LinearPath {
     startTick: number,
     speed: number,
     start: [number, number],
-    end: [number, number]
+    end: [number, number],
   ) {
     this.fishId = fishId;
     this.seed = seed;
@@ -49,7 +49,7 @@ export class LinearPath {
   getPathData(): PathData {
     const distance = Math.sqrt(
       Math.pow(this.end[0] - this.start[0], 2) +
-      Math.pow(this.end[1] - this.start[1], 2)
+        Math.pow(this.end[1] - this.start[1], 2),
     );
 
     return {
@@ -60,7 +60,7 @@ export class LinearPath {
       speed: this.speed,
       controlPoints: [this.start, this.end],
       duration: distance / this.speed,
-      loop: false
+      loop: false,
     };
   }
 }
