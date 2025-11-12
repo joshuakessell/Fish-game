@@ -26,6 +26,11 @@ export class GameState {
   public players: Map<number, PlayerData> = new Map();
   public currentTick: number = 0;
   
+  // Tick synchronization
+  public tickDrift: number = 0;
+  private lastServerTick: number = 0;
+  private readonly TICK_DRIFT_THRESHOLD = 5;
+  
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
   
@@ -143,7 +148,15 @@ export class GameState {
     
     this.connection.on('StateDelta', (update: any) => {
       if (update.tick !== undefined) {
-        this.currentTick = update.tick;
+        this.lastServerTick = update.tick;
+        this.tickDrift = update.tick - this.currentTick;
+        
+        if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
+          const adjustment = Math.sign(this.tickDrift) * Math.ceil(Math.abs(this.tickDrift) / 2);
+          this.currentTick += adjustment;
+          this.tickDrift = update.tick - this.currentTick;
+          console.log(`Tick sync: drift=${this.tickDrift}, adjusted client tick by ${adjustment} to ${this.currentTick}`);
+        }
       }
       
       if (update.fish) {

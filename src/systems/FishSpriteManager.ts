@@ -42,6 +42,12 @@ export class FishSpriteManager {
       sprite.updatePosition(tick);
     }
   }
+  
+  public renderAllFish(alpha: number): void {
+    for (const sprite of this.fishSprites.values()) {
+      sprite.render(alpha);
+    }
+  }
 
   public removeFish(fishId: number): void {
     const sprite = this.fishSprites.get(fishId);

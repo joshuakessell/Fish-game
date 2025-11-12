@@ -10,7 +10,7 @@ export default class GameScene extends Phaser.Scene {
   private accumulator = 0;
   private readonly TICK_RATE = 30;
   private readonly MS_PER_TICK = 1000 / 30;
-  private currentTick = 0;
+  private readonly MAX_DELTA = 100;
   
   private debugText!: Phaser.GameObjects.Text;
   private fpsText!: Phaser.GameObjects.Text;
@@ -121,15 +121,18 @@ export default class GameScene extends Phaser.Scene {
   }
   
   update(time: number, delta: number) {
-    this.accumulator += delta;
+    const clampedDelta = Math.min(delta, this.MAX_DELTA);
+    this.accumulator += clampedDelta;
     
     while (this.accumulator >= this.MS_PER_TICK) {
-      this.fixedUpdate(this.currentTick);
-      this.currentTick++;
+      this.fixedUpdate(this.gameState.currentTick);
+      this.gameState.currentTick++;
       this.accumulator -= this.MS_PER_TICK;
     }
     
     const tickProgress = this.accumulator / this.MS_PER_TICK;
+    
+    this.fishSpriteManager.renderAllFish(tickProgress);
     
     this.updateDebugOverlay(tickProgress);
   }
@@ -143,14 +146,16 @@ export default class GameScene extends Phaser.Scene {
     const activeFish = this.fishSpriteManager.getActiveFishCount();
     const pathMode = this.gameState.fishPathManager.getTrackedFishCount() > 0 ? 'ON' : 'OFF';
     const accumulatorDrift = this.accumulator.toFixed(2);
+    const tickDrift = this.gameState.tickDrift;
     
     this.debugText.setText([
-      `Current Tick: ${this.currentTick}`,
+      `Current Tick: ${this.gameState.currentTick}`,
       `FPS: ${fps}`,
       `Active Fish: ${activeFish}`,
       `Path Mode: ${pathMode}`,
       `Accumulator: ${accumulatorDrift}ms`,
       `Tick Progress: ${(tickProgress * 100).toFixed(1)}%`,
+      `Tick Drift: ${tickDrift}`,
     ]);
   }
   
