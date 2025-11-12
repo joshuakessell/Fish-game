@@ -277,8 +277,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private createBettingUI(seat: number) {
-    const isBottomSeat = seat < 3;
-    const offsetY = isBottomSeat ? -60 : 60;
+    const offsetY = 60;
 
     this.bettingUI = new BettingUI(
       this,

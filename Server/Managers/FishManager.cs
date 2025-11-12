@@ -14,6 +14,12 @@ public class FishManager
     private long _lastSpawnTick = 0;
     private const int MIN_TICKS_BETWEEN_SPAWNS = 5; // Spawn every ~0.16 seconds
     
+    // Special/Boss spawn cooldowns (prevent infinite spawning if fish dies immediately)
+    private long _lastSpecialItemSpawnTick = 0;
+    private long _lastBossSpawnTick = 0;
+    private const int MIN_TICKS_BETWEEN_SPECIAL_SPAWNS = 90; // 3 seconds cooldown at 30 TPS
+    private const int MIN_TICKS_BETWEEN_BOSS_SPAWNS = 90; // 3 seconds cooldown at 30 TPS
+    
     // Limit rare fish
     private const int MAX_LARGE_FISH = 3;
     private const int MAX_BOSS_FISH = 1;
@@ -46,8 +52,8 @@ public class FishManager
         int specialItemCount = _activeFish.Values.Count(f => f.TypeId >= 21 && f.TypeId <= 24);
         int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 25 && f.TypeId <= 28);
         
-        // Spawn Special Item if missing
-        if (specialItemCount == 0)
+        // Spawn Special Item if missing (WITH COOLDOWN to prevent infinite spawning)
+        if (specialItemCount == 0 && (currentTick - _lastSpecialItemSpawnTick) >= MIN_TICKS_BETWEEN_SPECIAL_SPAWNS)
         {
             if (_activeFish.Count >= MAX_FISH_COUNT)
             {
@@ -67,11 +73,12 @@ public class FishManager
             // Spawn random Special Item (21-24)
             int specialTypeId = Random.Shared.Next(21, 25);
             SpawnSingleFish(specialTypeId, currentTick);
+            _lastSpecialItemSpawnTick = currentTick;
             Console.WriteLine($"[SPECIAL] Spawned Special Item type {specialTypeId}");
         }
         
-        // Spawn Boss Fish if missing
-        if (bossFishCount == 0)
+        // Spawn Boss Fish if missing (WITH COOLDOWN to prevent infinite spawning)
+        if (bossFishCount == 0 && (currentTick - _lastBossSpawnTick) >= MIN_TICKS_BETWEEN_BOSS_SPAWNS)
         {
             if (_activeFish.Count >= MAX_FISH_COUNT)
             {
@@ -91,6 +98,7 @@ public class FishManager
             // Spawn random Boss Fish (25-28)
             int bossTypeId = Random.Shared.Next(25, 29);
             SpawnSingleFish(bossTypeId, currentTick);
+            _lastBossSpawnTick = currentTick;
             Console.WriteLine($"[BOSS] Spawned Boss Fish type {bossTypeId}");
         }
 
