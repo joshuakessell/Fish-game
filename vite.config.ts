@@ -12,12 +12,12 @@ export default defineConfig({
     proxy: {
       // Proxy SignalR and API calls to C# backend
       '/gamehub': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         ws: true,
         changeOrigin: true,
       },
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
     },

@@ -47,8 +47,8 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "dotnet run --project OceanKing.csproj --urls=http://0.0.0.0:8000"
-waitForPort = 8000
+args = "dotnet run --project OceanKing.csproj --urls=http://0.0.0.0:8080"
+waitForPort = 8080
 
 [[workflows.workflow]]
 name = "Phaser Frontend"
@@ -65,6 +65,10 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 9999
+externalPort = 9000
 
 [[ports]]
 localPort = 32959

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OceanKing.Server.Data;
 using OceanKing.Server.Services;
 using System.Security.Claims;
 
