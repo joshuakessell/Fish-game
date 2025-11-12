@@ -3,27 +3,28 @@ namespace OceanKing.Server.Systems.Paths;
 /// <summary>
 /// Deterministic random number generator using Linear Congruential Generator (LCG)
 /// Same algorithm will be implemented in TypeScript to ensure identical results
+/// Uses explicit 64-bit math to avoid overflow differences between platforms
 /// </summary>
 public class SeededRandom
 {
-    private const int A = 1103515245;
-    private const int C = 12345;
-    private const int M = 2147483648; // 2^31
+    private const long A = 1103515245L;
+    private const long C = 12345L;
+    private const long M = 2147483648L; // 2^31
     
-    private int _seed;
+    private long _seed;
     
     public SeededRandom(int seed)
     {
-        _seed = seed;
+        _seed = (long)seed & 0x7FFFFFFFL; // Ensure positive seed
     }
     
     /// <summary>
-    /// Get next random integer
+    /// Get next random integer (0 to 2^31-1)
     /// </summary>
     public int Next()
     {
         _seed = (A * _seed + C) % M;
-        return _seed;
+        return (int)_seed;
     }
     
     /// <summary>

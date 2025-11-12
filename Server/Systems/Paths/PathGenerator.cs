@@ -1,5 +1,6 @@
 using OceanKing.Server.Data;
 using OceanKing.Server.Models;
+using OceanKing.Server.Entities;
 
 namespace OceanKing.Server.Systems.Paths;
 
@@ -15,7 +16,7 @@ public class PathGenerator
     /// <summary>
     /// Generate a path for a fish based on its type
     /// </summary>
-    public static IPath GeneratePathForFish(int fishId, FishType fishType, int currentTick)
+    public static IPath GeneratePathForFish(int fishId, FishDefinition fishType, int currentTick)
     {
         // Generate unique seed for this fish
         int seed = GenerateSeed(fishId, currentTick);
@@ -24,10 +25,12 @@ public class PathGenerator
         // Determine path type based on fish category
         return fishType.Category switch
         {
-            "Common" => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
-            "Rare" => GenerateBezierPath(fishId, seed, currentTick, fishType, rng),
-            "Special" => GenerateCircularOrComplexPath(fishId, seed, currentTick, fishType, rng),
-            "Boss" => GenerateBossPath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.SmallFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.MediumFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.LargeFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.HighValueFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.SpecialItems => GenerateCircularOrComplexPath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.BossFish => GenerateBossPath(fishId, seed, currentTick, fishType, rng),
             _ => GenerateLinearPath(fishId, seed, currentTick, fishType, rng)
         };
     }
@@ -35,10 +38,12 @@ public class PathGenerator
     private static int GenerateSeed(int fishId, int tick)
     {
         // Combine fish ID, tick, and counter for unique seed
-        return (fishId * 31 + tick * 17 + _seedCounter++) % int.MaxValue;
+        // Use 64-bit arithmetic to prevent overflow before modulo
+        long combined = ((long)fishId * 31L + (long)tick * 17L + _seedCounter++);
+        return (int)(combined % int.MaxValue);
     }
     
-    private static IPath GenerateLinearOrSinePath(int fishId, int seed, int startTick, FishType fishType, SeededRandom rng)
+    private static IPath GenerateLinearOrSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
     {
         // 50% chance for linear, 50% for sine wave
         bool useSine = rng.NextFloat() > 0.5f;
@@ -50,21 +55,21 @@ public class PathGenerator
         {
             float amplitude = rng.NextFloat(20f, 50f);
             float frequency = rng.NextFloat(2f, 5f);
-            return new SinePath(fishId, seed, startTick, fishType.Speed, start, end, amplitude, frequency);
+            return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, amplitude, frequency);
         }
         else
         {
-            return new LinearPath(fishId, seed, startTick, fishType.Speed, start, end);
+            return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, end);
         }
     }
     
-    private static IPath GenerateLinearPath(int fishId, int seed, int startTick, FishType fishType, SeededRandom rng)
+    private static IPath GenerateLinearPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
     {
         var (start, end) = GenerateEdgeToEdgePoints(rng);
-        return new LinearPath(fishId, seed, startTick, fishType.Speed, start, end);
+        return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, end);
     }
     
-    private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishType fishType, SeededRandom rng)
+    private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
     {
         // Generate start and end points on edges
         var (start, end) = GenerateEdgeToEdgePoints(rng);
@@ -82,10 +87,10 @@ public class PathGenerator
             end[1] + rng.NextFloat(-200f, 200f)
         };
         
-        return new BezierPath(fishId, seed, startTick, fishType.Speed, start, p1, p2, end);
+        return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, p1, p2, end);
     }
     
-    private static IPath GenerateCircularOrComplexPath(int fishId, int seed, int startTick, FishType fishType, SeededRandom rng)
+    private static IPath GenerateCircularOrComplexPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
     {
         // 70% Bezier, 30% Circular for variety
         if (rng.NextFloat() > 0.3f)
@@ -105,10 +110,10 @@ public class PathGenerator
         float startAngle = rng.NextFloat(0f, MathF.PI * 2);
         bool clockwise = rng.NextFloat() > 0.5f;
         
-        return new CircularPath(fishId, seed, startTick, fishType.Speed, center, radiusX, radiusY, startAngle, clockwise);
+        return new CircularPath(fishId, seed, startTick, fishType.BaseSpeed, center, radiusX, radiusY, startAngle, clockwise);
     }
     
-    private static IPath GenerateBossPath(int fishId, int seed, int startTick, FishType fishType, SeededRandom rng)
+    private static IPath GenerateBossPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
     {
         // Bosses get dramatic curved paths
         var (start, end) = GenerateEdgeToEdgePoints(rng);
@@ -126,7 +131,7 @@ public class PathGenerator
             rng.NextFloat(100f, CANVAS_HEIGHT - 100f)
         };
         
-        return new BezierPath(fishId, seed, startTick, fishType.Speed * 0.7f, start, p1, p2, end);
+        return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed * 0.7f, start, p1, p2, end);
     }
     
     /// <summary>

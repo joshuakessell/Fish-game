@@ -1,3 +1,5 @@
+using OceanKing.Server.Systems.Paths;
+
 namespace OceanKing.Server.Entities;
 
 public class Fish
@@ -13,6 +15,10 @@ public class Fish
     public float VelocityX { get; set; }
     public float VelocityY { get; set; }
     public float HitboxRadius { get; set; }
+    
+    // Path-based movement (NEW SYSTEM)
+    public IPath? Path { get; set; }
+    public Models.PathData? CachedPathData { get; set; } // Cached to avoid per-tick allocation
     
     // Smooth speed control for lifelike swimming
     public float BaseSpeed { get; set; } // Target speed
@@ -47,11 +53,29 @@ public class Fish
             throw new ArgumentException($"Invalid fish type ID: {typeId}");
         }
         
+        // Generate stable fish ID hash for path generation
+        var fishIdGuid = Guid.NewGuid().ToString();
+        var fishIdHash = Math.Abs(fishIdGuid.GetHashCode());
+        
+        // Generate parametric path for this fish
+        var path = PathGenerator.GeneratePathForFish(
+            fishIdHash,
+            fishDef,
+            (int)currentTick
+        );
+        
+        // Get initial position from path
+        var startPos = path.GetPosition(0f);
+        
+        // Cache path data to avoid per-tick allocations
+        var pathData = path.GetPathData();
+        
         var fish = new Fish
         {
+            FishId = fishIdGuid,
             TypeId = typeId,
-            X = x,
-            Y = y,
+            X = startPos[0],
+            Y = startPos[1],
             SpawnTick = currentTick,
             MovementPatternId = movementPattern,
             VelocityX = velocityX,
@@ -59,7 +83,9 @@ public class Fish
             BaseSpeed = fishDef.BaseSpeed,
             CurrentSpeed = 0f, // Start at 0, will accelerate smoothly
             AccelerationProgress = 0f,
-            HitboxRadius = fishDef.HitboxRadius
+            HitboxRadius = fishDef.HitboxRadius,
+            Path = path, // Store the path for client synchronization
+            CachedPathData = pathData // Cache for performance
         };
         
         // Set BaseValue (payout multiplier from catalog)
@@ -107,6 +133,35 @@ public class Fish
 
     public void UpdatePosition(float deltaTime, long currentTick)
     {
+        // NEW PATH-BASED MOVEMENT SYSTEM
+        if (Path != null && CachedPathData != null)
+        {
+            // Calculate time progress along the path
+            float ticksSinceSpawn = currentTick - SpawnTick;
+            float pathDuration = CachedPathData.Duration * 30f; // Convert seconds to ticks
+            
+            // Normalize time (0.0 to 1.0)
+            float t = pathDuration > 0 ? ticksSinceSpawn / pathDuration : 0f;
+            
+            // Handle looping paths
+            if (CachedPathData.Loop && t > 1f)
+            {
+                t = t % 1f;
+            }
+            else if (t > 1f)
+            {
+                t = 1f; // Clamp to end of path
+            }
+            
+            // Get position from path
+            var pos = Path.GetPosition(t);
+            X = pos[0];
+            Y = pos[1];
+            
+            return; // Skip legacy movement code
+        }
+        
+        // LEGACY MOVEMENT CODE (fallback for old fish)
         float timeSinceSpawn = (currentTick - SpawnTick) / 30f;
         
         // Smooth acceleration - fish ease into their swimming speed over 2 seconds
