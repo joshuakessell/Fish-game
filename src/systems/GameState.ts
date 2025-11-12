@@ -241,15 +241,15 @@ export class GameState {
   private updateFish(fishData: FishData) {
     const isNew = !this.fish.has(fishData.id);
 
-    if (fishData.isNewSpawn && fishData.path) {
+    if (fishData.path) {
       this.fishPathManager.registerFishPath(fishData.id, fishData.path);
       console.log(
         `Registered path for fish ${fishData.id}, type: ${fishData.path.pathType}`,
       );
+    }
 
-      if (this.onFishSpawned && isNew) {
-        this.onFishSpawned(fishData.id, fishData.type);
-      }
+    if (isNew && this.onFishSpawned) {
+      this.onFishSpawned(fishData.id, fishData.type);
     }
 
     this.fish.set(fishData.id, fishData);

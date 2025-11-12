@@ -317,6 +317,13 @@ export default class GameScene extends Phaser.Scene {
     const dirY = dy / length;
 
     if (this.gameState.connection && this.gameState.isConnected) {
+      this.createBullet(
+        this.turretPosition.x,
+        this.turretPosition.y,
+        dirX * this.BULLET_SPEED,
+        dirY * this.BULLET_SPEED,
+      );
+
       this.gameState.connection
         .invoke(
           "Fire",
