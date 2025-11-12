@@ -99,12 +99,12 @@ localPort = 41971
 externalPort = 5173
 
 [[ports]]
-localPort = 42657
-externalPort = 8099
+localPort = 42461
+externalPort = 9000
 
 [[ports]]
-localPort = 44335
-externalPort = 9000
+localPort = 42657
+externalPort = 8099
 
 [[ports]]
 localPort = 44515

@@ -29,6 +29,9 @@ export class GameState {
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
   
+  public onFishSpawned: ((fishId: number, typeId: number) => void) | null = null;
+  public onFishRemoved: ((fishId: number) => void) | null = null;
+  
   private constructor() {}
   
   public static getInstance(): GameState {
@@ -144,8 +147,21 @@ export class GameState {
       }
       
       if (update.fish) {
+        const currentFishIds = new Set(this.fish.keys());
+        const incomingFishIds = new Set<number>();
+        
         for (const fishData of update.fish) {
+          incomingFishIds.add(fishData.id);
           this.updateFish(fishData);
+        }
+        
+        for (const existingFishId of currentFishIds) {
+          if (!incomingFishIds.has(existingFishId)) {
+            this.removeFish(existingFishId);
+            if (this.onFishRemoved) {
+              this.onFishRemoved(existingFishId);
+            }
+          }
         }
       }
       
@@ -165,21 +181,29 @@ export class GameState {
   }
   
   private updateFish(fishData: FishData) {
+    const isNew = !this.fish.has(fishData.id);
+    
     if (fishData.isNewSpawn && fishData.path) {
       this.fishPathManager.registerFishPath(fishData.id, fishData.path);
       console.log(`Registered path for fish ${fishData.id}, type: ${fishData.path.pathType}`);
+      
+      if (this.onFishSpawned && isNew) {
+        this.onFishSpawned(fishData.id, fishData.type);
+      }
     }
     
     this.fish.set(fishData.id, fishData);
   }
   
-  public getFishPosition(fishId: number): [number, number] | null {
-    const pathPosition = this.fishPathManager.getFishPosition(fishId, this.currentTick);
+  public getFishPosition(fishId: number, clientTick: number): [number, number] | null {
+    // Use client-driven tick for deterministic path computation
+    const pathPosition = this.fishPathManager.getFishPosition(fishId, clientTick);
     
     if (pathPosition) {
       return pathPosition;
     }
     
+    // Fallback to server position if path not available
     const fishData = this.fish.get(fishId);
     if (fishData) {
       return [fishData.x, fishData.y];
