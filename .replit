@@ -32,15 +32,31 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Ocean King Server"
+args = "C# Backend"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Phaser Frontend"
 
 [[workflows.workflow]]
-name = "Ocean King Server"
+name = "C# Backend"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "dotnet run --project OceanKing.csproj --urls=http://0.0.0.0:8000"
+waitForPort = 8000
+
+[[workflows.workflow]]
+name = "Phaser Frontend"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "dotnet run --project OceanKing.csproj"
+args = "npm run dev"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -65,6 +81,10 @@ externalPort = 8000
 [[ports]]
 localPort = 36765
 externalPort = 8080
+
+[[ports]]
+localPort = 37659
+externalPort = 9000
 
 [[ports]]
 localPort = 38393

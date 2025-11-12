@@ -120,4 +120,4 @@ app.MapControllers();
 // Map SignalR hub
 app.MapHub<GameHub>("/gamehub");
 
-app.Run("http://0.0.0.0:5000");
+app.Run();
