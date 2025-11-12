@@ -19,12 +19,11 @@ export interface PlayerData {
 
 export interface BulletData {
   id: number;
-  playerId: string;
+  ownerId: string;
   x: number;
   y: number;
-  velocityX: number;
-  velocityY: number;
-  timestamp: number;
+  directionX: number;
+  directionY: number;
 }
 
 export interface GameStateUpdate {

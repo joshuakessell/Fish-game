@@ -7,8 +7,8 @@ interface ClientBullet {
   id: number;
   x: number;
   y: number;
-  velocityX: number;
-  velocityY: number;
+  directionX: number;
+  directionY: number;
   graphics: Phaser.GameObjects.Graphics;
   createdAt: number;
 }
@@ -17,7 +17,14 @@ export default class GameScene extends Phaser.Scene {
   private gameState: GameState;
   private fishSpriteManager!: FishSpriteManager;
   private clientBullets: Map<number, ClientBullet> = new Map();
-  private nextBulletId = 1;
+  private nextBulletId = -1;
+  private lastFiredBullets: Map<number, {
+    timestamp: number;
+    x: number;
+    y: number;
+    directionX: number;
+    directionY: number;
+  }> = new Map();
 
   private accumulator = 0;
   private readonly TICK_RATE = 30;
@@ -105,6 +112,23 @@ export default class GameScene extends Phaser.Scene {
       this.fishSpriteManager.removeFish(fishId);
     };
 
+    this.gameState.onBulletSpawned = (bulletData) => {
+      if (!this.clientBullets.has(bulletData.id)) {
+        console.log(`💥 Bullet spawned from server: id=${bulletData.id}, pos=(${bulletData.x}, ${bulletData.y})`);
+        this.createBulletFromServer(bulletData);
+      }
+    };
+
+    this.gameState.onBulletRemoved = (bulletId: number) => {
+      const bullet = this.clientBullets.get(bulletId);
+      if (bullet) {
+        console.log(`💥 Bullet removed from server: id=${bulletId}`);
+        bullet.graphics.destroy();
+        this.clientBullets.delete(bulletId);
+        this.lastFiredBullets.delete(bulletId);
+      }
+    };
+
     this.gameState.onPayoutReceived = (fishId: number, payout: number) => {
       this.showCreditPopup(fishId, payout);
     };
@@ -129,6 +153,8 @@ export default class GameScene extends Phaser.Scene {
 
     this.gameState.onFishSpawned = null;
     this.gameState.onFishRemoved = null;
+    this.gameState.onBulletSpawned = null;
+    this.gameState.onBulletRemoved = null;
     this.gameState.onPayoutReceived = null;
     this.gameState.onCreditsChanged = null;
     this.gameState.onTickSnapped = null;
@@ -318,6 +344,9 @@ export default class GameScene extends Phaser.Scene {
     const dirX = dx / length;
     const dirY = dy / length;
 
+    const angle = Math.atan2(dy, dx);
+    this.turretBarrel.rotation = angle;
+
     if (this.gameState.connection && this.gameState.isConnected) {
       // Deduct shot cost locally (server will sync)
       this.gameState.deductShotCost();
@@ -328,8 +357,8 @@ export default class GameScene extends Phaser.Scene {
       this.createBullet(
         this.turretPosition.x,
         this.turretPosition.y,
-        dirX * this.BULLET_SPEED,
-        dirY * this.BULLET_SPEED,
+        dirX,
+        dirY,
       );
 
       this.gameState.connection
@@ -352,10 +381,10 @@ export default class GameScene extends Phaser.Scene {
   private createBullet(
     x: number,
     y: number,
-    velocityX: number,
-    velocityY: number,
+    directionX: number,
+    directionY: number,
   ) {
-    const bulletId = this.nextBulletId++;
+    const bulletId = this.nextBulletId--;
 
     const graphics = this.add.graphics();
     graphics.fillStyle(0xffff00, 1);
@@ -367,23 +396,86 @@ export default class GameScene extends Phaser.Scene {
       id: bulletId,
       x: x,
       y: y,
-      velocityX: velocityX,
-      velocityY: velocityY,
+      directionX: directionX,
+      directionY: directionY,
       graphics: graphics,
       createdAt: Date.now(),
     };
 
     this.clientBullets.set(bulletId, bullet);
+    this.lastFiredBullets.set(bulletId, {
+      timestamp: Date.now(),
+      x: x,
+      y: y,
+      directionX: directionX,
+      directionY: directionY
+    });
     graphics.setDepth(50);
+  }
+
+  private createBulletFromServer(bulletData: { id: number; x: number; y: number; directionX: number; directionY: number; ownerId: string }) {
+    if (bulletData.ownerId === this.gameState.playerAuth?.userId) {
+      for (const [id, data] of this.lastFiredBullets.entries()) {
+        const timeDiff = Date.now() - data.timestamp;
+        if (timeDiff < 500 && id < 0) {
+          const distX = Math.abs(bulletData.x - data.x);
+          const distY = Math.abs(bulletData.y - data.y);
+          const maxDist = 300;
+          
+          const dirDotProduct = (bulletData.directionX * data.directionX) + 
+                                (bulletData.directionY * data.directionY);
+          
+          if (distX < maxDist && distY < maxDist && dirDotProduct > 0.95) {
+            const localBullet = this.clientBullets.get(id);
+            if (localBullet) {
+              console.log(`🔄 Reconciling: removing local bullet ${id}, replacing with server bullet ${bulletData.id} (dist: ${Math.max(distX, distY).toFixed(1)}px, dir: ${dirDotProduct.toFixed(3)})`);
+              localBullet.graphics.destroy();
+              this.clientBullets.delete(id);
+              this.lastFiredBullets.delete(id);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0xffff00, 1);
+    graphics.fillEllipse(0, 0, 20, 6);
+    graphics.lineStyle(1, 0xffaa00);
+    graphics.strokeEllipse(0, 0, 20, 6);
+
+    const bullet: ClientBullet = {
+      id: bulletData.id,
+      x: bulletData.x,
+      y: bulletData.y,
+      directionX: bulletData.directionX,
+      directionY: bulletData.directionY,
+      graphics: graphics,
+      createdAt: Date.now(),
+    };
+
+    this.clientBullets.set(bulletData.id, bullet);
+    graphics.setDepth(50);
+
+    const angle = Math.atan2(bulletData.directionY, bulletData.directionX);
+    graphics.setPosition(bulletData.x, bulletData.y);
+    graphics.setRotation(angle);
   }
 
   private updateBullets(delta: number) {
     const deltaSeconds = delta / 1000;
     const now = Date.now();
 
+    for (const [id, data] of this.lastFiredBullets.entries()) {
+      if (now - data.timestamp > 1000) {
+        this.lastFiredBullets.delete(id);
+      }
+    }
+
     this.clientBullets.forEach((bullet, id) => {
-      bullet.x += bullet.velocityX * deltaSeconds;
-      bullet.y += bullet.velocityY * deltaSeconds;
+      bullet.x += bullet.directionX * this.BULLET_SPEED * deltaSeconds;
+      bullet.y += bullet.directionY * this.BULLET_SPEED * deltaSeconds;
 
       // Check collision with fish
       const fishSprites = this.fishSpriteManager.getFishSprites();
@@ -413,21 +505,21 @@ export default class GameScene extends Phaser.Scene {
 
       if (bullet.x < 0) {
         bullet.x = 0;
-        bullet.velocityX = Math.abs(bullet.velocityX);
+        bullet.directionX = Math.abs(bullet.directionX);
       } else if (bullet.x > 1800) {
         bullet.x = 1800;
-        bullet.velocityX = -Math.abs(bullet.velocityX);
+        bullet.directionX = -Math.abs(bullet.directionX);
       }
 
       if (bullet.y < 0) {
         bullet.y = 0;
-        bullet.velocityY = Math.abs(bullet.velocityY);
+        bullet.directionY = Math.abs(bullet.directionY);
       } else if (bullet.y > 900) {
         bullet.y = 900;
-        bullet.velocityY = -Math.abs(bullet.velocityY);
+        bullet.directionY = -Math.abs(bullet.directionY);
       }
 
-      const angle = Math.atan2(bullet.velocityY, bullet.velocityX);
+      const angle = Math.atan2(bullet.directionY, bullet.directionX);
       bullet.graphics.setPosition(bullet.x, bullet.y);
       bullet.graphics.setRotation(angle);
 

@@ -3,6 +3,7 @@ namespace OceanKing.Server.Entities;
 public class Projectile
 {
     public string ProjectileId { get; set; } = Guid.NewGuid().ToString();
+    public int NumericId { get; set; }
     public string OwnerPlayerId { get; set; } = string.Empty;
     public int WeaponTypeId { get; set; }
     

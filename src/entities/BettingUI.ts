@@ -158,18 +158,18 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
   private createBankDisplay() {
     const bankBg = this.scene.add.graphics();
-    bankBg.fillStyle(0x000000, 0.6);
+    bankBg.fillStyle(0x8b4513, 0.8);
     bankBg.fillRoundedRect(-260, -20, 150, 40, 5);
+    bankBg.lineStyle(2, 0xdaa520, 1);
+    bankBg.strokeRoundedRect(-260, -20, 150, 40, 5);
 
     const credits = this.gameState.playerAuth?.credits || 0;
     const formattedCredits = this.formatNumber(credits);
 
     this.bankText = this.scene.add.text(-185, 0, `Bank: ${formattedCredits}`, {
       fontSize: "20px",
-      color: "#FFD700",
+      color: "#ffffff",
       fontStyle: "bold",
-      stroke: "#8B6914",
-      strokeThickness: 2,
     });
     this.bankText.setOrigin(0.5, 0.5);
 

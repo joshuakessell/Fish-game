@@ -3,11 +3,21 @@ import { MessagePackHubProtocol } from "@microsoft/signalr-protocol-msgpack";
 import { FishData, PlayerData, BulletData } from "../types/GameTypes";
 import { FishPathManager } from "./FishPathManager";
 
+interface ServerPlayerState {
+  PlayerId: string;
+  DisplayName: string;
+  Credits: number;
+  CannonLevel: number;
+  PlayerSlot: number;
+  TotalKills: number;
+  BetValue: number;
+}
+
 interface StateDelta {
   tick?: number;
   fish?: FishData[];
   bullets?: BulletData[];
-  players?: PlayerData[];
+  players?: ServerPlayerState[];
   payoutEvents?: Array<{
     fishId: number;
     payout: number;
@@ -57,6 +67,8 @@ export class GameState {
   public onFishSpawned: ((fishId: number, typeId: number) => void) | null =
     null;
   public onFishRemoved: ((fishId: number) => void) | null = null;
+  public onBulletSpawned: ((bulletData: BulletData) => void) | null = null;
+  public onBulletRemoved: ((bulletId: number) => void) | null = null;
   public onPayoutReceived: ((fishId: number, payout: number) => void) | null =
     null;
   public onCreditsChanged: (() => void) | null = null;
@@ -218,14 +230,40 @@ export class GameState {
       }
 
       if (update.bullets) {
-        this.bullets.clear();
+        const currentBulletIds = new Set(this.bullets.keys());
+        const incomingBulletIds = new Set<number>();
+
         for (const bulletData of update.bullets) {
+          incomingBulletIds.add(bulletData.id);
+          const isNew = !this.bullets.has(bulletData.id);
+          
           this.bullets.set(bulletData.id, bulletData);
+          
+          if (isNew && this.onBulletSpawned) {
+            this.onBulletSpawned(bulletData);
+          }
+        }
+
+        for (const existingBulletId of currentBulletIds) {
+          if (!incomingBulletIds.has(existingBulletId)) {
+            this.bullets.delete(existingBulletId);
+            if (this.onBulletRemoved) {
+              this.onBulletRemoved(existingBulletId);
+            }
+          }
         }
       }
 
       if (update.players) {
-        for (const playerData of update.players) {
+        for (const serverPlayer of update.players) {
+          const playerData: PlayerData = {
+            slot: serverPlayer.PlayerSlot,
+            userId: serverPlayer.PlayerId,
+            name: serverPlayer.DisplayName,
+            credits: serverPlayer.Credits,
+            betValue: serverPlayer.BetValue
+          };
+          
           this.players.set(playerData.slot, playerData);
 
           if (playerData.slot === this.myPlayerSlot && this.playerAuth) {

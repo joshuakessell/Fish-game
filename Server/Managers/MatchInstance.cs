@@ -391,7 +391,6 @@ public class MatchInstance
         
         var delta = new StateDelta
         {
-            TickId = _currentTick,
             Tick = _currentTick,
             RoundNumber = roundState.RoundNumber,
             TimeRemainingTicks = _roundManager.GetTimeRemainingTicks(_currentTick),
@@ -403,7 +402,8 @@ public class MatchInstance
                 Credits = p.Credits,
                 CannonLevel = p.CannonLevel,
                 PlayerSlot = p.PlayerSlot,
-                TotalKills = p.TotalKills
+                TotalKills = p.TotalKills,
+                BetValue = p.BetValue
             }).ToList(),
             Fish = _fishManager.GetActiveFish().Select(f => {
                 bool isNew = (f.SpawnTick == _currentTick);
@@ -419,11 +419,12 @@ public class MatchInstance
             }).ToList(),
             Projectiles = _projectileManager.GetActiveProjectiles().Select(p => new ProjectileState
             {
-                ProjectileId = p.ProjectileId,
-                X = p.X,
-                Y = p.Y,
-                DirectionX = p.DirectionX,
-                DirectionY = p.DirectionY
+                id = p.NumericId,
+                x = p.X,
+                y = p.Y,
+                directionX = p.DirectionX,
+                directionY = p.DirectionY,
+                ownerId = p.OwnerPlayerId
             }).ToList(),
             ActiveBossSequences = activeSequences.Select(s => new BossSequenceState
             {
@@ -524,7 +525,7 @@ public enum CommandType
 public class StateDelta
 {
     [Key(0)]
-    public long TickId { get; set; }
+    public long Tick { get; set; }
     
     [Key(1)]
     public int RoundNumber { get; set; }
@@ -552,9 +553,6 @@ public class StateDelta
     
     [Key(9)]
     public List<KillPayoutEvent> PayoutEvents { get; set; } = new();
-    
-    [Key(10)]
-    public long Tick { get; set; }
 }
 
 [MessagePackObject]
@@ -609,6 +607,9 @@ public class PlayerState
     
     [Key(5)]
     public int TotalKills { get; set; }
+    
+    [Key(6)]
+    public int BetValue { get; set; }
 }
 
 [MessagePackObject]
@@ -637,19 +638,22 @@ public class FishState
 public class ProjectileState
 {
     [Key(0)]
-    public string ProjectileId { get; set; } = string.Empty;
+    public int id { get; set; } // Numeric hash for client compatibility
     
     [Key(1)]
-    public float X { get; set; }
+    public float x { get; set; }
     
     [Key(2)]
-    public float Y { get; set; }
+    public float y { get; set; }
     
     [Key(3)]
-    public float DirectionX { get; set; }
+    public float directionX { get; set; }
     
     [Key(4)]
-    public float DirectionY { get; set; }
+    public float directionY { get; set; }
+    
+    [Key(5)]
+    public string ownerId { get; set; } = string.Empty;
 }
 
 public class KillEvent

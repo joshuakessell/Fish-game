@@ -65,20 +65,24 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
   }
 
   private static getTextureForType(typeId: number): string {
-    // Based on FishCatalog.cs:
-    // 0-5: Small fish
-    // 6-11: Medium fish
-    // 12-20: Large/High value fish
-    // 21-24: Special items (render as medium)
-    // 25-28: Boss fish
-    if (typeId >= 25) {
-      return "fish-boss";
-    } else if (typeId >= 12) {
-      return "fish-large";
-    } else if (typeId >= 6) {
-      return "fish-medium";
-    } else {
-      return "fish-small";
+    const availableSprites: { [key: number]: string } = {
+      0: "fish-0",
+      1: "fish-1",
+      2: "fish-2",
+      6: "fish-6",
+      9: "fish-9",
+      12: "fish-12",
+      14: "fish-14",
+      21: "fish-21",
+    };
+
+    if (availableSprites[typeId]) {
+      return availableSprites[typeId];
     }
+
+    console.warn(
+      `No sprite available for fish typeId ${typeId}, using fallback fish-0`,
+    );
+    return "fish-0";
   }
 }

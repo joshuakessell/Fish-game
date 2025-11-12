@@ -8,10 +8,14 @@ export default class BootScene extends Phaser.Scene {
   preload() {
     console.log("BootScene: Preloading assets...");
 
-    // TODO: Load sprite sheets, texture atlases, sounds
-    // this.load.atlas('fish', 'assets/fish.png', 'assets/fish.json');
-    // this.load.image('turret', 'assets/turret.png');
-    // this.load.image('bullet', 'assets/bullet.png');
+    this.load.image("fish-0", "assets/fish/clownfish.png");
+    this.load.image("fish-1", "assets/fish/neon_tetra.png");
+    this.load.image("fish-2", "assets/fish/butterflyfish.png");
+    this.load.image("fish-6", "assets/fish/lionfish.png");
+    this.load.image("fish-9", "assets/fish/triggerfish.png");
+    this.load.image("fish-12", "assets/fish/hammerhead_shark.png");
+    this.load.image("fish-14", "assets/fish/giant_manta_ray.png");
+    this.load.image("fish-21", "assets/fish/wave_rider.png");
   }
 
   create() {

@@ -5,9 +5,11 @@ namespace OceanKing.Server.Managers;
 public class ProjectileManager
 {
     private readonly Dictionary<string, Projectile> _activeProjectiles = new();
+    private static int _nextProjectileId = 1;
 
     public void AddProjectile(Projectile projectile)
     {
+        projectile.NumericId = _nextProjectileId++;
         _activeProjectiles[projectile.ProjectileId] = projectile;
     }
 
