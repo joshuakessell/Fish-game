@@ -1,11 +1,4 @@
-export interface PathData {
-  fishId: number;
-  pathType: 'linear' | 'sine' | 'bezier' | 'circular';
-  seed: number;
-  startTick: number;
-  speed: number;
-  controlPoints?: number[][];
-}
+import { PathData } from '../systems/paths/PathData';
 
 export interface FishData {
   id: number;
@@ -13,6 +6,7 @@ export interface FishData {
   x: number;
   y: number;
   path?: PathData;
+  isNewSpawn?: boolean;
 }
 
 export interface PlayerData {

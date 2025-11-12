@@ -1,4 +1,5 @@
 using OceanKing.Server.Systems.Paths;
+using OceanKing.Server.Models;
 
 namespace OceanKing.Server.Entities;
 

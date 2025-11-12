@@ -1,5 +1,6 @@
 import * as signalR from '@microsoft/signalr';
 import { FishData, PlayerData, BulletData } from '../types/GameTypes';
+import { FishPathManager } from './FishPathManager';
 
 export class GameState {
   private static instance: GameState;
@@ -24,6 +25,9 @@ export class GameState {
   public bullets: Map<number, BulletData> = new Map();
   public players: Map<number, PlayerData> = new Map();
   public currentTick: number = 0;
+  
+  // Path system
+  public fishPathManager: FishPathManager = new FishPathManager();
   
   private constructor() {}
   
@@ -80,6 +84,8 @@ export class GameState {
         .configureLogging(signalR.LogLevel.Information)
         .build();
       
+      this.setupSignalRHandlers();
+      
       await this.connection.start();
       this.isConnected = true;
       console.log('Connected to SignalR game hub');
@@ -124,5 +130,66 @@ export class GameState {
     this.currentTick = 0;
     this.myPlayerSlot = null;
     this.currentRoomId = null;
+    this.fishPathManager.clear();
+  }
+  
+  private setupSignalRHandlers() {
+    if (!this.connection) {
+      return;
+    }
+    
+    this.connection.on('StateDelta', (update: any) => {
+      if (update.tick !== undefined) {
+        this.currentTick = update.tick;
+      }
+      
+      if (update.fish) {
+        for (const fishData of update.fish) {
+          this.updateFish(fishData);
+        }
+      }
+      
+      if (update.bullets) {
+        this.bullets.clear();
+        for (const bulletData of update.bullets) {
+          this.bullets.set(bulletData.id, bulletData);
+        }
+      }
+      
+      if (update.players) {
+        for (const playerData of update.players) {
+          this.players.set(playerData.slot, playerData);
+        }
+      }
+    });
+  }
+  
+  private updateFish(fishData: FishData) {
+    if (fishData.isNewSpawn && fishData.path) {
+      this.fishPathManager.registerFishPath(fishData.id, fishData.path);
+      console.log(`Registered path for fish ${fishData.id}, type: ${fishData.path.pathType}`);
+    }
+    
+    this.fish.set(fishData.id, fishData);
+  }
+  
+  public getFishPosition(fishId: number): [number, number] | null {
+    const pathPosition = this.fishPathManager.getFishPosition(fishId, this.currentTick);
+    
+    if (pathPosition) {
+      return pathPosition;
+    }
+    
+    const fishData = this.fish.get(fishId);
+    if (fishData) {
+      return [fishData.x, fishData.y];
+    }
+    
+    return null;
+  }
+  
+  public removeFish(fishId: number) {
+    this.fish.delete(fishId);
+    this.fishPathManager.removeFish(fishId);
   }
 }

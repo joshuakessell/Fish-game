@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using OceanKing.Server.Entities;
 using OceanKing.Server.Managers;
+using OceanKing.Server.Models;
 using OceanKing.Hubs;
 
 namespace OceanKing.Server;
@@ -390,12 +391,17 @@ public class MatchInstance
                 PlayerSlot = p.PlayerSlot,
                 TotalKills = p.TotalKills
             }).ToList(),
-            Fish = _fishManager.GetActiveFish().Select(f => new FishState
-            {
-                FishId = f.FishId,
-                TypeId = f.TypeId,
-                X = f.X,
-                Y = f.Y
+            Fish = _fishManager.GetActiveFish().Select(f => {
+                bool isNewSpawn = (f.SpawnTick == _currentTick);
+                return new FishState
+                {
+                    FishId = f.FishId,
+                    TypeId = f.TypeId,
+                    X = f.X, // Legacy fallback - will remove once path system verified
+                    Y = f.Y, // Legacy fallback - will remove once path system verified
+                    Path = isNewSpawn ? f.CachedPathData : null, // Only send path data on spawn
+                    IsNewSpawn = isNewSpawn
+                };
             }).ToList(),
             Projectiles = _projectileManager.GetActiveProjectiles().Select(p => new ProjectileState
             {
@@ -542,8 +548,12 @@ public class FishState
 {
     public string FishId { get; set; } = string.Empty;
     public int TypeId { get; set; }
-    public float X { get; set; }
-    public float Y { get; set; }
+    public float X { get; set; }  // Only sent for legacy/fallback
+    public float Y { get; set; }  // Only sent for legacy/fallback
+    
+    // Path-based movement data (sent once on spawn)
+    public Models.PathData? Path { get; set; }
+    public bool IsNewSpawn { get; set; } // True if spawned this tick
 }
 
 public class ProjectileState
