@@ -45,6 +45,7 @@ export class GameState {
   public currentTick: number = 0;
 
   // Tick synchronization
+  public isSynced: boolean = false;
   public tickDrift: number = 0;
   private lastServerTick: number = 0;
   private readonly TICK_DRIFT_THRESHOLD = 5;
@@ -58,6 +59,7 @@ export class GameState {
   public onPayoutReceived: ((fishId: number, payout: number) => void) | null =
     null;
   public onCreditsChanged: (() => void) | null = null;
+  public onTickSnapped: (() => void) | null = null;
 
   private constructor() {}
 
@@ -158,6 +160,8 @@ export class GameState {
     this.bullets.clear();
     this.players.clear();
     this.currentTick = 0;
+    this.isSynced = false;
+    this.tickDrift = 0;
     this.myPlayerSlot = null;
     this.currentRoomId = null;
     this.fishPathManager.clear();
@@ -173,14 +177,21 @@ export class GameState {
         this.lastServerTick = update.tick;
         this.tickDrift = update.tick - this.currentTick;
 
-        if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
-          const adjustment =
-            Math.sign(this.tickDrift) * Math.ceil(Math.abs(this.tickDrift) / 2);
-          this.currentTick += adjustment;
-          this.tickDrift = update.tick - this.currentTick;
-          console.log(
-            `Tick sync: drift=${this.tickDrift}, adjusted client tick by ${adjustment} to ${this.currentTick}`,
-          );
+        if (!this.isSynced) {
+          this.currentTick = update.tick;
+          this.isSynced = true;
+          this.tickDrift = 0;
+          if (this.onTickSnapped) {
+            this.onTickSnapped();
+          }
+          console.log(`Tick snapped to server tick on first sync: ${this.currentTick}`);
+        } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
+          this.currentTick = update.tick;
+          this.tickDrift = 0;
+          if (this.onTickSnapped) {
+            this.onTickSnapped();
+          }
+          console.log(`Tick snapped to server tick due to large drift: ${this.currentTick}`);
         }
       }
 
@@ -235,7 +246,19 @@ export class GameState {
           }
         }
       }
+
+      this.applyGentleDriftCorrection();
     });
+  }
+
+  public applyGentleDriftCorrection() {
+    if (this.isSynced && this.tickDrift > 0 && this.tickDrift <= 5) {
+      this.currentTick++;
+      this.tickDrift--;
+    } else if (this.isSynced && this.tickDrift < 0 && this.tickDrift >= -5) {
+      this.currentTick--;
+      this.tickDrift++;
+    }
   }
 
   private updateFish(fishData: FishData) {

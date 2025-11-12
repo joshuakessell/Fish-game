@@ -129,6 +129,11 @@ export default class GameScene extends Phaser.Scene {
         this.bettingUI.updateBankDisplay();
       }
     };
+
+    this.gameState.onTickSnapped = () => {
+      this.accumulator = 0;
+      console.log("GameScene: Accumulator reset after tick snap");
+    };
   }
 
   private cleanupSignalR() {
@@ -141,6 +146,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.onFishRemoved = null;
     this.gameState.onPayoutReceived = null;
     this.gameState.onCreditsChanged = null;
+    this.gameState.onTickSnapped = null;
 
     if (this.fishSpriteManager) {
       this.fishSpriteManager.clear();
@@ -163,7 +169,9 @@ export default class GameScene extends Phaser.Scene {
 
     while (this.accumulator >= this.MS_PER_TICK) {
       this.fixedUpdate(this.gameState.currentTick);
-      this.gameState.currentTick++;
+      if (this.gameState.isSynced) {
+        this.gameState.currentTick++;
+      }
       this.accumulator -= this.MS_PER_TICK;
     }
 

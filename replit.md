@@ -73,6 +73,7 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 
 ## Recent Changes (2025-11-12)
 - **Critical Bug Fixes:**
+  - **Fixed tick synchronization data race**: Eliminated erratic fish movement by implementing proper client-server tick synchronization. Added `isSynced` flag to GameState to prevent tick advancement before first server update. Client now freezes at tick 0 until first StateDelta arrives, then snaps to server tick and resets accumulator. For large drift (>5 ticks), client snaps immediately. For minor drift (1-5 ticks), gentle correction applies ±1 per frame to gradually converge. This ensures smooth fish movement with accumulator staying in 0-33ms range and tick drift near 0.
   - Fixed infinite boss fish spawning crash by adding cooldown mechanism (90 ticks/3 seconds between boss spawns)
   - Fixed room auto-creation: rooms now auto-create when joining if they don't exist  
   - Fixed turret positioning: turret now appears above bet controls for all seats (uniform +60px offset)
