@@ -27,7 +27,10 @@ The game employs a client-server architecture, utilizing ASP.NET Core 8 for serv
     - **Game Loop:** A 30 TPS core game loop manages state, physics, and collisions.
     - **Authoritative Server:** Handles all game logic, RNG, fish spawning, projectile validation, and collision resolution.
     - **Fish Catalog:** Defines fish types with properties like payout, capture probability, and movement characteristics.
-    - **Casino Mechanics:** Currently set to 120% RTP for developer testing (production target: 97%). Features dynamic destruction odds and high-volatility payout multipliers.
+    - **Casino Mechanics:** Currently set to 105% RTP for developer testing (production target: 97%). Features:
+        - **Inverse Risk/Reward:** Regular fish use formula CaptureProbability = 1.0 / (BaseValue × Multiplier) ensuring 100% RTP baseline
+        - **Progressive Boss Kills:** BossShotTracker (per-match) tracks cumulative damage to boss fish, using logistic curve to increase kill odds as damage approaches break-even (BaseValue × 1.657)
+        - **Hidden Hot Seats:** Match-scoped HotSeatManager randomly assigns subtle multipliers (1.05x-1.15x) to individual players for 30-second periods with 60-second cooldowns, providing controlled +5-15% variance
     - **Homing Bullets:** Server-side projectiles with 3.0 rad/s turn rate and 320 px/s speed curve toward targets for guaranteed hits.
     - **Protocol:** MessagePack configured for SignalR to reduce message size.
 - **Client-Side:**
