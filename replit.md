@@ -48,6 +48,12 @@ The game employs a client-server architecture, utilizing ASP.NET Core 8 for serv
     - Advanced Shooting with targeting, auto-fire (4 shots/second at 250ms intervals), and server-side homing bullets.
     - **Auto-Targeting:** Type-specific auto-targeting with visual crosshair indicator that follows targeted fish. Exclusive mode - manual firing exits auto-target. Intelligent retargeting to same-type fish when target is destroyed.
     - **Enhanced Fish Visuals:** Larger sprite sizes - small fish +20%, medium +50%, large +150% for better visibility.
+    - **Reward Animations:** When fish are killed, comprehensive visual feedback includes:
+        - Fish death animation (white flash, scale pop, fade out)
+        - Floating payout text rising and fading (golden +amount for own kills, silver for other players)
+        - Spinning coin that arcs from fish to player's bank (golden 32px for own kills, silver 24px for others)
+        - Programmatically generated coin graphics with quadratic Bezier path animation
+        - All animations orchestrated via RewardAnimationManager with proper timing coordination
     - Bet Value System replacing weapon selection, allowing bet adjustment per shot.
     - Direct Coordinate System (0-1800 × 0-900) for consistent interaction.
 
