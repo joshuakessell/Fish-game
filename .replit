@@ -13,7 +13,7 @@ requiredFiles = [".replit", "replit.nix"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["poppler_utils"]
+packages = ["poppler_utils", "imagemagick"]
 
 [deployment]
 run = ["dotnet", "run"]
