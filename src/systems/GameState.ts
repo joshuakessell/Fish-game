@@ -209,25 +209,21 @@ export class GameState {
             this.onTickSnapped();
           }
           console.log(`Tick snapped to server tick on first sync: ${this.currentTick}`);
+        } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
+          this.currentTick = tick;
+          this.tickDrift = 0;
+          if (this.onTickSnapped) {
+            this.onTickSnapped();
+          }
+          console.log(`Tick snapped to server tick due to large drift: ${this.currentTick}`);
+        }
+
+        // Apply gentle drift correction AFTER snap check
+        if (this.isSynced && Math.abs(this.tickDrift) <= 5) {
+          const driftMs = this.tickDrift * (1000 / 30);
+          this.accumulatorAdjustment = driftMs * 0.2;
         } else {
-          // Apply gentle drift correction via accumulator adjustment
-          if (Math.abs(this.tickDrift) <= 5) {
-            // Convert tick drift to milliseconds (30 TPS = 33.33ms per tick)
-            const driftMs = this.tickDrift * (1000 / 30);
-            // Apply 20% of drift per update for smooth correction
-            this.accumulatorAdjustment = driftMs * 0.2;
-          } else {
-            this.accumulatorAdjustment = 0;
-          }
-          
-          if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
-            this.currentTick = tick;
-            this.tickDrift = 0;
-            if (this.onTickSnapped) {
-              this.onTickSnapped();
-            }
-            console.log(`Tick snapped to server tick due to large drift: ${this.currentTick}`);
-          }
+          this.accumulatorAdjustment = 0;
         }
       }
 

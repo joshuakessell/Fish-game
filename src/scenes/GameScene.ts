@@ -105,12 +105,15 @@ export default class GameScene extends Phaser.Scene {
 
   private createDebugOverlay() {
     this.debugText = this.add.text(10, 10, "", {
-      fontSize: "16px",
-      color: "#ffffff",
+      fontFamily: "monospace",
+      fontSize: "14px",
+      color: "#00ff00",
       backgroundColor: "#000000",
-      padding: { x: 10, y: 10 },
+      padding: { x: 8, y: 8 },
+      fixedWidth: 400,
+      wordWrap: { width: 400, useAdvancedWrap: false }
     });
-    this.debugText.setDepth(1000);
+    this.debugText.setDepth(10000);
     this.debugText.setScrollFactor(0);
   }
 
@@ -198,7 +201,8 @@ export default class GameScene extends Phaser.Scene {
     };
 
     this.gameState.onTickSnapped = () => {
-      console.log("GameScene: Tick snapped (accumulator NOT reset)");
+      this.accumulator = 0;
+      console.log("GameScene: Tick snapped, accumulator reset to 0");
     };
   }
 
@@ -222,6 +226,11 @@ export default class GameScene extends Phaser.Scene {
 
     if (this.fishSpriteManager) {
       this.fishSpriteManager.clear();
+    }
+    
+    // Destroy debug text to prevent multiple instances
+    if (this.debugText) {
+      this.debugText.destroy();
     }
   }
 
@@ -279,17 +288,18 @@ export default class GameScene extends Phaser.Scene {
         : "N/A";
 
     this.debugText.setText([
-      `Current Tick: ${this.gameState.currentTick}`,
+      `Tick: ${this.gameState.currentTick}`,
       `FPS: ${fps}`,
-      `My Seat: ${seat}`,
-      `Active Fish: ${activeFish}`,
-      `Active Bullets: ${this.clientBullets.size}`,
-      `Path Mode: ${pathMode}`,
-      `Auto-Target: ${this.autoTargetMode ? "ON" : "OFF"}`,
-      `Hold Fire: ${this.isHoldingFire ? "YES" : "NO"}`,
-      `Accumulator: ${accumulatorDrift}ms`,
-      `Tick Progress: ${(tickProgress * 100).toFixed(1)}%`,
-      `Tick Drift: ${tickDrift}`,
+      `Seat: ${seat}`,
+      `Fish: ${activeFish}`,
+      `Bullets: ${this.clientBullets.size}`,
+      `Paths: ${pathMode}`,
+      `Auto: ${this.autoTargetMode ? "ON" : "OFF"}`,
+      `Hold: ${this.isHoldingFire ? "Y" : "N"}`,
+      `Acc: ${accumulatorDrift}ms`,
+      `Prog: ${(tickProgress * 100).toFixed(1)}%`,
+      `Drift: ${tickDrift}`,
+      `Sync: ${this.gameState.isSynced ? "Y" : "N"}`,
     ]);
   }
 
