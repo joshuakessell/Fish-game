@@ -187,6 +187,7 @@ export class GameState {
     }
 
     this.connection.on("StateDelta", (update: StateDelta) => {
+      console.log("🔥 StateDelta received:", update);
       if (update.Tick !== undefined) {
         this.lastServerTick = update.Tick;
         this.tickDrift = update.Tick - this.currentTick;
