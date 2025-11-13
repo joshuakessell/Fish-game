@@ -31,6 +31,11 @@ export default class GameScene extends Phaser.Scene {
   private readonly MS_PER_TICK = 1000 / 30;
   private readonly MAX_DELTA = 100;
 
+  // Debug counters
+  private stateDeltaCount = 0;
+  private fishSpawnedCallbackCount = 0;
+  private tickSnappedCallbackCount = 0;
+
   private debugText!: Phaser.GameObjects.Text;
   private fpsText!: Phaser.GameObjects.Text;
 
@@ -147,6 +152,7 @@ export default class GameScene extends Phaser.Scene {
 
   private setupFishLifecycleCallbacks() {
     this.gameState.onFishSpawned = (fishId: number, typeId: number) => {
+      this.fishSpawnedCallbackCount++;
       console.log(`🐟 Fish spawned callback: fishId=${fishId}, typeId=${typeId}`);
       this.fishSpriteManager.spawnFish(fishId, typeId);
       
@@ -229,8 +235,9 @@ export default class GameScene extends Phaser.Scene {
     };
 
     this.gameState.onTickSnapped = () => {
+      this.tickSnappedCallbackCount++;
       this.accumulator = 0;
-      console.log("GameScene: Tick snapped, accumulator reset to 0");
+      console.log(`GameScene: Tick snapped #${this.tickSnappedCallbackCount}, accumulator reset to 0`);
     };
   }
 
@@ -270,6 +277,11 @@ export default class GameScene extends Phaser.Scene {
       console.error("GameScene: No SignalR connection available");
       return;
     }
+
+    // Add a StateDelta counter to track message receipt
+    conn.on("StateDelta", () => {
+      this.stateDeltaCount++;
+    });
 
     console.log("GameScene: SignalR event handlers registered");
   }
@@ -335,6 +347,9 @@ export default class GameScene extends Phaser.Scene {
       `Prog: ${(tickProgress * 100).toFixed(1)}%`,
       `Drift: ${tickDrift}`,
       `Sync: ${this.gameState.isSynced ? "Y" : "N"}`,
+      `SD: ${this.stateDeltaCount}`,
+      `FS: ${this.fishSpawnedCallbackCount}`,
+      `TS: ${this.tickSnappedCallbackCount}`,
     ]);
   }
 
