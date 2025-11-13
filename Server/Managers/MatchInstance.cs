@@ -147,8 +147,8 @@ public class MatchInstance
         // Step 2: Update fish positions and remove despawned fish
         _fishManager.UpdateFish(deltaTime, _currentTick);
 
-        // Step 3: Update projectiles
-        _projectileManager.UpdateProjectiles(deltaTime);
+        // Step 3: Update projectiles (pass fish list for homing calculations)
+        _projectileManager.UpdateProjectiles(deltaTime, _fishManager.GetActiveFish());
 
         // Step 4: Collision detection
         var kills = _collisionResolver.ResolveCollisions(
@@ -245,7 +245,8 @@ public class MatchInstance
             DirectionY = command.DirectionY,
             Damage = 10f * player.CannonLevel,
             BetValue = cost, // Snapshot bet value at fire time (immutable)
-            ClientNonce = command.ClientNonce
+            ClientNonce = command.ClientNonce,
+            TargetFishId = command.TargetFishId
         };
 
         _projectileManager.AddProjectile(projectile);
@@ -426,7 +427,8 @@ public class MatchInstance
                 directionX = p.DirectionX,
                 directionY = p.DirectionY,
                 ownerId = p.OwnerPlayerId,
-                clientNonce = p.ClientNonce
+                clientNonce = p.ClientNonce,
+                targetFishId = p.TargetFishId
             }).ToList(),
             ActiveBossSequences = activeSequences.Select(s => new BossSequenceState
             {
@@ -516,6 +518,7 @@ public class GameCommand
     public float DirectionY { get; set; }
     public int BetValue { get; set; }
     public string ClientNonce { get; set; } = string.Empty;
+    public int? TargetFishId { get; set; }
 }
 
 public enum CommandType
@@ -660,6 +663,9 @@ public class ProjectileState
     
     [Key(6)]
     public string clientNonce { get; set; } = string.Empty;
+    
+    [Key(7)]
+    public int? targetFishId { get; set; }
 }
 
 public class KillEvent

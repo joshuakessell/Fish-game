@@ -18,7 +18,7 @@ export interface PlayerData {
   betValue: number;
 }
 
-// MessagePack array format from server: [id, x, y, directionX, directionY, ownerId, clientNonce]
+// MessagePack array format from server: [id, x, y, directionX, directionY, ownerId, clientNonce, targetFishId]
 export type BulletData = [
   number,  // [0] id
   number,  // [1] x
@@ -26,7 +26,8 @@ export type BulletData = [
   number,  // [3] directionX
   number,  // [4] directionY
   string,  // [5] ownerId
-  string   // [6] clientNonce
+  string,  // [6] clientNonce
+  number | null  // [7] targetFishId
 ];
 
 export interface GameStateUpdate {

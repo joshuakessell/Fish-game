@@ -531,6 +531,7 @@ export default class GameScene extends Phaser.Scene {
           dirX,
           dirY,
           nonce,
+          targetFishId,
         )
         .catch((err) => {
           console.error("Failed to send Fire command:", err);
@@ -568,26 +569,19 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private createBulletFromServer(bulletData: BulletData) {
+    const targetFishId = bulletData[7];
+    const isHoming = targetFishId !== null;
+    
     if (bulletData[6] && bulletData[5] === this.gameState.playerAuth?.userId) {
       const localBulletId = this.pendingLocalBullets.get(bulletData[6]);
       if (localBulletId !== undefined) {
         const localBullet = this.clientBullets.get(localBulletId);
         if (localBullet) {
-          // Homing bullets are client-side visual effects only
-          // Keep them active for smooth tracking, skip server bullet creation
-          // Server still handles authoritative hit detection and payouts
-          if (localBullet.isHoming) {
-            console.log(`🎯 Keeping homing bullet ${localBulletId} as client-side visual effect - skipping server bullet`);
-            this.pendingLocalBullets.delete(bulletData[6]);
-            return; // Don't create server bullet, keep only the homing bullet
-          }
-          
           console.log(`🎯 Perfect reconciliation: removing local bullet ${localBulletId}, replacing with server bullet ${bulletData[0]} using nonce ${bulletData[6]}`);
           localBullet.destroy();
           this.clientBullets.delete(localBulletId);
           this.pendingLocalBullets.delete(bulletData[6]);
         } else {
-          // Local bullet already removed/timed out, just clean up nonce
           this.pendingLocalBullets.delete(bulletData[6]);
         }
       }
@@ -599,8 +593,8 @@ export default class GameScene extends Phaser.Scene {
       y: bulletData[2],
       directionX: bulletData[3],
       directionY: bulletData[4],
-      isHoming: false,
-      targetFishId: null,
+      isHoming: isHoming,
+      targetFishId: targetFishId,
       createdAt: Date.now(),
     });
 

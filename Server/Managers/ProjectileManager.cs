@@ -13,13 +13,13 @@ public class ProjectileManager
         _activeProjectiles[projectile.ProjectileId] = projectile;
     }
 
-    public void UpdateProjectiles(float deltaTime)
+    public void UpdateProjectiles(float deltaTime, List<Fish>? activeFish = null)
     {
         var projectilesToRemove = new List<string>();
 
         foreach (var projectile in _activeProjectiles.Values)
         {
-            projectile.UpdatePosition(deltaTime);
+            projectile.UpdatePosition(deltaTime, activeFish);
 
             if (projectile.ShouldRemove())
             {
