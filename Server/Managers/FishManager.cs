@@ -128,12 +128,6 @@ public class FishManager
             Y = startPos[1],
             SpawnTick = currentTick,
             DespawnTick = currentTick + 1800, // 60 seconds
-            MovementPatternId = 0,
-            VelocityX = 0,
-            VelocityY = 0,
-            BaseSpeed = fishDef.BaseSpeed,
-            CurrentSpeed = 0f,
-            AccelerationProgress = 0f,
             HitboxRadius = fishDef.HitboxRadius,
             BaseValue = fishDef.PayoutMultiplier,
             DestructionOdds = fishDef.CaptureProbability,
@@ -340,16 +334,7 @@ public class FishManager
                 break;
         }
         
-        int groupPattern = 0;
-        if (groupSize >= 3 && typeId == 0)
-        {
-            groupPattern = Random.Shared.Next(1, 4);
-        }
-        
-        int movementPattern = Random.Shared.Next(0, 4);
-        
         float spacing = typeId == 0 ? 40f : 60f;
-        string groupId = Guid.NewGuid().ToString();
         
         for (int i = 0; i < groupSize; i++)
         {
@@ -365,15 +350,7 @@ public class FishManager
             float spawnX = baseX + offsetX;
             float spawnY = baseY + offsetY;
             
-            var fish = Fish.CreateFish(typeId, spawnX, spawnY, currentTick, velocityX, velocityY, movementPattern);
-            
-            if (groupSize > 1)
-            {
-                fish.GroupId = groupId;
-                fish.GroupIndex = i;
-                fish.GroupSize = groupSize;
-                fish.GroupPattern = groupPattern;
-            }
+            var fish = Fish.CreateFish(typeId, spawnX, spawnY, currentTick, velocityX, velocityY);
             
             _activeFish[fish.FishId] = fish;
         }
