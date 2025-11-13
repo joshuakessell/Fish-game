@@ -403,7 +403,7 @@ public class MatchInstance
                     // Only send position on spawn - client calculates from path afterwards
                     x = isNew ? f.X : 0,
                     y = isNew ? f.Y : 0,
-                    path = isNew ? f.CachedPathData : null, // Only send path data on spawn
+                    path = f.CachedPathData, // Always send path data so late-joiners can see movement
                     isNewSpawn = isNew
                 };
             }).ToList(),
