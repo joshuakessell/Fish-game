@@ -18,13 +18,7 @@ export default class GameScene extends Phaser.Scene {
   private fishSpriteManager!: FishSpriteManager;
   private clientBullets: Map<number, ClientBullet> = new Map();
   private nextBulletId = -1;
-  private lastFiredBullets: Map<number, {
-    timestamp: number;
-    x: number;
-    y: number;
-    directionX: number;
-    directionY: number;
-  }> = new Map();
+  private pendingLocalBullets: Map<string, number> = new Map();
 
   private accumulator = 0;
   private readonly TICK_RATE = 30;
@@ -125,7 +119,6 @@ export default class GameScene extends Phaser.Scene {
         console.log(`💥 Bullet removed from server: id=${bulletId}`);
         bullet.graphics.destroy();
         this.clientBullets.delete(bulletId);
-        this.lastFiredBullets.delete(bulletId);
       }
     };
 
@@ -351,15 +344,21 @@ export default class GameScene extends Phaser.Scene {
       // Deduct shot cost locally (server will sync)
       this.gameState.deductShotCost();
       
+      // Generate unique client nonce for bullet reconciliation
+      const nonce = `${Date.now()}-${Math.random()}`;
+      
       // Create firing effect
       this.createFiringEffect(dirX, dirY);
       
-      this.createBullet(
+      const bulletId = this.createBullet(
         this.turretPosition.x,
         this.turretPosition.y,
         dirX,
         dirY,
       );
+      
+      // Store nonce mapping for reconciliation
+      this.pendingLocalBullets.set(nonce, bulletId);
 
       this.gameState.connection
         .invoke(
@@ -368,12 +367,13 @@ export default class GameScene extends Phaser.Scene {
           this.turretPosition.y,
           dirX,
           dirY,
+          nonce,
         )
         .catch((err) => {
           console.error("Failed to send Fire command:", err);
         });
       console.log(
-        `Fired from (${this.turretPosition.x}, ${this.turretPosition.y}) in direction (${dirX.toFixed(2)}, ${dirY.toFixed(2)})`,
+        `Fired from (${this.turretPosition.x}, ${this.turretPosition.y}) in direction (${dirX.toFixed(2)}, ${dirY.toFixed(2)}), nonce: ${nonce}`,
       );
     }
   }
@@ -383,7 +383,7 @@ export default class GameScene extends Phaser.Scene {
     y: number,
     directionX: number,
     directionY: number,
-  ) {
+  ): number {
     const bulletId = this.nextBulletId--;
 
     const graphics = this.add.graphics();
@@ -403,38 +403,22 @@ export default class GameScene extends Phaser.Scene {
     };
 
     this.clientBullets.set(bulletId, bullet);
-    this.lastFiredBullets.set(bulletId, {
-      timestamp: Date.now(),
-      x: x,
-      y: y,
-      directionX: directionX,
-      directionY: directionY
-    });
     graphics.setDepth(50);
+    
+    return bulletId;
   }
 
-  private createBulletFromServer(bulletData: { id: number; x: number; y: number; directionX: number; directionY: number; ownerId: string }) {
-    if (bulletData.ownerId === this.gameState.playerAuth?.userId) {
-      for (const [id, data] of this.lastFiredBullets.entries()) {
-        const timeDiff = Date.now() - data.timestamp;
-        if (timeDiff < 500 && id < 0) {
-          const distX = Math.abs(bulletData.x - data.x);
-          const distY = Math.abs(bulletData.y - data.y);
-          const maxDist = 300;
-          
-          const dirDotProduct = (bulletData.directionX * data.directionX) + 
-                                (bulletData.directionY * data.directionY);
-          
-          if (distX < maxDist && distY < maxDist && dirDotProduct > 0.95) {
-            const localBullet = this.clientBullets.get(id);
-            if (localBullet) {
-              console.log(`🔄 Reconciling: removing local bullet ${id}, replacing with server bullet ${bulletData.id} (dist: ${Math.max(distX, distY).toFixed(1)}px, dir: ${dirDotProduct.toFixed(3)})`);
-              localBullet.graphics.destroy();
-              this.clientBullets.delete(id);
-              this.lastFiredBullets.delete(id);
-              break;
-            }
-          }
+  private createBulletFromServer(bulletData: { id: number; x: number; y: number; directionX: number; directionY: number; ownerId: string; clientNonce?: string }) {
+    // Perfect bullet reconciliation using client-generated nonces
+    if (bulletData.clientNonce && bulletData.ownerId === this.gameState.playerAuth?.userId) {
+      const localBulletId = this.pendingLocalBullets.get(bulletData.clientNonce);
+      if (localBulletId !== undefined) {
+        const localBullet = this.clientBullets.get(localBulletId);
+        if (localBullet) {
+          console.log(`🎯 Perfect reconciliation: removing local bullet ${localBulletId}, replacing with server bullet ${bulletData.id} using nonce ${bulletData.clientNonce}`);
+          localBullet.graphics.destroy();
+          this.clientBullets.delete(localBulletId);
+          this.pendingLocalBullets.delete(bulletData.clientNonce);
         }
       }
     }
@@ -467,9 +451,11 @@ export default class GameScene extends Phaser.Scene {
     const deltaSeconds = delta / 1000;
     const now = Date.now();
 
-    for (const [id, data] of this.lastFiredBullets.entries()) {
-      if (now - data.timestamp > 1000) {
-        this.lastFiredBullets.delete(id);
+    // Clean up old pending nonces (after 1 second)
+    for (const [nonce, bulletId] of this.pendingLocalBullets.entries()) {
+      const bullet = this.clientBullets.get(bulletId);
+      if (!bullet || now - bullet.createdAt > 1000) {
+        this.pendingLocalBullets.delete(nonce);
       }
     }
 

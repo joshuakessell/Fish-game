@@ -244,7 +244,8 @@ public class MatchInstance
             DirectionX = command.DirectionX,
             DirectionY = command.DirectionY,
             Damage = 10f * player.CannonLevel,
-            BetValue = cost // Snapshot bet value at fire time (immutable)
+            BetValue = cost, // Snapshot bet value at fire time (immutable)
+            ClientNonce = command.ClientNonce
         };
 
         _projectileManager.AddProjectile(projectile);
@@ -424,7 +425,8 @@ public class MatchInstance
                 y = p.Y,
                 directionX = p.DirectionX,
                 directionY = p.DirectionY,
-                ownerId = p.OwnerPlayerId
+                ownerId = p.OwnerPlayerId,
+                clientNonce = p.ClientNonce
             }).ToList(),
             ActiveBossSequences = activeSequences.Select(s => new BossSequenceState
             {
@@ -513,6 +515,7 @@ public class GameCommand
     public float DirectionX { get; set; }
     public float DirectionY { get; set; }
     public int BetValue { get; set; }
+    public string ClientNonce { get; set; } = string.Empty;
 }
 
 public enum CommandType
@@ -654,6 +657,9 @@ public class ProjectileState
     
     [Key(5)]
     public string ownerId { get; set; } = string.Empty;
+    
+    [Key(6)]
+    public string clientNonce { get; set; } = string.Empty;
 }
 
 public class KillEvent

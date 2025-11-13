@@ -85,7 +85,7 @@ public class GameHub : Hub
         }
     }
 
-    public void Fire(float x, float y, float directionX, float directionY)
+    public void Fire(float x, float y, float directionX, float directionY, string clientNonce = "")
     {
         if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
             return;
@@ -105,7 +105,8 @@ public class GameHub : Hub
             X = x,
             Y = y,
             DirectionX = directionX,
-            DirectionY = directionY
+            DirectionY = directionY,
+            ClientNonce = clientNonce
         });
     }
 

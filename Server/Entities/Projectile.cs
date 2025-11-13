@@ -14,6 +14,7 @@ public class Projectile
     public float Speed { get; set; } = 420f; // pixels per second (300f * 1.4)
     public float Damage { get; set; }
     public decimal BetValue { get; set; } // Shot value (10-200 credits)
+    public string ClientNonce { get; set; } = string.Empty;
     
     public int TtlTicks { get; set; } = 900; // 30 seconds at 30 TPS (bullets bounce until hitting fish)
     public bool IsSpent { get; set; } = false;

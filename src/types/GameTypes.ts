@@ -24,6 +24,7 @@ export interface BulletData {
   y: number;
   directionX: number;
   directionY: number;
+  clientNonce?: string;
 }
 
 export interface GameStateUpdate {
