@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.SignalR;
 using OceanKing.Server.Entities;
 using OceanKing.Server.Models;
+using OceanKing.Server.Systems;
 using OceanKing.Hubs;
 using MessagePack;
 
@@ -22,9 +23,13 @@ public class MatchInstance
     private readonly CollisionResolver _collisionResolver;
     
     // Boss system managers
+    private readonly BossShotTracker _bossShotTracker;
     private readonly RoundManager _roundManager;
     private readonly KillSequenceHandler _killSequenceHandler;
     private readonly InteractionManager _interactionManager;
+    
+    // Hot seat system
+    private readonly HotSeatManager _hotSeatManager;
     
     // Game loop
     private Thread? _gameLoopThread;
@@ -32,11 +37,6 @@ public class MatchInstance
     private long _currentTick = 0;
     private const int TARGET_TPS = 30; // 30 ticks per second
     private const double MS_PER_TICK = 1000.0 / TARGET_TPS;
-    
-    // Hot seat system
-    private long _lastHotSeatRotation = 0;
-    private const int HOT_SEAT_DURATION_TICKS = 900; // 30 seconds at 30 TPS
-    private const int HOT_SEAT_ROTATION_INTERVAL = 300; // Check every 10 seconds
     
     // Input queue (thread-safe)
     private readonly ConcurrentQueue<GameCommand> _commandQueue = new();
@@ -61,11 +61,14 @@ public class MatchInstance
         _playerManager = new PlayerManager();
         _fishManager = new FishManager();
         _projectileManager = new ProjectileManager();
-        _collisionResolver = new CollisionResolver(_playerManager);
+        _bossShotTracker = new BossShotTracker();
+        _collisionResolver = new CollisionResolver(_playerManager, _bossShotTracker);
         
         _roundManager = new RoundManager();
         _killSequenceHandler = new KillSequenceHandler(_fishManager);
         _interactionManager = new InteractionManager();
+        
+        _hotSeatManager = new HotSeatManager();
     }
 
     public bool CanJoin() => !_isSolo && _playerManager.GetPlayerCount() < MatchManager.MAX_PLAYERS_PER_MATCH;
@@ -186,8 +189,8 @@ public class MatchInstance
         var eligibleBosses = _roundManager.GetEligibleBosses();
         _fishManager.SpawnFishIfNeeded(_currentTick, eligibleBosses);
         
-        // Step 10: Manage hot seats (random luck boosts for excitement)
-        ManageHotSeats(_currentTick);
+        // Step 10: Update hot seat system
+        _hotSeatManager.Update((int)_currentTick);
 
         // Step 11: Check for empty room timeout
         CheckEmptyRoomTimeout();
@@ -289,7 +292,11 @@ public class MatchInstance
             }
         }
 
-        var payout = fish.BaseValue * multiplier * projectile.BetValue;
+        var basePayout = fish.BaseValue * multiplier * projectile.BetValue;
+        
+        float hotSeatMultiplier = _hotSeatManager.GetMultiplier(player.PlayerSlot);
+        var payout = basePayout * (decimal)hotSeatMultiplier;
+        
         player.Credits += payout;
         player.TotalEarned += payout;
         player.TotalKills++;
@@ -303,7 +310,15 @@ public class MatchInstance
             PlayerSlot = player.PlayerSlot
         });
 
-        Console.WriteLine($"Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits (bet: {projectile.BetValue}, x{multiplier})");
+        if (hotSeatMultiplier > 1.0f)
+        {
+            Console.WriteLine($"🔥 [HotSeat] Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits " +
+                            $"(base: {basePayout}, hot seat: x{hotSeatMultiplier:F2}, bet: {projectile.BetValue}, multiplier: x{multiplier})");
+        }
+        else
+        {
+            Console.WriteLine($"Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits (bet: {projectile.BetValue}, x{multiplier})");
+        }
     }
 
     private void ProcessBossKillResult(BossKillResult result)
@@ -313,10 +328,22 @@ public class MatchInstance
 
         if (result.TotalPayout > 0)
         {
-            player.Credits += result.TotalPayout;
-            player.TotalEarned += result.TotalPayout;
+            float hotSeatMultiplier = _hotSeatManager.GetMultiplier(player.PlayerSlot);
+            var basePayout = result.TotalPayout;
+            var finalPayout = basePayout * (decimal)hotSeatMultiplier;
             
-            Console.WriteLine($"Boss kill sequence payout: {player.DisplayName} earned {result.TotalPayout} credits from boss effect");
+            player.Credits += finalPayout;
+            player.TotalEarned += finalPayout;
+            
+            if (hotSeatMultiplier > 1.0f)
+            {
+                Console.WriteLine($"🔥 [HotSeat] Boss kill sequence payout: {player.DisplayName} earned {finalPayout} credits " +
+                                $"(base: {basePayout}, hot seat: x{hotSeatMultiplier:F2})");
+            }
+            else
+            {
+                Console.WriteLine($"Boss kill sequence payout: {player.DisplayName} earned {finalPayout} credits from boss effect");
+            }
         }
     }
 
@@ -326,46 +353,6 @@ public class MatchInstance
         if (result != null)
         {
             _killSequenceHandler.ApplyInteractionResult(result.SequenceId, result.PerformanceModifier);
-        }
-    }
-
-    private void ManageHotSeats(long currentTick)
-    {
-        // Check if it's time to rotate hot seats
-        if (currentTick - _lastHotSeatRotation < HOT_SEAT_ROTATION_INTERVAL)
-            return;
-            
-        _lastHotSeatRotation = currentTick;
-        
-        var players = _playerManager.GetAllPlayers();
-        if (players.Count == 0) return;
-        
-        // Find current hot seat player (max 1 at a time to maintain 95% RTP)
-        var currentHotSeat = players.FirstOrDefault(p => p.IsHotSeat);
-        
-        // Check if current hot seat has expired
-        if (currentHotSeat != null && currentTick >= currentHotSeat.HotSeatExpiryTick)
-        {
-            currentHotSeat.IsHotSeat = false;
-            currentHotSeat.LuckMultiplier = 1.0f;
-            Console.WriteLine($"Hot seat expired for {currentHotSeat.DisplayName}");
-            currentHotSeat = null;
-        }
-        
-        // If no active hot seat, heavily rotate to random players for excitement
-        // Note: LuckMultiplier stays at 1.0 to maintain exactly 95% RTP
-        // The hot seat is purely visual/psychological - creates excitement without breaking RTP balance
-        if (currentHotSeat == null && Random.Shared.Next(100) < 70) // 70% chance - frequent rotation for excitement
-        {
-            var eligiblePlayers = players.Where(p => !p.IsHotSeat).ToList();
-            if (eligiblePlayers.Count > 0)
-            {
-                var luckyPlayer = eligiblePlayers[Random.Shared.Next(eligiblePlayers.Count)];
-                luckyPlayer.IsHotSeat = true;
-                luckyPlayer.LuckMultiplier = 1.0f; // No actual odds boost - maintains 95% RTP exactly
-                luckyPlayer.HotSeatExpiryTick = currentTick + HOT_SEAT_DURATION_TICKS;
-                Console.WriteLine($"🔥 HOT SEAT activated for {luckyPlayer.DisplayName} for 30 seconds!");
-            }
         }
     }
     

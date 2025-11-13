@@ -1,14 +1,17 @@
 using OceanKing.Server.Entities;
+using OceanKing.Server.Systems;
 
 namespace OceanKing.Server.Managers;
 
 public class CollisionResolver
 {
     private readonly PlayerManager _playerManager;
+    private readonly BossShotTracker _bossShotTracker;
     
-    public CollisionResolver(PlayerManager playerManager)
+    public CollisionResolver(PlayerManager playerManager, BossShotTracker bossShotTracker)
     {
         _playerManager = playerManager;
+        _bossShotTracker = bossShotTracker;
     }
     
     public List<KillEvent> ResolveCollisions(
@@ -36,14 +39,20 @@ public class CollisionResolver
                     projectile.IsSpent = true;
 
                     var player = _playerManager.GetPlayer(projectile.OwnerPlayerId);
-                    float luckMultiplier = player?.LuckMultiplier ?? 1.0f;
                     
-                    float adjustedOdds = f.DestructionOdds * luckMultiplier;
-                    float roll = Random.Shared.NextSingle();
-                    
-                    if (roll < adjustedOdds)
+                    if (BossCatalog.IsBoss(f.TypeId))
                     {
-                        if (BossCatalog.IsBoss(f.TypeId))
+                        _bossShotTracker.RecordShot(f.TypeId, projectile.BetValue);
+                        
+                        float killProbability = _bossShotTracker.GetKillProbability(f.TypeId, projectile.BetValue);
+                        float roll = Random.Shared.NextSingle();
+                        
+                        var record = _bossShotTracker.GetRecord(f.TypeId);
+                        Console.WriteLine($"[Boss] Type {f.TypeId} hit by {player?.DisplayName ?? "unknown"} - " +
+                                        $"Cumulative: {record?.TotalShots ?? 0} shots, ${record?.TotalDamage ?? 0} damage - " +
+                                        $"Kill probability: {killProbability * 100:F2}% - Roll: {roll * 100:F2}%");
+                        
+                        if (roll < killProbability)
                         {
                             var bossDef = BossCatalog.GetBoss(f.TypeId);
                             if (bossDef != null)
@@ -67,6 +76,11 @@ public class CollisionResolver
 
                                 var basePayout = f.BaseValue * multiplier;
                                 
+                                Console.WriteLine($"[Boss] KILLED! Type {f.TypeId} by {player?.DisplayName ?? "unknown"} - " +
+                                                $"Base payout: ${basePayout} (x{multiplier})");
+                                
+                                _bossShotTracker.ResetBoss(f.TypeId);
+                                
                                 killSequenceHandler.StartBossKillSequence(
                                     f.TypeId, 
                                     projectile.OwnerPlayerId, 
@@ -88,16 +102,24 @@ public class CollisionResolver
                                 }
                             }
                         }
-                        else
+                    }
+                    else
+                    {
+                        var fishDef = FishCatalog.GetFish(f.TypeId);
+                        if (fishDef != null)
                         {
-                            kills.Add(new KillEvent
+                            float killProbability = fishDef.CaptureProbability;
+                            float roll = Random.Shared.NextSingle();
+                            
+                            if (roll < killProbability)
                             {
-                                FishId = f.FishId,
-                                ProjectileId = projectile.ProjectileId
-                            });
+                                kills.Add(new KillEvent
+                                {
+                                    FishId = f.FishId,
+                                    ProjectileId = projectile.ProjectileId
+                                });
+                            }
                         }
-                        
-                        break;
                     }
                     
                     break;
