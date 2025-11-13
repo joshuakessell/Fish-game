@@ -1,13 +1,14 @@
 import { PathData } from "../systems/paths/PathData";
 
-export interface FishData {
-  id: number;
-  type: number;
-  x: number;
-  y: number;
-  path?: PathData;
-  isNewSpawn?: boolean;
-}
+// MessagePack array format from server: [id, type, x, y, path, isNewSpawn]
+export type FishData = [
+  number,        // [0] id
+  number,        // [1] type
+  number,        // [2] x
+  number,        // [3] y
+  PathData | null, // [4] path
+  boolean        // [5] isNewSpawn
+];
 
 export interface PlayerData {
   slot: number;
@@ -17,15 +18,16 @@ export interface PlayerData {
   betValue: number;
 }
 
-export interface BulletData {
-  id: number;
-  ownerId: string;
-  x: number;
-  y: number;
-  directionX: number;
-  directionY: number;
-  clientNonce?: string;
-}
+// MessagePack array format from server: [id, x, y, directionX, directionY, ownerId, clientNonce]
+export type BulletData = [
+  number,  // [0] id
+  number,  // [1] x
+  number,  // [2] y
+  number,  // [3] directionX
+  number,  // [4] directionY
+  string,  // [5] ownerId
+  string   // [6] clientNonce
+];
 
 export interface GameStateUpdate {
   tick: number;

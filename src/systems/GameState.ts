@@ -13,17 +13,19 @@ interface ServerPlayerState {
   BetValue: number;
 }
 
-interface StateDelta {
-  Tick?: number;
-  Fish?: FishData[];
-  Projectiles?: BulletData[];
-  Players?: ServerPlayerState[];
-  PayoutEvents?: Array<{
-    fishId: number;
-    payout: number;
-    playerSlot: number;
-  }>;
-}
+// MessagePack sends this as an array with indices [0-9], not object with properties
+type StateDelta = [
+  number,                    // [0] Tick
+  number,                    // [1] RoundNumber
+  number,                    // [2] TimeRemainingTicks
+  boolean,                   // [3] IsRoundTransitioning
+  ServerPlayerState[],       // [4] Players
+  FishData[],                // [5] Fish
+  BulletData[],              // [6] Projectiles
+  any[],                     // [7] ActiveBossSequences
+  any[],                     // [8] PendingInteractions
+  Array<{ fishId: number; payout: number; playerSlot: number }>  // [9] PayoutEvents
+];
 
 export class GameState {
   private static instance: GameState;
@@ -187,13 +189,18 @@ export class GameState {
     }
 
     this.connection.on("StateDelta", (update: StateDelta) => {
-      console.log("🔥 StateDelta received:", update);
-      if (update.Tick !== undefined) {
-        this.lastServerTick = update.Tick;
-        this.tickDrift = update.Tick - this.currentTick;
+      const tick = update[0];
+      const players = update[4];
+      const fish = update[5];
+      const projectiles = update[6];
+      const payoutEvents = update[9];
+
+      if (tick !== undefined) {
+        this.lastServerTick = tick;
+        this.tickDrift = tick - this.currentTick;
 
         if (!this.isSynced) {
-          this.currentTick = update.Tick;
+          this.currentTick = tick;
           this.isSynced = true;
           this.tickDrift = 0;
           if (this.onTickSnapped) {
@@ -201,7 +208,7 @@ export class GameState {
           }
           console.log(`Tick snapped to server tick on first sync: ${this.currentTick}`);
         } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
-          this.currentTick = update.Tick;
+          this.currentTick = tick;
           this.tickDrift = 0;
           if (this.onTickSnapped) {
             this.onTickSnapped();
@@ -210,13 +217,13 @@ export class GameState {
         }
       }
 
-      if (update.Fish) {
-        console.log(`📦 Received ${update.Fish.length} fish in StateDelta`);
+      if (fish && fish.length > 0) {
+        console.log(`📦 Received ${fish.length} fish in StateDelta`);
         const currentFishIds = new Set(this.fish.keys());
         const incomingFishIds = new Set<number>();
 
-        for (const fishData of update.Fish) {
-          incomingFishIds.add(fishData.id);
+        for (const fishData of fish) {
+          incomingFishIds.add(fishData[0]);
           this.updateFish(fishData);
         }
 
@@ -230,15 +237,15 @@ export class GameState {
         }
       }
 
-      if (update.Projectiles) {
+      if (projectiles && projectiles.length > 0) {
         const currentBulletIds = new Set(this.bullets.keys());
         const incomingBulletIds = new Set<number>();
 
-        for (const bulletData of update.Projectiles) {
-          incomingBulletIds.add(bulletData.id);
-          const isNew = !this.bullets.has(bulletData.id);
+        for (const bulletData of projectiles) {
+          incomingBulletIds.add(bulletData[0]);
+          const isNew = !this.bullets.has(bulletData[0]);
           
-          this.bullets.set(bulletData.id, bulletData);
+          this.bullets.set(bulletData[0], bulletData);
           
           if (isNew && this.onBulletSpawned) {
             this.onBulletSpawned(bulletData);
@@ -255,8 +262,8 @@ export class GameState {
         }
       }
 
-      if (update.Players) {
-        for (const serverPlayer of update.Players) {
+      if (players && players.length > 0) {
+        for (const serverPlayer of players) {
           const playerData: PlayerData = {
             slot: serverPlayer.PlayerSlot,
             userId: serverPlayer.PlayerId,
@@ -281,8 +288,8 @@ export class GameState {
         }
       }
 
-      if (update.PayoutEvents) {
-        for (const event of update.PayoutEvents) {
+      if (payoutEvents && payoutEvents.length > 0) {
+        for (const event of payoutEvents) {
           if (event.playerSlot === this.myPlayerSlot && this.onPayoutReceived) {
             this.onPayoutReceived(event.fishId, event.payout);
           }
@@ -304,24 +311,24 @@ export class GameState {
   }
 
   private updateFish(fishData: FishData) {
-    const isNew = !this.fish.has(fishData.id);
-    console.log(`🔄 Updating fish ${fishData.id} (type ${fishData.type}), isNew=${isNew}, hasPath=${!!fishData.path}, pos=(${fishData.x}, ${fishData.y})`);
+    const isNew = !this.fish.has(fishData[0]);
+    console.log(`🔄 Updating fish ${fishData[0]} (type ${fishData[1]}), isNew=${isNew}, hasPath=${!!fishData[4]}, pos=(${fishData[2]}, ${fishData[3]})`);
 
     // Store fish data BEFORE triggering spawn callback
-    this.fish.set(fishData.id, fishData);
+    this.fish.set(fishData[0], fishData);
 
-    if (fishData.path) {
-      this.fishPathManager.registerFishPath(fishData.id, fishData.path);
+    if (fishData[4]) {
+      this.fishPathManager.registerFishPath(fishData[0], fishData[4]);
       console.log(
-        `Registered path for fish ${fishData.id}, type: ${fishData.path.pathType}`,
+        `Registered path for fish ${fishData[0]}, type: ${fishData[4].pathType}`,
       );
     }
 
     if (isNew && this.onFishSpawned) {
-      console.log(`🎯 Calling onFishSpawned for fish ${fishData.id}, type ${fishData.type}`);
-      this.onFishSpawned(fishData.id, fishData.type);
+      console.log(`🎯 Calling onFishSpawned for fish ${fishData[0]}, type ${fishData[1]}`);
+      this.onFishSpawned(fishData[0], fishData[1]);
     } else if (isNew && !this.onFishSpawned) {
-      console.warn(`⚠️ New fish ${fishData.id} but no onFishSpawned callback set!`);
+      console.warn(`⚠️ New fish ${fishData[0]} but no onFishSpawned callback set!`);
     }
   }
 
@@ -342,7 +349,7 @@ export class GameState {
     // Fallback to server position if path not available
     const fishData = this.fish.get(fishId);
     if (fishData) {
-      return [fishData.x, fishData.y];
+      return [fishData[2], fishData[3]];
     }
 
     return null;

@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { GameState } from "../systems/GameState";
 import { FishSpriteManager } from "../systems/FishSpriteManager";
 import { BettingUI } from "../entities/BettingUI";
+import { BulletData } from "../types/GameTypes";
 
 interface ClientBullet {
   id: number;
@@ -107,8 +108,8 @@ export default class GameScene extends Phaser.Scene {
     };
 
     this.gameState.onBulletSpawned = (bulletData) => {
-      if (!this.clientBullets.has(bulletData.id)) {
-        console.log(`💥 Bullet spawned from server: id=${bulletData.id}, pos=(${bulletData.x}, ${bulletData.y})`);
+      if (!this.clientBullets.has(bulletData[0])) {
+        console.log(`💥 Bullet spawned from server: id=${bulletData[0]}, pos=(${bulletData[1]}, ${bulletData[2]})`);
         this.createBulletFromServer(bulletData);
       }
     };
@@ -408,17 +409,17 @@ export default class GameScene extends Phaser.Scene {
     return bulletId;
   }
 
-  private createBulletFromServer(bulletData: { id: number; x: number; y: number; directionX: number; directionY: number; ownerId: string; clientNonce?: string }) {
+  private createBulletFromServer(bulletData: BulletData) {
     // Perfect bullet reconciliation using client-generated nonces
-    if (bulletData.clientNonce && bulletData.ownerId === this.gameState.playerAuth?.userId) {
-      const localBulletId = this.pendingLocalBullets.get(bulletData.clientNonce);
+    if (bulletData[6] && bulletData[5] === this.gameState.playerAuth?.userId) {
+      const localBulletId = this.pendingLocalBullets.get(bulletData[6]);
       if (localBulletId !== undefined) {
         const localBullet = this.clientBullets.get(localBulletId);
         if (localBullet) {
-          console.log(`🎯 Perfect reconciliation: removing local bullet ${localBulletId}, replacing with server bullet ${bulletData.id} using nonce ${bulletData.clientNonce}`);
+          console.log(`🎯 Perfect reconciliation: removing local bullet ${localBulletId}, replacing with server bullet ${bulletData[0]} using nonce ${bulletData[6]}`);
           localBullet.graphics.destroy();
           this.clientBullets.delete(localBulletId);
-          this.pendingLocalBullets.delete(bulletData.clientNonce);
+          this.pendingLocalBullets.delete(bulletData[6]);
         }
       }
     }
@@ -430,20 +431,20 @@ export default class GameScene extends Phaser.Scene {
     graphics.strokeEllipse(0, 0, 20, 6);
 
     const bullet: ClientBullet = {
-      id: bulletData.id,
-      x: bulletData.x,
-      y: bulletData.y,
-      directionX: bulletData.directionX,
-      directionY: bulletData.directionY,
+      id: bulletData[0],
+      x: bulletData[1],
+      y: bulletData[2],
+      directionX: bulletData[3],
+      directionY: bulletData[4],
       graphics: graphics,
       createdAt: Date.now(),
     };
 
-    this.clientBullets.set(bulletData.id, bullet);
+    this.clientBullets.set(bulletData[0], bullet);
     graphics.setDepth(50);
 
-    const angle = Math.atan2(bulletData.directionY, bulletData.directionX);
-    graphics.setPosition(bulletData.x, bulletData.y);
+    const angle = Math.atan2(bulletData[4], bulletData[3]);
+    graphics.setPosition(bulletData[1], bulletData[2]);
     graphics.setRotation(angle);
   }
 
@@ -531,8 +532,8 @@ export default class GameScene extends Phaser.Scene {
     } else {
       const fishData = this.gameState.fish.get(fishId);
       if (fishData) {
-        x = fishData.x;
-        y = fishData.y;
+        x = fishData[2];
+        y = fishData[3];
       }
     }
 

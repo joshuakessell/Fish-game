@@ -28,7 +28,7 @@ export class FishSpriteManager {
     if (!initialPosition) {
       const fishData = this.gameState.fish.get(fishId);
       if (fishData) {
-        initialPosition = [fishData.x, fishData.y];
+        initialPosition = [fishData[2], fishData[3]];
         console.log(`Fish ${fishId} spawning with server position (path not yet ready)`);
       } else {
         console.warn(`Cannot spawn fish ${fishId}: no position data available at all`);
