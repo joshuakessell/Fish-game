@@ -14,11 +14,11 @@ interface ServerPlayerState {
 }
 
 interface StateDelta {
-  tick?: number;
-  fish?: FishData[];
-  bullets?: BulletData[];
-  players?: ServerPlayerState[];
-  payoutEvents?: Array<{
+  Tick?: number;
+  Fish?: FishData[];
+  Projectiles?: BulletData[];
+  Players?: ServerPlayerState[];
+  PayoutEvents?: Array<{
     fishId: number;
     payout: number;
     playerSlot: number;
@@ -187,12 +187,12 @@ export class GameState {
     }
 
     this.connection.on("StateDelta", (update: StateDelta) => {
-      if (update.tick !== undefined) {
-        this.lastServerTick = update.tick;
-        this.tickDrift = update.tick - this.currentTick;
+      if (update.Tick !== undefined) {
+        this.lastServerTick = update.Tick;
+        this.tickDrift = update.Tick - this.currentTick;
 
         if (!this.isSynced) {
-          this.currentTick = update.tick;
+          this.currentTick = update.Tick;
           this.isSynced = true;
           this.tickDrift = 0;
           if (this.onTickSnapped) {
@@ -200,7 +200,7 @@ export class GameState {
           }
           console.log(`Tick snapped to server tick on first sync: ${this.currentTick}`);
         } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
-          this.currentTick = update.tick;
+          this.currentTick = update.Tick;
           this.tickDrift = 0;
           if (this.onTickSnapped) {
             this.onTickSnapped();
@@ -209,12 +209,12 @@ export class GameState {
         }
       }
 
-      if (update.fish) {
-        console.log(`📦 Received ${update.fish.length} fish in StateDelta`);
+      if (update.Fish) {
+        console.log(`📦 Received ${update.Fish.length} fish in StateDelta`);
         const currentFishIds = new Set(this.fish.keys());
         const incomingFishIds = new Set<number>();
 
-        for (const fishData of update.fish) {
+        for (const fishData of update.Fish) {
           incomingFishIds.add(fishData.id);
           this.updateFish(fishData);
         }
@@ -229,11 +229,11 @@ export class GameState {
         }
       }
 
-      if (update.bullets) {
+      if (update.Projectiles) {
         const currentBulletIds = new Set(this.bullets.keys());
         const incomingBulletIds = new Set<number>();
 
-        for (const bulletData of update.bullets) {
+        for (const bulletData of update.Projectiles) {
           incomingBulletIds.add(bulletData.id);
           const isNew = !this.bullets.has(bulletData.id);
           
@@ -254,8 +254,8 @@ export class GameState {
         }
       }
 
-      if (update.players) {
-        for (const serverPlayer of update.players) {
+      if (update.Players) {
+        for (const serverPlayer of update.Players) {
           const playerData: PlayerData = {
             slot: serverPlayer.PlayerSlot,
             userId: serverPlayer.PlayerId,
@@ -280,8 +280,8 @@ export class GameState {
         }
       }
 
-      if (update.payoutEvents) {
-        for (const event of update.payoutEvents) {
+      if (update.PayoutEvents) {
+        for (const event of update.PayoutEvents) {
           if (event.playerSlot === this.myPlayerSlot && this.onPayoutReceived) {
             this.onPayoutReceived(event.fishId, event.payout);
           }
