@@ -55,18 +55,10 @@ export default class BootScene extends Phaser.Scene {
       return;
     }
 
-    // Auto-join match_1 with seat 1
-    console.log("BootScene [DEV]: Joining match_1 with seat 1");
-    const roomId = "match_1";
-    const seat = 1;
-    const joined = await gameState.joinRoom(roomId, seat);
-    
-    if (!joined) {
-      console.error("BootScene [DEV]: Failed to join room");
-      return;
-    }
+    // Store the target seat for GameScene to use
+    gameState.devModeSeat = 1;
 
-    console.log("BootScene [DEV]: Successfully auto-joined, starting game");
+    console.log("BootScene [DEV]: Auth complete, starting game (room join deferred to GameScene)");
     this.scene.start("GameScene");
     this.scene.launch("UIScene");
   }

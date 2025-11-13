@@ -81,8 +81,37 @@ export default class GameScene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this.cleanupSignalR, this);
     this.events.on(Phaser.Scenes.Events.DESTROY, this.cleanupSignalR, this);
 
-    this.createPlayerTurret();
+    // Register room-ready handler BEFORE joining
+    this.gameState.onRoomJoined = () => {
+      console.log("GameScene: Room joined, initializing seat-dependent components");
+      this.initializeSeatDependentComponents();
+    };
 
+    // DEV MODE: Auto-join room after callbacks are set up
+    if (this.gameState.devModeSeat !== null) {
+      const seat = this.gameState.devModeSeat;
+      const roomId = "match_1";
+      console.log(`GameScene [DEV]: Auto-joining ${roomId} at seat ${seat} (callbacks ready)`);
+      
+      this.gameState.joinRoom(roomId, seat).then(joined => {
+        if (!joined) {
+          console.error("GameScene [DEV]: Failed to join room");
+        } else {
+          console.log("GameScene [DEV]: Successfully joined room");
+        }
+      });
+    } else if (this.gameState.myPlayerSlot !== null) {
+      // Normal mode: already joined from lobby, initialize immediately
+      console.log("GameScene: Already joined, initializing components");
+      this.initializeSeatDependentComponents();
+    }
+
+    console.log("GameScene: Initialization complete");
+  }
+
+
+  private initializeSeatDependentComponents() {
+    this.createPlayerTurret();
     this.createAutoTargetIndicator();
 
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -98,10 +127,9 @@ export default class GameScene extends Phaser.Scene {
         this.rotateTurretToPointer(pointer.x, pointer.y);
       }
     });
-
-    console.log("GameScene: Initialization complete");
+    
+    console.log("GameScene: Seat-dependent components initialized");
   }
-
 
   private createDebugOverlay() {
     this.debugText = this.add.text(10, 10, "", {
@@ -223,6 +251,8 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.onPayoutReceived = null;
     this.gameState.onCreditsChanged = null;
     this.gameState.onTickSnapped = null;
+    this.gameState.onRoomJoined = null;
+    this.gameState.onRoomLeft = null;
 
     if (this.fishSpriteManager) {
       this.fishSpriteManager.clear();

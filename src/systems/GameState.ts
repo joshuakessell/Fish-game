@@ -64,6 +64,9 @@ export class GameState {
   private lastServerTick: number = 0;
   private readonly TICK_DRIFT_THRESHOLD = 5;
 
+  // Dev mode auto-join
+  public devModeSeat: number | null = null;
+
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
 
@@ -77,6 +80,12 @@ export class GameState {
     null;
   public onCreditsChanged: (() => void) | null = null;
   public onTickSnapped: (() => void) | null = null;
+
+  // Room join lifecycle
+  public onRoomJoined: (() => void) | null = null;
+  public onRoomLeft: (() => void) | null = null;
+  private roomJoinResolve: (() => void) | null = null;
+  private roomJoinPromise: Promise<void> | null = null;
 
   private constructor() {}
 
@@ -166,11 +175,43 @@ export class GameState {
       this.currentRoomId = roomId;
       this.myPlayerSlot = seat;
       console.log(`Joined room ${roomId} at seat ${seat}`);
+      
+      // Fire room joined callback
+      if (this.onRoomJoined) {
+        this.onRoomJoined();
+      }
+      
+      // Resolve waiting promise
+      if (this.roomJoinResolve) {
+        this.roomJoinResolve();
+        this.roomJoinResolve = null;
+        this.roomJoinPromise = null;
+      }
+      
       return true;
     } catch (error) {
       console.error("Failed to join room:", error);
       return false;
     }
+  }
+
+  public waitForRoomJoin(): Promise<void> {
+    // If already joined, resolve immediately
+    if (this.myPlayerSlot !== null) {
+      return Promise.resolve();
+    }
+    
+    // If already waiting, return existing promise
+    if (this.roomJoinPromise) {
+      return this.roomJoinPromise;
+    }
+    
+    // Create new promise that resolves when room is joined
+    this.roomJoinPromise = new Promise<void>((resolve) => {
+      this.roomJoinResolve = resolve;
+    });
+    
+    return this.roomJoinPromise;
   }
 
   public reset() {
