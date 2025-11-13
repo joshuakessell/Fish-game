@@ -16,38 +16,38 @@ public class PathGenerator
     /// <summary>
     /// Generate a path for a fish based on its type
     /// </summary>
-    public static IPath GeneratePathForFish(int fishId, FishDefinition fishType, int currentTick)
+    public static IPath GeneratePathForFish(int fishId, FishDefinition fishType, int currentTick, int spawnEdge = -1, int groupIndex = 0)
     {
-        // Generate unique seed for this fish
-        int seed = GenerateSeed(fishId, currentTick);
+        // Generate unique seed for this fish, incorporating spawn edge and group index for variation
+        int seed = GenerateSeed(fishId, currentTick, spawnEdge, groupIndex);
         var rng = new SeededRandom(seed);
         
         // Determine path type based on fish category
         return fishType.Category switch
         {
-            FishCategory.SmallFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
-            FishCategory.MediumFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
-            FishCategory.LargeFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng),
-            FishCategory.BonusFish => GenerateSinePath(fishId, seed, currentTick, fishType, rng),
-            _ => GenerateLinearPath(fishId, seed, currentTick, fishType, rng)
+            FishCategory.SmallFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex),
+            FishCategory.MediumFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex),
+            FishCategory.LargeFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex),
+            FishCategory.BonusFish => GenerateSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex),
+            _ => GenerateLinearPath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex)
         };
     }
     
-    private static int GenerateSeed(int fishId, int tick)
+    private static int GenerateSeed(int fishId, int tick, int spawnEdge, int groupIndex)
     {
-        // Combine fish ID, tick, and counter for unique seed
+        // Combine fish ID, tick, spawn edge, group index and counter for unique seed
         // Use 64-bit arithmetic to prevent overflow before modulo
-        long combined = ((long)fishId * 31L + (long)tick * 17L + _seedCounter++);
+        long combined = ((long)fishId * 31L + (long)tick * 17L + (long)spawnEdge * 13L + (long)groupIndex * 7L + _seedCounter++);
         return (int)(combined % int.MaxValue);
     }
     
-    private static IPath GenerateLinearOrSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
+    private static IPath GenerateLinearOrSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex)
     {
         // 50% chance for linear, 50% for sine wave
         bool useSine = rng.NextFloat() > 0.5f;
         
-        // Generate random entry and exit points on opposite edges
-        var (start, end) = GenerateEdgeToEdgePoints(rng);
+        // Generate entry and exit points based on spawn edge
+        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex);
         
         if (useSine)
         {
@@ -61,15 +61,15 @@ public class PathGenerator
         }
     }
     
-    private static IPath GenerateLinearPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
+    private static IPath GenerateLinearPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex)
     {
-        var (start, end) = GenerateEdgeToEdgePoints(rng);
+        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex);
         return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, end);
     }
     
-    private static IPath GenerateSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
+    private static IPath GenerateSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex)
     {
-        var (start, end) = GenerateEdgeToEdgePoints(rng);
+        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex);
         float amplitude = rng.NextFloat(40f, 80f);
         float frequency = rng.NextFloat(3f, 6f);
         return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, amplitude, frequency);
@@ -85,10 +85,10 @@ public class PathGenerator
         return new SinePath(fishId, seed, startTick, speed, start, end, amplitude, frequency);
     }
     
-    private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
+    private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex)
     {
-        // Generate start and end points on edges
-        var (start, end) = GenerateEdgeToEdgePoints(rng);
+        // Generate start and end points based on spawn edge
+        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex);
         
         // Generate control points for smooth curve - KEEP WITHIN BOUNDS
         float[] p1 = new[]
@@ -106,12 +106,12 @@ public class PathGenerator
         return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, p1, p2, end);
     }
     
-    private static IPath GenerateCircularOrComplexPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
+    private static IPath GenerateCircularOrComplexPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex)
     {
         // 70% Bezier, 30% Circular for variety
         if (rng.NextFloat() > 0.3f)
         {
-            return GenerateBezierPath(fishId, seed, startTick, fishType, rng);
+            return GenerateBezierPath(fishId, seed, startTick, fishType, rng, spawnEdge, groupIndex);
         }
         
         // Circular path - ensure entire circle stays within bounds
@@ -165,6 +165,83 @@ public class PathGenerator
         
         float[] start = GeneratePointOnEdge(startEdge, rng);
         float[] end = GeneratePointOnEdge(endEdge, rng);
+        
+        return (start, end);
+    }
+    
+    /// <summary>
+    /// Generate start and end points based on specified spawn edge
+    /// </summary>
+    private static (float[] start, float[] end) GenerateEdgeToEdgePointsFromSpawnEdge(SeededRandom rng, int spawnEdge, int groupIndex)
+    {
+        // If no spawn edge specified, use random edge
+        if (spawnEdge < 0 || spawnEdge > 7)
+        {
+            return GenerateEdgeToEdgePoints(rng);
+        }
+        
+        // Map spawn direction (0-7) to edge (0-3)
+        // 0: left, 1: right, 2: top, 3: bottom, 4: left-top, 5: right-top, 6: left-bottom, 7: right-bottom
+        int startEdge;
+        float[] start;
+        
+        switch (spawnEdge)
+        {
+            case 0: // From left edge
+                startEdge = 0;
+                start = new[] { 0f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) + groupIndex * 20f };
+                break;
+            case 1: // From right edge
+                startEdge = 1;
+                start = new[] { CANVAS_WIDTH, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) + groupIndex * 20f };
+                break;
+            case 2: // From top edge
+                startEdge = 2;
+                start = new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f) + groupIndex * 20f, 0f };
+                break;
+            case 3: // From bottom edge
+                startEdge = 3;
+                start = new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f) + groupIndex * 20f, CANVAS_HEIGHT };
+                break;
+            case 4: // From left-top corner
+                startEdge = rng.NextFloat() > 0.5f ? 0 : 2;
+                start = startEdge == 0 
+                    ? new[] { 0f, rng.NextFloat(0f, 200f) + groupIndex * 15f }
+                    : new[] { rng.NextFloat(0f, 200f) + groupIndex * 15f, 0f };
+                break;
+            case 5: // From right-top corner
+                startEdge = rng.NextFloat() > 0.5f ? 1 : 2;
+                start = startEdge == 1 
+                    ? new[] { CANVAS_WIDTH, rng.NextFloat(0f, 200f) + groupIndex * 15f }
+                    : new[] { rng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH) - groupIndex * 15f, 0f };
+                break;
+            case 6: // From left-bottom corner
+                startEdge = rng.NextFloat() > 0.5f ? 0 : 3;
+                start = startEdge == 0 
+                    ? new[] { 0f, rng.NextFloat(CANVAS_HEIGHT - 200f, CANVAS_HEIGHT) - groupIndex * 15f }
+                    : new[] { rng.NextFloat(0f, 200f) + groupIndex * 15f, CANVAS_HEIGHT };
+                break;
+            case 7: // From right-bottom corner
+                startEdge = rng.NextFloat() > 0.5f ? 1 : 3;
+                start = startEdge == 1 
+                    ? new[] { CANVAS_WIDTH, rng.NextFloat(CANVAS_HEIGHT - 200f, CANVAS_HEIGHT) - groupIndex * 15f }
+                    : new[] { rng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH) - groupIndex * 15f, CANVAS_HEIGHT };
+                break;
+            default:
+                startEdge = 0;
+                start = new[] { 0f, CANVAS_HEIGHT / 2f };
+                break;
+        }
+        
+        // End edge is generally opposite, but with some variation for diagonal spawns
+        int endEdge = spawnEdge < 4 ? (startEdge + 2) % 4 : ((startEdge + 1 + rng.NextInt(0, 2)) % 4);
+        
+        // Generate end point with some variation
+        float[] end = GeneratePointOnEdge(endEdge, rng);
+        
+        // Clamp values to ensure they're within bounds
+        start[0] = MathF.Max(0f, MathF.Min(CANVAS_WIDTH, start[0]));
+        start[1] = MathF.Max(0f, MathF.Min(CANVAS_HEIGHT, start[1]));
         
         return (start, end);
     }

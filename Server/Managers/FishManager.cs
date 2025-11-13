@@ -79,65 +79,18 @@ public class FishManager
         var fishDef = Entities.FishCatalog.GetFish(21);
         if (fishDef == null) return;
 
-        // Generate stable fish ID hash for path generation
-        var fishIdGuid = Guid.NewGuid().ToString();
-        var fishIdHash = Math.Abs(fishIdGuid.GetHashCode());
+        // Determine spawn edge based on current direction
+        int spawnEdge = _waveRiderSpawnFromLeft ? 0 : 1; // 0 = left edge, 1 = right edge
         
-        // Determine start and end points based on spawn direction
-        float[] start, end;
-        float y = Random.Shared.Next(200, ARENA_HEIGHT - 200);
-        
-        if (_waveRiderSpawnFromLeft)
-        {
-            // Spawn from left edge, exit on right edge
-            start = new[] { 0f, (float)y };
-            end = new[] { (float)ARENA_WIDTH, (float)Random.Shared.Next(200, ARENA_HEIGHT - 200) };
-        }
-        else
-        {
-            // Spawn from right edge, exit on left edge
-            start = new[] { (float)ARENA_WIDTH, (float)y };
-            end = new[] { 0f, (float)Random.Shared.Next(200, ARENA_HEIGHT - 200) };
-        }
-        
-        _waveRiderSpawnFromLeft = !_waveRiderSpawnFromLeft;
-        
-        // Generate sine wave path with specific start/end points
-        var path = Systems.Paths.PathGenerator.GenerateSinePathWithPoints(
-            fishIdHash,
-            fishIdHash,
-            (int)currentTick,
-            fishDef.BaseSpeed,
-            start,
-            end
-        );
-        
-        // Get initial position from path
-        var startPos = path.GetPosition(0f);
-        
-        // Cache path data to avoid per-tick allocations
-        var pathData = path.GetPathData();
-        
-        // Create the Wave Rider fish with sine wave path
-        var fish = new Fish
-        {
-            FishId = fishIdGuid,
-            FishIdHash = fishIdHash,
-            TypeId = 21,
-            X = startPos[0],
-            Y = startPos[1],
-            SpawnTick = currentTick,
-            DespawnTick = currentTick + 1800, // 60 seconds
-            HitboxRadius = fishDef.HitboxRadius,
-            BaseValue = fishDef.PayoutMultiplier,
-            DestructionOdds = fishDef.CaptureProbability,
-            Path = path,
-            CachedPathData = pathData
-        };
+        // Create Wave Rider fish using the standard CreateFish method
+        // Wave Rider (typeId=21) is a bonus fish, so PathGenerator will handle it specially
+        var fish = Fish.CreateFish(21, currentTick, spawnEdge);
         
         _activeFish[fish.FishId] = fish;
         
-        Console.WriteLine($"[WAVE RIDER] Spawned from {(_waveRiderSpawnFromLeft ? "right" : "left")} side with sine wave pattern");
+        _waveRiderSpawnFromLeft = !_waveRiderSpawnFromLeft;
+        
+        Console.WriteLine($"[WAVE RIDER] Spawned from {(!_waveRiderSpawnFromLeft ? "left" : "right")} edge with sine wave pattern");
     }
 
     private void SpawnSingleFish(int typeId, long currentTick)
@@ -145,62 +98,11 @@ public class FishManager
         var fishDef = Entities.FishCatalog.GetFish(typeId);
         if (fishDef == null) return;
 
-        int spawnDirection = Random.Shared.Next(8);
-        float x, y, velocityX, velocityY;
+        // Select random spawn edge/direction (0-7)
+        int spawnEdge = Random.Shared.Next(8);
         
-        switch (spawnDirection)
-        {
-            case 0:
-                x = 0;
-                y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
-                velocityX = fishDef.BaseSpeed;
-                velocityY = 0;
-                break;
-            case 1:
-                x = ARENA_WIDTH;
-                y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
-                velocityX = -fishDef.BaseSpeed;
-                velocityY = 0;
-                break;
-            case 2:
-                x = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                y = 0;
-                velocityX = 0;
-                velocityY = fishDef.BaseSpeed;
-                break;
-            case 3:
-                x = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                y = ARENA_HEIGHT;
-                velocityX = 0;
-                velocityY = -fishDef.BaseSpeed;
-                break;
-            case 4:
-                x = 0;
-                y = 0;
-                velocityX = fishDef.BaseSpeed * 0.707f;
-                velocityY = fishDef.BaseSpeed * 0.707f;
-                break;
-            case 5:
-                x = ARENA_WIDTH;
-                y = 0;
-                velocityX = -fishDef.BaseSpeed * 0.707f;
-                velocityY = fishDef.BaseSpeed * 0.707f;
-                break;
-            case 6:
-                x = 0;
-                y = ARENA_HEIGHT;
-                velocityX = fishDef.BaseSpeed * 0.707f;
-                velocityY = -fishDef.BaseSpeed * 0.707f;
-                break;
-            default:
-                x = ARENA_WIDTH;
-                y = ARENA_HEIGHT;
-                velocityX = -fishDef.BaseSpeed * 0.707f;
-                velocityY = -fishDef.BaseSpeed * 0.707f;
-                break;
-        }
-
-        var fish = Fish.CreateFish(typeId, x, y, currentTick, velocityX, velocityY);
+        // Create fish with spawn edge information for path generation
+        var fish = Fish.CreateFish(typeId, currentTick, spawnEdge);
         _activeFish[fish.FishId] = fish;
     }
 
@@ -265,92 +167,17 @@ public class FishManager
             groupSize = 1;
         }
         
-        int spawnDirection = Random.Shared.Next(8);
-        float baseX, baseY, velocityX, velocityY;
+        // Select a spawn edge for the entire group (0-7)
+        int spawnEdge = Random.Shared.Next(8);
         
-        switch (spawnDirection)
-        {
-            case 0:
-                baseX = 0;
-                baseY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
-                velocityX = GetSpeedForType(typeId);
-                velocityY = (Random.Shared.NextSingle() - 0.5f) * 20f;
-                break;
-                
-            case 1:
-                baseX = ARENA_WIDTH;
-                baseY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
-                velocityX = -GetSpeedForType(typeId);
-                velocityY = (Random.Shared.NextSingle() - 0.5f) * 20f;
-                break;
-                
-            case 2:
-                baseX = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                baseY = 0;
-                velocityX = (Random.Shared.NextSingle() - 0.5f) * 30f;
-                velocityY = GetSpeedForType(typeId) * 0.7f;
-                break;
-                
-            case 3:
-                baseX = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                baseY = ARENA_HEIGHT;
-                velocityX = (Random.Shared.NextSingle() - 0.5f) * 30f;
-                velocityY = -GetSpeedForType(typeId) * 0.7f;
-                break;
-                
-            case 4:
-                baseX = 0;
-                baseY = 0;
-                velocityX = GetSpeedForType(typeId) * 0.8f;
-                velocityY = GetSpeedForType(typeId) * 0.6f;
-                break;
-                
-            case 5:
-                baseX = ARENA_WIDTH;
-                baseY = 0;
-                velocityX = -GetSpeedForType(typeId) * 0.8f;
-                velocityY = GetSpeedForType(typeId) * 0.6f;
-                break;
-                
-            case 6:
-                baseX = Random.Shared.Next(200, ARENA_WIDTH - 200);
-                baseY = 0;
-                velocityX = GetSpeedForType(typeId) * 0.4f;
-                velocityY = GetSpeedForType(typeId) * 0.8f;
-                break;
-                
-            case 7:
-                baseX = 0;
-                baseY = Random.Shared.Next(200, ARENA_HEIGHT - 200);
-                velocityX = GetSpeedForType(typeId) * 0.9f;
-                velocityY = -GetSpeedForType(typeId) * 0.3f;
-                break;
-                
-            default:
-                baseX = 0;
-                baseY = ARENA_HEIGHT / 2;
-                velocityX = GetSpeedForType(typeId);
-                velocityY = 0;
-                break;
-        }
-        
-        float spacing = typeId == 0 ? 40f : 60f;
-        
+        // Spawn fish in the group with the same edge but different group indices for variation
         for (int i = 0; i < groupSize; i++)
         {
             if (_activeFish.Count >= MAX_FISH_COUNT)
                 break;
-                
-            float offsetX = (i % 3) * spacing - spacing;
-            float offsetY = (i / 3) * spacing;
             
-            offsetX += Random.Shared.NextSingle() * 20 - 10;
-            offsetY += Random.Shared.NextSingle() * 20 - 10;
-            
-            float spawnX = baseX + offsetX;
-            float spawnY = baseY + offsetY;
-            
-            var fish = Fish.CreateFish(typeId, spawnX, spawnY, currentTick, velocityX, velocityY);
+            // Create fish with spawn edge and group index for path variation
+            var fish = Fish.CreateFish(typeId, currentTick, spawnEdge, i);
             
             _activeFish[fish.FishId] = fish;
         }

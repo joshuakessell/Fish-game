@@ -28,7 +28,7 @@ public class Fish
     public bool IsExplosive { get; set; }
     public bool IsChainLightningEligible { get; set; } = true;
 
-    public static Fish CreateFish(int typeId, float x, float y, long currentTick, float velocityX, float velocityY, int movementPattern = 0)
+    public static Fish CreateFish(int typeId, long currentTick, int spawnEdge = -1, int groupIndex = 0)
     {
         // Lookup fish definition from catalog
         var fishDef = FishCatalog.GetFish(typeId);
@@ -41,11 +41,13 @@ public class Fish
         var fishIdGuid = Guid.NewGuid().ToString();
         var fishIdHash = Math.Abs(fishIdGuid.GetHashCode());
         
-        // Generate parametric path for this fish
+        // Generate parametric path for this fish with spawn edge information
         var path = PathGenerator.GeneratePathForFish(
             fishIdHash,
             fishDef,
-            (int)currentTick
+            (int)currentTick,
+            spawnEdge,
+            groupIndex
         );
         
         // Get initial position from path
