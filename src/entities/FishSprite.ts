@@ -29,6 +29,12 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
 
     this.previousPosition = [x, y];
     this.currentPosition = [x, y];
+
+    this.setInteractive();
+    
+    this.on('pointerdown', () => {
+      this.emit('fish-tapped', this.fishId);
+    });
   }
 
   public updatePosition(tick: number): void {

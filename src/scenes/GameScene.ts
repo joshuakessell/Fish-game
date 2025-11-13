@@ -3,23 +3,24 @@ import { GameState } from "../systems/GameState";
 import { FishSpriteManager } from "../systems/FishSpriteManager";
 import { BettingUI } from "../entities/BettingUI";
 import { BulletData } from "../types/GameTypes";
-
-interface ClientBullet {
-  id: number;
-  x: number;
-  y: number;
-  directionX: number;
-  directionY: number;
-  graphics: Phaser.GameObjects.Graphics;
-  createdAt: number;
-}
+import { Bullet } from "../entities/Bullet";
 
 export default class GameScene extends Phaser.Scene {
   private gameState: GameState;
   private fishSpriteManager!: FishSpriteManager;
-  private clientBullets: Map<number, ClientBullet> = new Map();
+  private clientBullets: Map<number, Bullet> = new Map();
   private nextBulletId = -1;
   private pendingLocalBullets: Map<string, number> = new Map();
+
+  private isHoldingFire: boolean = false;
+  private holdFireInterval: NodeJS.Timeout | null = null;
+  private autoTargetMode: boolean = false;
+  private autoTargetInterval: NodeJS.Timeout | null = null;
+  private currentTarget: number | null = null;
+  private lastTapTime: number = 0;
+  private lastTappedFish: number | null = null;
+  private autoTargetIndicator!: Phaser.GameObjects.Graphics | null;
+  private autoTargetText!: Phaser.GameObjects.Text | null;
 
   private accumulator = 0;
   private readonly TICK_RATE = 30;
@@ -73,12 +74,20 @@ export default class GameScene extends Phaser.Scene {
 
     this.createPlayerTurret();
 
+    this.createAutoTargetIndicator();
+
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      this.handleShoot(pointer.x, pointer.y);
+      this.startHoldFire(pointer.x, pointer.y);
+    });
+
+    this.input.on("pointerup", () => {
+      this.stopHoldFire();
     });
 
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
-      this.rotateTurretToPointer(pointer.x, pointer.y);
+      if (!this.autoTargetMode) {
+        this.rotateTurretToPointer(pointer.x, pointer.y);
+      }
     });
 
     console.log("GameScene: Initialization complete");
@@ -100,6 +109,11 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.onFishSpawned = (fishId: number, typeId: number) => {
       console.log(`🐟 Fish spawned callback: fishId=${fishId}, typeId=${typeId}`);
       this.fishSpriteManager.spawnFish(fishId, typeId);
+      
+      const fishSprite = this.fishSpriteManager.getFishSprites().get(fishId);
+      if (fishSprite) {
+        fishSprite.on('fish-tapped', this.handleFishTapped, this);
+      }
     };
 
     this.gameState.onFishRemoved = (fishId: number) => {
@@ -113,6 +127,11 @@ export default class GameScene extends Phaser.Scene {
       const typeId = fishData[1]; // FishData is tuple: [id, type, x, y, path, isNewSpawn]
       console.log(`🐟 Spawning existing fish ${fishId} (type ${typeId})`);
       this.fishSpriteManager.spawnFish(fishId, typeId);
+      
+      const fishSprite = this.fishSpriteManager.getFishSprites().get(fishId);
+      if (fishSprite) {
+        fishSprite.on('fish-tapped', this.handleFishTapped, this);
+      }
     });
 
     this.gameState.onBulletSpawned = (bulletData) => {
@@ -126,7 +145,7 @@ export default class GameScene extends Phaser.Scene {
       const bullet = this.clientBullets.get(bulletId);
       if (bullet) {
         console.log(`💥 Bullet removed from server: id=${bulletId}`);
-        bullet.graphics.destroy();
+        bullet.destroy();
         this.clientBullets.delete(bulletId);
       }
     };
@@ -152,6 +171,9 @@ export default class GameScene extends Phaser.Scene {
       this.gameState.connection.off("StateDelta");
       console.log("GameScene: SignalR handlers cleaned up");
     }
+
+    this.stopHoldFire();
+    this.stopAutoTargeting();
 
     this.gameState.onFishSpawned = null;
     this.gameState.onFishRemoved = null;
@@ -192,6 +214,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.fishSpriteManager.renderAllFish(tickProgress);
     this.updateBullets(delta);
+    this.updateAutoTargetIndicator();
 
     this.updateDebugOverlay(tickProgress);
   }
@@ -219,6 +242,8 @@ export default class GameScene extends Phaser.Scene {
       `Active Fish: ${activeFish}`,
       `Active Bullets: ${this.clientBullets.size}`,
       `Path Mode: ${pathMode}`,
+      `Auto-Target: ${this.autoTargetMode ? "ON" : "OFF"}`,
+      `Hold Fire: ${this.isHoldingFire ? "YES" : "NO"}`,
       `Accumulator: ${accumulatorDrift}ms`,
       `Tick Progress: ${(tickProgress * 100).toFixed(1)}%`,
       `Tick Drift: ${tickDrift}`,
@@ -322,13 +347,144 @@ export default class GameScene extends Phaser.Scene {
     this.turretBarrel.rotation = angle;
   }
 
-  private handleShoot(x: number, y: number) {
+  private startHoldFire(x: number, y: number) {
+    this.stopHoldFire();
+    this.isHoldingFire = true;
+
+    this.handleShoot(x, y);
+
+    this.holdFireInterval = setInterval(() => {
+      if (this.isHoldingFire && this.input.activePointer) {
+        // Use current pointer position, not initial click position
+        this.handleShoot(this.input.activePointer.worldX, this.input.activePointer.worldY);
+      }
+    }, 500);
+  }
+
+  private stopHoldFire() {
+    this.isHoldingFire = false;
+    if (this.holdFireInterval) {
+      clearInterval(this.holdFireInterval);
+      this.holdFireInterval = null;
+    }
+  }
+
+  private handleFishTapped(fishId: number) {
+    const now = Date.now();
+    const isDoubleTap = 
+      this.lastTappedFish === fishId && 
+      now - this.lastTapTime < 300;
+
+    if (isDoubleTap) {
+      this.toggleAutoTargeting(fishId);
+      this.lastTappedFish = null;
+      this.lastTapTime = 0;
+    } else {
+      this.lastTappedFish = fishId;
+      this.lastTapTime = now;
+    }
+  }
+
+  private toggleAutoTargeting(fishId?: number) {
+    if (this.autoTargetMode) {
+      this.stopAutoTargeting();
+    } else {
+      this.startAutoTargeting(fishId);
+    }
+  }
+
+  private startAutoTargeting(initialTarget?: number) {
+    this.autoTargetMode = true;
+    this.currentTarget = initialTarget || null;
+    this.updateAutoTargetIndicator();
+
+    this.autoTargetInterval = setInterval(() => {
+      this.fireAtTarget();
+    }, 500);
+
+    console.log("Auto-targeting activated");
+  }
+
+  private stopAutoTargeting() {
+    this.autoTargetMode = false;
+    this.currentTarget = null;
+    this.updateAutoTargetIndicator();
+
+    if (this.autoTargetInterval) {
+      clearInterval(this.autoTargetInterval);
+      this.autoTargetInterval = null;
+    }
+
+    console.log("Auto-targeting deactivated");
+  }
+
+  private findNearestFish(): number | null {
+    const fishSprites = this.fishSpriteManager.getFishSprites();
+    let nearestFish: number | null = null;
+    let nearestDistance = Infinity;
+
+    fishSprites.forEach((sprite, fishId) => {
+      if (sprite.active) {
+        const distance = Phaser.Math.Distance.Between(
+          this.turretPosition.x,
+          this.turretPosition.y,
+          sprite.x,
+          sprite.y
+        );
+
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestFish = fishId;
+        }
+      }
+    });
+
+    return nearestFish;
+  }
+
+  private fireAtTarget() {
+    if (!this.autoTargetMode) return;
+
+    const fishSprites = this.fishSpriteManager.getFishSprites();
+    const currentTargetSprite = this.currentTarget !== null 
+      ? fishSprites.get(this.currentTarget) 
+      : null;
+
+    if (!currentTargetSprite || !currentTargetSprite.active) {
+      this.currentTarget = this.findNearestFish();
+    }
+
+    if (this.currentTarget === null) {
+      return;
+    }
+
+    const targetSprite = fishSprites.get(this.currentTarget);
+    if (!targetSprite) {
+      this.currentTarget = this.findNearestFish();
+      return;
+    }
+
+    const dx = targetSprite.x - this.turretPosition.x;
+    const dy = targetSprite.y - this.turretPosition.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+
+    if (length === 0) return;
+
+    const dirX = dx / length;
+    const dirY = dy / length;
+
+    const angle = Math.atan2(dy, dx);
+    this.turretBarrel.rotation = angle;
+
+    this.handleShoot(targetSprite.x, targetSprite.y, true, this.currentTarget);
+  }
+
+  private handleShoot(x: number, y: number, isHoming: boolean = false, targetFishId: number | null = null) {
     if (!this.turretPosition) {
       console.error("GameScene: Turret position not set");
       return;
     }
 
-    // Check if player has enough credits to shoot
     const shotCost = this.gameState.currentBet;
     const currentCredits = this.gameState.playerAuth?.credits || 0;
     
@@ -350,13 +506,10 @@ export default class GameScene extends Phaser.Scene {
     this.turretBarrel.rotation = angle;
 
     if (this.gameState.connection && this.gameState.isConnected) {
-      // Deduct shot cost locally (server will sync)
       this.gameState.deductShotCost();
       
-      // Generate unique client nonce for bullet reconciliation
       const nonce = `${Date.now()}-${Math.random()}`;
       
-      // Create firing effect
       this.createFiringEffect(dirX, dirY);
       
       const bulletId = this.createBullet(
@@ -364,9 +517,10 @@ export default class GameScene extends Phaser.Scene {
         this.turretPosition.y,
         dirX,
         dirY,
+        isHoming,
+        targetFishId
       );
       
-      // Store nonce mapping for reconciliation
       this.pendingLocalBullets.set(nonce, bulletId);
 
       this.gameState.connection
@@ -382,7 +536,7 @@ export default class GameScene extends Phaser.Scene {
           console.error("Failed to send Fire command:", err);
         });
       console.log(
-        `Fired from (${this.turretPosition.x}, ${this.turretPosition.y}) in direction (${dirX.toFixed(2)}, ${dirY.toFixed(2)}), nonce: ${nonce}`,
+        `Fired ${isHoming ? "homing" : "normal"} bullet from (${this.turretPosition.x}, ${this.turretPosition.y}) in direction (${dirX.toFixed(2)}, ${dirY.toFixed(2)}), nonce: ${nonce}`,
       );
     }
   }
@@ -392,75 +546,70 @@ export default class GameScene extends Phaser.Scene {
     y: number,
     directionX: number,
     directionY: number,
+    isHoming: boolean = false,
+    targetFishId: number | null = null
   ): number {
     const bulletId = this.nextBulletId--;
 
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0xffff00, 1);
-    graphics.fillEllipse(0, 0, 20, 6);
-    graphics.lineStyle(1, 0xffaa00);
-    graphics.strokeEllipse(0, 0, 20, 6);
-
-    const bullet: ClientBullet = {
+    const bullet = new Bullet(this, {
       id: bulletId,
       x: x,
       y: y,
       directionX: directionX,
       directionY: directionY,
-      graphics: graphics,
+      isHoming: isHoming,
+      targetFishId: targetFishId,
       createdAt: Date.now(),
-    };
+    });
 
     this.clientBullets.set(bulletId, bullet);
-    graphics.setDepth(50);
     
     return bulletId;
   }
 
   private createBulletFromServer(bulletData: BulletData) {
-    // Perfect bullet reconciliation using client-generated nonces
     if (bulletData[6] && bulletData[5] === this.gameState.playerAuth?.userId) {
       const localBulletId = this.pendingLocalBullets.get(bulletData[6]);
       if (localBulletId !== undefined) {
         const localBullet = this.clientBullets.get(localBulletId);
         if (localBullet) {
+          // Homing bullets are client-side visual effects only
+          // Keep them active for smooth tracking, skip server bullet creation
+          // Server still handles authoritative hit detection and payouts
+          if (localBullet.isHoming) {
+            console.log(`🎯 Keeping homing bullet ${localBulletId} as client-side visual effect - skipping server bullet`);
+            this.pendingLocalBullets.delete(bulletData[6]);
+            return; // Don't create server bullet, keep only the homing bullet
+          }
+          
           console.log(`🎯 Perfect reconciliation: removing local bullet ${localBulletId}, replacing with server bullet ${bulletData[0]} using nonce ${bulletData[6]}`);
-          localBullet.graphics.destroy();
+          localBullet.destroy();
           this.clientBullets.delete(localBulletId);
+          this.pendingLocalBullets.delete(bulletData[6]);
+        } else {
+          // Local bullet already removed/timed out, just clean up nonce
           this.pendingLocalBullets.delete(bulletData[6]);
         }
       }
     }
 
-    const graphics = this.add.graphics();
-    graphics.fillStyle(0xffff00, 1);
-    graphics.fillEllipse(0, 0, 20, 6);
-    graphics.lineStyle(1, 0xffaa00);
-    graphics.strokeEllipse(0, 0, 20, 6);
-
-    const bullet: ClientBullet = {
+    const bullet = new Bullet(this, {
       id: bulletData[0],
       x: bulletData[1],
       y: bulletData[2],
       directionX: bulletData[3],
       directionY: bulletData[4],
-      graphics: graphics,
+      isHoming: false,
+      targetFishId: null,
       createdAt: Date.now(),
-    };
+    });
 
     this.clientBullets.set(bulletData[0], bullet);
-    graphics.setDepth(50);
-
-    const angle = Math.atan2(bulletData[4], bulletData[3]);
-    graphics.setPosition(bulletData[1], bulletData[2]);
-    graphics.setRotation(angle);
   }
 
   private updateBullets(delta: number) {
-    const deltaSeconds = delta / 1000;
     const now = Date.now();
 
-    // Clean up old pending nonces (after 1 second)
     for (const [nonce, bulletId] of this.pendingLocalBullets.entries()) {
       const bullet = this.clientBullets.get(bulletId);
       if (!bullet || now - bullet.createdAt > 1000) {
@@ -468,12 +617,11 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    this.clientBullets.forEach((bullet, id) => {
-      bullet.x += bullet.directionX * this.BULLET_SPEED * deltaSeconds;
-      bullet.y += bullet.directionY * this.BULLET_SPEED * deltaSeconds;
+    const fishSprites = this.fishSpriteManager.getFishSprites();
 
-      // Check collision with fish
-      const fishSprites = this.fishSpriteManager.getFishSprites();
+    this.clientBullets.forEach((bullet, id) => {
+      bullet.update(delta, fishSprites);
+
       fishSprites.forEach((fishSprite, fishId) => {
         const distance = Phaser.Math.Distance.Between(
           bullet.x,
@@ -482,44 +630,21 @@ export default class GameScene extends Phaser.Scene {
           fishSprite.y
         );
         
-        // Hit detection radius (adjust based on fish size)
         const hitRadius = 40;
         
         if (distance < hitRadius) {
           console.log(`💥 Bullet ${id} hit fish ${fishId}!`);
           
-          // Create hit effect
           this.createHitEffect(bullet.x, bullet.y);
           
-          // Server will handle the actual hit, just remove bullet locally
-          bullet.graphics.destroy();
+          bullet.destroy();
           this.clientBullets.delete(id);
           return;
         }
       });
 
-      if (bullet.x < 0) {
-        bullet.x = 0;
-        bullet.directionX = Math.abs(bullet.directionX);
-      } else if (bullet.x > 1800) {
-        bullet.x = 1800;
-        bullet.directionX = -Math.abs(bullet.directionX);
-      }
-
-      if (bullet.y < 0) {
-        bullet.y = 0;
-        bullet.directionY = Math.abs(bullet.directionY);
-      } else if (bullet.y > 900) {
-        bullet.y = 900;
-        bullet.directionY = -Math.abs(bullet.directionY);
-      }
-
-      const angle = Math.atan2(bullet.directionY, bullet.directionX);
-      bullet.graphics.setPosition(bullet.x, bullet.y);
-      bullet.graphics.setRotation(angle);
-
       if (now - bullet.createdAt > this.BULLET_TIMEOUT_MS) {
-        bullet.graphics.destroy();
+        bullet.destroy();
         this.clientBullets.delete(id);
       }
     });
@@ -671,6 +796,58 @@ export default class GameScene extends Phaser.Scene {
           smoke.destroy();
         },
       });
+    }
+  }
+
+  private createAutoTargetIndicator() {
+    this.autoTargetIndicator = this.add.graphics();
+    this.autoTargetIndicator.setDepth(999);
+
+    this.autoTargetText = this.add.text(110, 30, "AUTO-TARGET ACTIVE", {
+      fontSize: "18px",
+      color: "#ffffff",
+      fontStyle: "bold",
+    });
+    this.autoTargetText.setOrigin(0.5, 0.5);
+    this.autoTargetText.setDepth(1000);
+    this.autoTargetText.setVisible(false);
+
+    this.updateAutoTargetIndicator();
+  }
+
+  private updateAutoTargetIndicator() {
+    if (!this.autoTargetIndicator) return;
+
+    this.autoTargetIndicator.clear();
+
+    if (this.autoTargetMode) {
+      this.autoTargetIndicator.lineStyle(4, 0xff00ff, 0.8);
+      this.autoTargetIndicator.strokeRect(10, 10, 1780, 880);
+
+      this.autoTargetIndicator.fillStyle(0xff00ff, 0.3);
+      this.autoTargetIndicator.fillRect(10, 10, 200, 40);
+
+      if (this.autoTargetText) {
+        this.autoTargetText.setVisible(true);
+      }
+
+      if (this.currentTarget !== null) {
+        const targetSprite = this.fishSpriteManager.getFishSprites().get(this.currentTarget);
+        if (targetSprite && targetSprite.active) {
+          this.autoTargetIndicator.lineStyle(3, 0xff00ff, 0.9);
+          this.autoTargetIndicator.strokeCircle(targetSprite.x, targetSprite.y, 50);
+
+          this.autoTargetIndicator.lineStyle(2, 0xff00ff, 0.6);
+          this.autoTargetIndicator.beginPath();
+          this.autoTargetIndicator.moveTo(this.turretPosition.x, this.turretPosition.y);
+          this.autoTargetIndicator.lineTo(targetSprite.x, targetSprite.y);
+          this.autoTargetIndicator.strokePath();
+        }
+      }
+    } else {
+      if (this.autoTargetText) {
+        this.autoTargetText.setVisible(false);
+      }
     }
   }
 }
