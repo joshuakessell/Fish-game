@@ -345,7 +345,7 @@ export class GameState {
     fishId: number,
     clientTick: number,
   ): [number, number] | null {
-    // Use client-driven tick for deterministic path computation
+    // Use ONLY client-driven tick for deterministic path computation
     const pathPosition = this.fishPathManager.getFishPosition(
       fishId,
       clientTick,
@@ -355,12 +355,8 @@ export class GameState {
       return pathPosition;
     }
 
-    // Fallback to server position if path not available
-    const fishData = this.fish.get(fishId);
-    if (fishData) {
-      return [fishData[2], fishData[3]];
-    }
-
+    // No fallback - if no path, fish shouldn't be rendered
+    // This ensures 100% deterministic movement
     return null;
   }
 
