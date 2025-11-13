@@ -62,10 +62,12 @@ export class FishSpriteManager {
     }
   }
 
-  public removeFish(fishId: number): void {
+  public async removeFish(fishId: number): Promise<void> {
     const sprite = this.fishSprites.get(fishId);
     if (sprite) {
-      console.log(`🗑️ Destroying fish ${fishId} - visible: ${sprite.visible}, alpha: ${sprite.alpha}, active: ${sprite.active}`);
+      console.log(`🎬 Playing death sequence for fish ${fishId}`);
+      await sprite.playDeathSequence();
+      console.log(`🗑️ Destroying fish ${fishId} after death animation`);
       sprite.destroy();
       this.fishSprites.delete(fishId);
       console.log(`✅ Removed fish ${fishId} from sprite manager`);

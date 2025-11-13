@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { GameState } from "../systems/GameState";
 import { FishSpriteManager } from "../systems/FishSpriteManager";
+import { RewardAnimationManager } from "../systems/RewardAnimationManager";
 import { BettingUI } from "../entities/BettingUI";
 import { BulletData } from "../types/GameTypes";
 import { Bullet } from "../entities/Bullet";
@@ -8,6 +9,7 @@ import { Bullet } from "../entities/Bullet";
 export default class GameScene extends Phaser.Scene {
   private gameState: GameState;
   private fishSpriteManager!: FishSpriteManager;
+  private rewardAnimationManager!: RewardAnimationManager;
   private clientBullets: Map<number, Bullet> = new Map();
   private nextBulletId = -1;
   private pendingLocalBullets: Map<string, number> = new Map();
@@ -64,6 +66,11 @@ export default class GameScene extends Phaser.Scene {
     this.createAmbientBubbles();
 
     this.fishSpriteManager = new FishSpriteManager(this);
+    this.rewardAnimationManager = new RewardAnimationManager(
+      this,
+      this.gameState,
+      this.fishSpriteManager,
+    );
 
     this.createDebugOverlay();
 
@@ -124,9 +131,9 @@ export default class GameScene extends Phaser.Scene {
       }
     };
 
-    this.gameState.onFishRemoved = (fishId: number) => {
+    this.gameState.onFishRemoved = async (fishId: number) => {
       console.log(`🐟 Fish removed callback: fishId=${fishId}`);
-      this.fishSpriteManager.removeFish(fishId);
+      await this.fishSpriteManager.removeFish(fishId);
 
       if (this.autoTargetMode && fishId === this.currentTarget) {
         console.log(`Targeted fish ${fishId} removed, retargeting...`);
@@ -165,6 +172,21 @@ export default class GameScene extends Phaser.Scene {
       }
     };
 
+    this.gameState.onPayoutEvent = (
+      fishId: number,
+      payout: number,
+      playerSlot: number,
+      isOwnKill: boolean,
+    ) => {
+      console.log(`💰 Payout event: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`);
+      this.rewardAnimationManager.playRewardAnimation(
+        fishId,
+        payout,
+        playerSlot,
+        isOwnKill,
+      );
+    };
+
     this.gameState.onPayoutReceived = (fishId: number, payout: number) => {
       this.showCreditPopup(fishId, payout);
     };
@@ -194,6 +216,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.onFishRemoved = null;
     this.gameState.onBulletSpawned = null;
     this.gameState.onBulletRemoved = null;
+    this.gameState.onPayoutEvent = null;
     this.gameState.onPayoutReceived = null;
     this.gameState.onCreditsChanged = null;
     this.gameState.onTickSnapped = null;
@@ -342,6 +365,12 @@ export default class GameScene extends Phaser.Scene {
 
     this.bettingUI = new BettingUI(
       this,
+      this.turretPosition.x,
+      this.turretPosition.y + offsetY,
+    );
+
+    this.rewardAnimationManager.setBankPosition(
+      seat,
       this.turretPosition.x,
       this.turretPosition.y + offsetY,
     );

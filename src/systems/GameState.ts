@@ -71,6 +71,7 @@ export class GameState {
   public onFishRemoved: ((fishId: number) => void) | null = null;
   public onBulletSpawned: ((bulletData: BulletData) => void) | null = null;
   public onBulletRemoved: ((bulletId: number) => void) | null = null;
+  public onPayoutEvent: ((fishId: number, payout: number, playerSlot: number, isOwnKill: boolean) => void) | null = null;
   public onPayoutReceived: ((fishId: number, payout: number) => void) | null =
     null;
   public onCreditsChanged: (() => void) | null = null;
@@ -217,6 +218,22 @@ export class GameState {
         }
       }
 
+      // CRITICAL: Process payout events BEFORE fish removals
+      // This ensures reward animations can capture fish positions before sprites are destroyed
+      if (payoutEvents && payoutEvents.length > 0) {
+        for (const event of payoutEvents) {
+          const isOwnKill = event.playerSlot === this.myPlayerSlot;
+          
+          if (this.onPayoutEvent) {
+            this.onPayoutEvent(event.fishId, event.payout, event.playerSlot, isOwnKill);
+          }
+          
+          if (isOwnKill && this.onPayoutReceived) {
+            this.onPayoutReceived(event.fishId, event.payout);
+          }
+        }
+      }
+
       if (fish && fish.length > 0) {
         console.log(`📦 Received ${fish.length} fish in StateDelta`);
         const currentFishIds = new Set(this.fish.keys());
@@ -284,14 +301,6 @@ export class GameState {
                 this.onCreditsChanged();
               }
             }
-          }
-        }
-      }
-
-      if (payoutEvents && payoutEvents.length > 0) {
-        for (const event of payoutEvents) {
-          if (event.playerSlot === this.myPlayerSlot && this.onPayoutReceived) {
-            this.onPayoutReceived(event.fishId, event.payout);
           }
         }
       }

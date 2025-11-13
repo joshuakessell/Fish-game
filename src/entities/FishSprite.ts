@@ -122,4 +122,37 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
 
     return scaleMap[typeId] || 1.0;
   }
+
+  public playDeathSequence(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const baseScale = FishSprite.getScaleForType(this.typeId);
+      
+      this.scene.tweens.add({
+        targets: this,
+        tint: 0xffffff,
+        duration: 100,
+        yoyo: true,
+        repeat: 1,
+      });
+
+      this.scene.tweens.add({
+        targets: this,
+        scaleX: baseScale * 1.2,
+        scaleY: baseScale * 1.2,
+        duration: 200,
+        yoyo: true,
+        ease: 'Cubic.easeOut',
+      });
+
+      this.scene.tweens.add({
+        targets: this,
+        alpha: 0,
+        duration: 400,
+        onComplete: () => {
+          this.setVisible(false);
+          resolve();
+        }
+      });
+    });
+  }
 }
