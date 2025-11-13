@@ -61,7 +61,7 @@ export class GameState {
   public isSynced: boolean = false;
   public tickDrift: number = 0;
   private lastServerTick: number = 0;
-  private readonly TICK_DRIFT_THRESHOLD = 5;
+  private readonly TICK_DRIFT_THRESHOLD = 10;
 
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
@@ -208,13 +208,17 @@ export class GameState {
             this.onTickSnapped();
           }
           console.log(`Tick snapped to server tick on first sync: ${this.currentTick}`);
-        } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
-          this.currentTick = tick;
-          this.tickDrift = 0;
-          if (this.onTickSnapped) {
-            this.onTickSnapped();
+        } else {
+          this.applyGentleDriftCorrection();
+          
+          if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
+            this.currentTick = tick;
+            this.tickDrift = 0;
+            if (this.onTickSnapped) {
+              this.onTickSnapped();
+            }
+            console.log(`Tick snapped to server tick due to large drift: ${this.currentTick}`);
           }
-          console.log(`Tick snapped to server tick due to large drift: ${this.currentTick}`);
         }
       }
 
@@ -304,18 +308,18 @@ export class GameState {
           }
         }
       }
-
-      this.applyGentleDriftCorrection();
     });
   }
 
   public applyGentleDriftCorrection() {
-    if (this.isSynced && this.tickDrift > 0 && this.tickDrift <= 5) {
-      this.currentTick++;
-      this.tickDrift--;
-    } else if (this.isSynced && this.tickDrift < 0 && this.tickDrift >= -5) {
-      this.currentTick--;
-      this.tickDrift++;
+    if (this.isSynced && this.tickDrift > 0 && this.tickDrift <= 10) {
+      const correction = Math.min(3, this.tickDrift);
+      this.currentTick += correction;
+      this.tickDrift -= correction;
+    } else if (this.isSynced && this.tickDrift < 0 && this.tickDrift >= -10) {
+      const correction = Math.max(-3, this.tickDrift);
+      this.currentTick += correction;
+      this.tickDrift -= correction;
     }
   }
 

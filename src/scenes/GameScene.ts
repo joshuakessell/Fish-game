@@ -198,8 +198,7 @@ export default class GameScene extends Phaser.Scene {
     };
 
     this.gameState.onTickSnapped = () => {
-      this.accumulator = 0;
-      console.log("GameScene: Accumulator reset after tick snap");
+      console.log("GameScene: Tick snapped (accumulator NOT reset)");
     };
   }
 
