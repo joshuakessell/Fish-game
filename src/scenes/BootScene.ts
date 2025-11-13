@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 
 export default class BootScene extends Phaser.Scene {
+  // DEV MODE: Skip login/lobby and auto-join game with seat 1
+  private readonly DEV_MODE = true;
+
   constructor() {
     super({ key: "BootScene" });
   }
@@ -18,10 +21,53 @@ export default class BootScene extends Phaser.Scene {
     this.load.image("fish-21", "assets/fish/wave_rider.png");
   }
 
-  create() {
-    console.log("BootScene: Assets loaded, transitioning to Login");
+  async create() {
+    console.log("BootScene: Assets loaded");
 
-    // Transition to login scene
-    this.scene.start("LoginScene");
+    if (this.DEV_MODE) {
+      console.log("BootScene: DEV_MODE enabled - auto-joining game");
+      await this.devModeAutoJoin();
+    } else {
+      console.log("BootScene: Transitioning to Login");
+      this.scene.start("LoginScene");
+    }
+  }
+
+  private async devModeAutoJoin() {
+    const { GameState } = await import("../systems/GameState");
+    const gameState = GameState.getInstance();
+
+    // Auto guest login
+    const guestName = "DevPlayer" + Math.floor(Math.random() * 1000);
+    console.log(`BootScene [DEV]: Logging in as ${guestName}`);
+    
+    const loginSuccess = await gameState.guestLogin(guestName);
+    if (!loginSuccess) {
+      console.error("BootScene [DEV]: Guest login failed");
+      return;
+    }
+
+    // Connect to SignalR
+    console.log("BootScene [DEV]: Connecting to SignalR");
+    const connected = await gameState.connectToSignalR();
+    if (!connected) {
+      console.error("BootScene [DEV]: SignalR connection failed");
+      return;
+    }
+
+    // Auto-join match_1 with seat 1
+    console.log("BootScene [DEV]: Joining match_1 with seat 1");
+    const roomId = "match_1";
+    const seat = 1;
+    const joined = await gameState.joinRoom(roomId, seat);
+    
+    if (!joined) {
+      console.error("BootScene [DEV]: Failed to join room");
+      return;
+    }
+
+    console.log("BootScene [DEV]: Successfully auto-joined, starting game");
+    this.scene.start("GameScene");
+    this.scene.launch("UIScene");
   }
 }
