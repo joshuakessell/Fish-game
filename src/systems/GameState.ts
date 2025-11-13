@@ -326,7 +326,8 @@ export class GameState {
     // Store fish data BEFORE triggering spawn callback
     this.fish.set(fishData[0], fishData);
 
-    if (fishData[4]) {
+    // Only register path if fish doesn't have one yet (prevents re-registration every tick)
+    if (fishData[4] && !this.fishPathManager.hasFishPath(fishData[0])) {
       this.fishPathManager.registerFishPath(fishData[0], fishData[4]);
       console.log(
         `Registered path for fish ${fishData[0]}, type: ${fishData[4].pathType}`,
