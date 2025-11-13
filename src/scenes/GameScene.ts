@@ -35,6 +35,7 @@ export default class GameScene extends Phaser.Scene {
   private stateDeltaCount = 0;
   private fishSpawnedCallbackCount = 0;
   private tickSnappedCallbackCount = 0;
+  private pathsRegisteredCount = 0;
 
   private debugText!: Phaser.GameObjects.Text;
   private fpsText!: Phaser.GameObjects.Text;
@@ -281,6 +282,8 @@ export default class GameScene extends Phaser.Scene {
     // Add a StateDelta counter to track message receipt
     conn.on("StateDelta", () => {
       this.stateDeltaCount++;
+      // Count paths registered
+      this.pathsRegisteredCount = this.gameState.fishPathManager.getTrackedFishCount();
     });
 
     console.log("GameScene: SignalR event handlers registered");
@@ -350,6 +353,8 @@ export default class GameScene extends Phaser.Scene {
       `SD: ${this.stateDeltaCount}`,
       `FS: ${this.fishSpawnedCallbackCount}`,
       `TS: ${this.tickSnappedCallbackCount}`,
+      `Paths: ${this.pathsRegisteredCount}`,
+      `Stored: ${this.gameState.fish.size}`,
     ]);
   }
 
