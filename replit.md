@@ -27,7 +27,8 @@ The game employs a client-server architecture, utilizing ASP.NET Core 8 for serv
     - **Game Loop:** A 30 TPS core game loop manages state, physics, and collisions.
     - **Authoritative Server:** Handles all game logic, RNG, fish spawning, projectile validation, and collision resolution.
     - **Fish Catalog:** Defines fish types with properties like payout, capture probability, and movement characteristics.
-    - **Casino Mechanics:** Implements a 97% RTP system with dynamic destruction odds and high-volatility payout multipliers.
+    - **Casino Mechanics:** Currently set to 120% RTP for developer testing (production target: 97%). Features dynamic destruction odds and high-volatility payout multipliers.
+    - **Homing Bullets:** Server-side projectiles with 3.0 rad/s turn rate and 320 px/s speed curve toward targets for guaranteed hits.
     - **Protocol:** MessagePack configured for SignalR to reduce message size.
 - **Client-Side:**
     - **Framework:** Phaser 3 with TypeScript and Vite. Scene architecture includes Boot, Login, Lobby, Game, and UI scenes.
@@ -44,7 +45,9 @@ The game employs a client-server architecture, utilizing ASP.NET Core 8 for serv
     - Deterministic Synchronization ensures consistent fish trajectories across client and server.
     - Dynamic Fish Spawning based on weight, including guaranteed special and boss fish.
     - 6 Turret System with specific positioning.
-    - Advanced Shooting with targeting, auto-fire, larger bullets, and bounce physics.
+    - Advanced Shooting with targeting, auto-fire (4 shots/second at 250ms intervals), and server-side homing bullets.
+    - **Auto-Targeting:** Type-specific auto-targeting with visual crosshair indicator that follows targeted fish. Exclusive mode - manual firing exits auto-target. Intelligent retargeting to same-type fish when target is destroyed.
+    - **Enhanced Fish Visuals:** Larger sprite sizes - small fish +20%, medium +50%, large +150% for better visibility.
     - Bet Value System replacing weapon selection, allowing bet adjustment per shot.
     - Direct Coordinate System (0-1800 × 0-900) for consistent interaction.
 
