@@ -60,8 +60,9 @@ export class GameState {
   // Tick synchronization
   public isSynced: boolean = false;
   public tickDrift: number = 0;
+  public accumulatorAdjustment: number = 0;
   private lastServerTick: number = 0;
-  private readonly TICK_DRIFT_THRESHOLD = 10;
+  private readonly TICK_DRIFT_THRESHOLD = 5;
 
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
@@ -209,7 +210,15 @@ export class GameState {
           }
           console.log(`Tick snapped to server tick on first sync: ${this.currentTick}`);
         } else {
-          this.applyGentleDriftCorrection();
+          // Apply gentle drift correction via accumulator adjustment
+          if (Math.abs(this.tickDrift) <= 5) {
+            // Convert tick drift to milliseconds (30 TPS = 33.33ms per tick)
+            const driftMs = this.tickDrift * (1000 / 30);
+            // Apply 20% of drift per update for smooth correction
+            this.accumulatorAdjustment = driftMs * 0.2;
+          } else {
+            this.accumulatorAdjustment = 0;
+          }
           
           if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
             this.currentTick = tick;
@@ -311,17 +320,6 @@ export class GameState {
     });
   }
 
-  public applyGentleDriftCorrection() {
-    if (this.isSynced && this.tickDrift > 0 && this.tickDrift <= 10) {
-      const correction = Math.min(3, this.tickDrift);
-      this.currentTick += correction;
-      this.tickDrift -= correction;
-    } else if (this.isSynced && this.tickDrift < 0 && this.tickDrift >= -10) {
-      const correction = Math.max(-3, this.tickDrift);
-      this.currentTick += correction;
-      this.tickDrift -= correction;
-    }
-  }
 
   private updateFish(fishData: FishData) {
     const isNew = !this.fish.has(fishData[0]);

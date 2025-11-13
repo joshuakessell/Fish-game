@@ -237,7 +237,13 @@ export default class GameScene extends Phaser.Scene {
 
   update(time: number, delta: number) {
     const clampedDelta = Math.min(delta, this.MAX_DELTA);
-    this.accumulator += clampedDelta;
+    
+    // Apply drift correction by adjusting accumulator
+    const correction = this.gameState.accumulatorAdjustment;
+    this.accumulator += clampedDelta + correction;
+    
+    // Reset correction after applying
+    this.gameState.accumulatorAdjustment = 0;
 
     while (this.accumulator >= this.MS_PER_TICK) {
       this.fixedUpdate(this.gameState.currentTick);
