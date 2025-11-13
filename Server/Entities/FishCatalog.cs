@@ -32,6 +32,7 @@ public class FishDefinition
 
 public static class FishCatalog
 {
+    // NOTE: Capture probabilities increased by 23.7% (120/97 ratio) for developer testing mode (120% RTP)
     private static readonly Dictionary<int, FishDefinition> _catalog = new()
     {
         // SMALL FISH (Types 0-2) - Common, easy to catch - 70% spawn rate
@@ -45,8 +46,8 @@ public static class FishCatalog
             BaseRewardValue = 3,
             Category = FishCategory.SmallFish,
             PayoutMultiplier = 7,
-            CaptureProbability = 0.064591305843402f,
-            ExpectedValue = 0.452139140903814f,
+            CaptureProbability = 0.0799f, // 120% RTP: 0.064591 * 1.237 = 0.0799
+            ExpectedValue = 0.5593f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
             HitboxRadius = 18f,
@@ -62,8 +63,8 @@ public static class FishCatalog
             BaseRewardValue = 3,
             Category = FishCategory.SmallFish,
             PayoutMultiplier = 6,
-            CaptureProbability = 0.08603861203078643f,
-            ExpectedValue = 0.5162316721847185f,
+            CaptureProbability = 0.1064f, // 120% RTP: 0.08604 * 1.237 = 0.1064
+            ExpectedValue = 0.6384f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
             HitboxRadius = 16f,
@@ -79,8 +80,8 @@ public static class FishCatalog
             BaseRewardValue = 2,
             Category = FishCategory.SmallFish,
             PayoutMultiplier = 5,
-            CaptureProbability = 0.08653738659328375f,
-            ExpectedValue = 0.43268693296641875f,
+            CaptureProbability = 0.1071f, // 120% RTP: 0.08654 * 1.237 = 0.1071
+            ExpectedValue = 0.5355f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 20,
             HitboxRadius = 17f,
@@ -98,8 +99,8 @@ public static class FishCatalog
             BaseRewardValue = 9,
             Category = FishCategory.MediumFish,
             PayoutMultiplier = 18,
-            CaptureProbability = 0.049659242378638696f,
-            ExpectedValue = 0.8938663628154966f,
+            CaptureProbability = 0.0614f, // 120% RTP: 0.04966 * 1.237 = 0.0614
+            ExpectedValue = 1.1052f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 10,
             HitboxRadius = 26f,
@@ -115,8 +116,8 @@ public static class FishCatalog
             BaseRewardValue = 8,
             Category = FishCategory.MediumFish,
             PayoutMultiplier = 16,
-            CaptureProbability = 0.045731392698972355f,
-            ExpectedValue = 0.7317022831835577f,
+            CaptureProbability = 0.0566f, // 120% RTP: 0.04573 * 1.237 = 0.0566
+            ExpectedValue = 0.9056f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 10,
             HitboxRadius = 27f,
@@ -134,8 +135,8 @@ public static class FishCatalog
             BaseRewardValue = 21,
             Category = FishCategory.LargeFish,
             PayoutMultiplier = 43,
-            CaptureProbability = 0.043954508320075684f,
-            ExpectedValue = 1.8900438577632543f,
+            CaptureProbability = 0.0544f, // 120% RTP: 0.04395 * 1.237 = 0.0544
+            ExpectedValue = 2.3392f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
             HitboxRadius = 45f,
@@ -151,8 +152,8 @@ public static class FishCatalog
             BaseRewardValue = 28,
             Category = FishCategory.LargeFish,
             PayoutMultiplier = 56,
-            CaptureProbability = 0.02665326568345015f,
-            ExpectedValue = 1.4925828782732085f,
+            CaptureProbability = 0.0330f, // 120% RTP: 0.02665 * 1.237 = 0.0330
+            ExpectedValue = 1.8480f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
             HitboxRadius = 55f,
@@ -170,8 +171,8 @@ public static class FishCatalog
             BaseRewardValue = 17,
             Category = FishCategory.BonusFish,
             PayoutMultiplier = 35,
-            CaptureProbability = 0.017768843788966766f,
-            ExpectedValue = 0.6219095326138369f,
+            CaptureProbability = 0.0220f, // 120% RTP: 0.01777 * 1.237 = 0.0220
+            ExpectedValue = 0.7700f,
             KillAnimation = "Advanced animation with glow, pulse, and screen shake.",
             SpawnWeight = 0,
             HitboxRadius = 35f,

@@ -27,6 +27,11 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
 
     this.setOrigin(0.5, 0.5);
 
+    // Set fish size based on type
+    const scale = FishSprite.getScaleForType(typeId);
+    this.setScale(scale);
+    console.log(`🐟 Fish ${fishId} (type ${typeId}) created with scale ${scale}, visible: ${this.visible}, alpha: ${this.alpha}`);
+
     this.previousPosition = [x, y];
     this.currentPosition = [x, y];
 
@@ -49,6 +54,7 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
 
   public render(alpha: number): void {
     if (!this.previousPosition || !this.currentPosition) {
+      console.warn(`⚠️ Fish ${this.fishId} cannot render - missing position data`);
       return;
     }
 
@@ -64,6 +70,11 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
     );
 
     this.setPosition(x, y);
+
+    // Debug: log if fish becomes invisible or has alpha issues
+    if (!this.visible || this.alpha < 0.1) {
+      console.warn(`⚠️ Fish ${this.fishId} visibility issue - visible: ${this.visible}, alpha: ${this.alpha}`);
+    }
   }
 
   private lerp(start: number, end: number, alpha: number): number {
@@ -90,5 +101,25 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
       `No sprite available for fish typeId ${typeId}, using fallback fish-0`,
     );
     return "fish-0";
+  }
+
+  private static getScaleForType(typeId: number): number {
+    // Small fish (0, 1, 2): +20% = 1.2x scale
+    // Medium fish (6, 9): +50% = 1.5x scale
+    // Large fish (12, 14): +150% = 2.5x scale
+    // Wave Rider (21): +50% = 1.5x scale (bonus fish)
+    
+    const scaleMap: { [key: number]: number } = {
+      0: 1.2,  // Clownfish (small)
+      1: 1.2,  // Neon Tetra (small)
+      2: 1.2,  // Butterflyfish (small)
+      6: 1.5,  // Lionfish (medium)
+      9: 1.5,  // Triggerfish (medium)
+      12: 2.5, // Hammerhead Shark (large)
+      14: 2.5, // Giant Manta Ray (large)
+      21: 1.5, // Wave Rider (bonus)
+    };
+
+    return scaleMap[typeId] || 1.0;
   }
 }

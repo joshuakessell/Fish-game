@@ -29,7 +29,10 @@ public class BossDefinition
 
 public static class BossCatalog
 {
-    private const float RTP = 0.97f;
+    // WARNING: RTP set to 1.20 (120%) for DEVELOPER TESTING ONLY
+    // TODO: Replace with configuration-based RTP before production deployment
+    // Production RTP should be 0.97 (97%)
+    private const float RTP = 1.20f;
     private const float AVG_MULTIPLIER = 1.74f;
 
     private static float CalculateDestructionOdds(decimal baseValue)

@@ -65,9 +65,12 @@ export class FishSpriteManager {
   public removeFish(fishId: number): void {
     const sprite = this.fishSprites.get(fishId);
     if (sprite) {
+      console.log(`🗑️ Destroying fish ${fishId} - visible: ${sprite.visible}, alpha: ${sprite.alpha}, active: ${sprite.active}`);
       sprite.destroy();
       this.fishSprites.delete(fishId);
-      console.log(`Removed fish ${fishId}`);
+      console.log(`✅ Removed fish ${fishId} from sprite manager`);
+    } else {
+      console.warn(`⚠️ Attempted to remove non-existent fish ${fishId}`);
     }
   }
 

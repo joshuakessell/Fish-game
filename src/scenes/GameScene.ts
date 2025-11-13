@@ -363,17 +363,25 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private startHoldFire(x: number, y: number) {
+    // Auto-fire exclusivity: exit auto-target mode if user tries to fire manually
+    if (this.autoTargetMode) {
+      console.log("Auto-target deactivated - manual fire attempted");
+      this.stopAutoTargeting();
+      return;
+    }
+
     this.stopHoldFire();
     this.isHoldingFire = true;
 
     this.handleShoot(x, y);
 
+    // Auto-fire at 250ms intervals (4 shots/second)
     this.holdFireInterval = setInterval(() => {
       if (this.isHoldingFire && this.input.activePointer) {
         // Use current pointer position, not initial click position
         this.handleShoot(this.input.activePointer.worldX, this.input.activePointer.worldY);
       }
-    }, 500);
+    }, 250);
   }
 
   private stopHoldFire() {
@@ -422,9 +430,10 @@ export default class GameScene extends Phaser.Scene {
     
     this.updateAutoTargetIndicator();
 
+    // Auto-fire at 250ms intervals (4 shots/second)
     this.autoTargetInterval = setInterval(() => {
       this.fireAtTarget();
-    }, 500);
+    }, 250);
 
     console.log("Auto-targeting activated");
   }
