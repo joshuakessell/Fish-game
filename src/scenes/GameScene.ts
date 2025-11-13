@@ -17,10 +17,12 @@ export default class GameScene extends Phaser.Scene {
   private autoTargetMode: boolean = false;
   private autoTargetInterval: NodeJS.Timeout | null = null;
   private currentTarget: number | null = null;
+  private currentTargetType: number | null = null;
   private lastTapTime: number = 0;
   private lastTappedFish: number | null = null;
   private autoTargetIndicator!: Phaser.GameObjects.Graphics | null;
   private autoTargetText!: Phaser.GameObjects.Text | null;
+  private targetIcon: Phaser.GameObjects.Graphics | null = null;
 
   private accumulator = 0;
   private readonly TICK_RATE = 30;
@@ -114,11 +116,24 @@ export default class GameScene extends Phaser.Scene {
       if (fishSprite) {
         fishSprite.on('fish-tapped', this.handleFishTapped, this);
       }
+
+      if (this.autoTargetMode && this.currentTargetType !== null && 
+          this.currentTarget === null && typeId === this.currentTargetType) {
+        console.log(`Fish of target type ${this.currentTargetType} spawned, resuming auto-fire`);
+        this.currentTarget = fishId;
+      }
     };
 
     this.gameState.onFishRemoved = (fishId: number) => {
       console.log(`🐟 Fish removed callback: fishId=${fishId}`);
       this.fishSpriteManager.removeFish(fishId);
+
+      if (this.autoTargetMode && fishId === this.currentTarget) {
+        console.log(`Targeted fish ${fishId} removed, retargeting...`);
+        this.currentTarget = this.currentTargetType !== null 
+          ? this.findNearestFishOfType(this.currentTargetType)
+          : null;
+      }
     };
 
     // Spawn any fish that already exist in the game state (when joining existing game)
@@ -395,7 +410,16 @@ export default class GameScene extends Phaser.Scene {
 
   private startAutoTargeting(initialTarget?: number) {
     this.autoTargetMode = true;
-    this.currentTarget = initialTarget || null;
+    this.currentTarget = initialTarget ?? null; // Use ?? to preserve fish ID 0
+    
+    if (initialTarget !== undefined) {
+      const fishData = this.gameState.fish.get(initialTarget);
+      if (fishData) {
+        this.currentTargetType = fishData[1];
+        console.log(`Auto-targeting activated for fish type ${this.currentTargetType}`);
+      }
+    }
+    
     this.updateAutoTargetIndicator();
 
     this.autoTargetInterval = setInterval(() => {
@@ -408,6 +432,12 @@ export default class GameScene extends Phaser.Scene {
   private stopAutoTargeting() {
     this.autoTargetMode = false;
     this.currentTarget = null;
+    this.currentTargetType = null;
+    
+    if (this.targetIcon) {
+      this.targetIcon.setVisible(false);
+    }
+    
     this.updateAutoTargetIndicator();
 
     if (this.autoTargetInterval) {
@@ -442,25 +472,68 @@ export default class GameScene extends Phaser.Scene {
     return nearestFish;
   }
 
+  private findNearestFishOfType(typeId: number): number | null {
+    const fishSprites = this.fishSpriteManager.getFishSprites();
+    let nearestFish: number | null = null;
+    let minDistance = Infinity;
+
+    fishSprites.forEach((fishSprite, fishId) => {
+      const fishData = this.gameState.fish.get(fishId);
+      if (!fishData || fishData[1] !== typeId) return;
+
+      const distance = Phaser.Math.Distance.Between(
+        this.turretPosition.x,
+        this.turretPosition.y,
+        fishSprite.x,
+        fishSprite.y
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestFish = fishId;
+      }
+    });
+
+    return nearestFish;
+  }
+
   private fireAtTarget() {
     if (!this.autoTargetMode) return;
 
     const fishSprites = this.fishSpriteManager.getFishSprites();
-    const currentTargetSprite = this.currentTarget !== null 
-      ? fishSprites.get(this.currentTarget) 
-      : null;
+    
+    if (this.currentTargetType !== null) {
+      const currentFish = this.currentTarget !== null 
+        ? this.gameState.fish.get(this.currentTarget) 
+        : null;
+      
+      if (!currentFish || currentFish[1] !== this.currentTargetType) {
+        this.currentTarget = this.findNearestFishOfType(this.currentTargetType);
+      }
 
-    if (!currentTargetSprite || !currentTargetSprite.active) {
-      this.currentTarget = this.findNearestFish();
-    }
+      if (this.currentTarget === null) {
+        console.log(`No fish of type ${this.currentTargetType} available, pausing auto-fire`);
+        return;
+      }
+    } else {
+      const currentTargetSprite = this.currentTarget !== null 
+        ? fishSprites.get(this.currentTarget) 
+        : null;
 
-    if (this.currentTarget === null) {
-      return;
+      if (!currentTargetSprite || !currentTargetSprite.active) {
+        this.currentTarget = this.findNearestFish();
+      }
+
+      if (this.currentTarget === null) {
+        return;
+      }
     }
 
     const targetSprite = fishSprites.get(this.currentTarget);
     if (!targetSprite) {
-      this.currentTarget = this.findNearestFish();
+      this.currentTarget = this.currentTargetType !== null 
+        ? this.findNearestFishOfType(this.currentTargetType)
+        : this.findNearestFish();
       return;
     }
 
@@ -806,6 +879,16 @@ export default class GameScene extends Phaser.Scene {
     this.autoTargetText.setDepth(1000);
     this.autoTargetText.setVisible(false);
 
+    this.targetIcon = this.add.graphics();
+    this.targetIcon.lineStyle(3, 0xff0000, 1);
+    this.targetIcon.strokeCircle(0, 0, 20);
+    this.targetIcon.lineBetween(-25, 0, -10, 0);
+    this.targetIcon.lineBetween(10, 0, 25, 0);
+    this.targetIcon.lineBetween(0, -25, 0, -10);
+    this.targetIcon.lineBetween(0, 10, 0, 25);
+    this.targetIcon.setDepth(100);
+    this.targetIcon.setVisible(false);
+
     this.updateAutoTargetIndicator();
   }
 
@@ -842,6 +925,18 @@ export default class GameScene extends Phaser.Scene {
       if (this.autoTargetText) {
         this.autoTargetText.setVisible(false);
       }
+    }
+
+    if (this.targetIcon && this.autoTargetMode && this.currentTarget !== null) {
+      const targetFish = this.fishSpriteManager.getFishSprites().get(this.currentTarget);
+      if (targetFish) {
+        this.targetIcon.setPosition(targetFish.x, targetFish.y);
+        this.targetIcon.setVisible(true);
+      } else {
+        this.targetIcon.setVisible(false);
+      }
+    } else if (this.targetIcon) {
+      this.targetIcon.setVisible(false);
     }
   }
 }
