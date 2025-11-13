@@ -178,6 +178,7 @@ export class GameState {
       
       // Fire room joined callback
       if (this.onRoomJoined) {
+        console.log("GameState: Triggering onRoomJoined callback");
         this.onRoomJoined();
       }
       
@@ -249,14 +250,14 @@ export class GameState {
           if (this.onTickSnapped) {
             this.onTickSnapped();
           }
-          console.log(`Tick snapped to server tick on first sync: ${this.currentTick}`);
+          console.log(`✅ FIRST SYNC: Tick snapped to server tick ${this.currentTick}, accumulator will be reset`);
         } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
           this.currentTick = tick;
           this.tickDrift = 0;
           if (this.onTickSnapped) {
             this.onTickSnapped();
           }
-          console.log(`Tick snapped to server tick due to large drift: ${this.currentTick}`);
+          console.log(`✅ TICK SNAP: Large drift corrected, tick=${this.currentTick}, accumulator will be reset`);
         }
 
         // Apply gentle drift correction AFTER snap check

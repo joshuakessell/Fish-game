@@ -83,7 +83,7 @@ export default class GameScene extends Phaser.Scene {
 
     // Register room-ready handler BEFORE joining
     this.gameState.onRoomJoined = () => {
-      console.log("GameScene: Room joined, initializing seat-dependent components");
+      console.log("🎮 GameScene: Room joined callback - initializing player components");
       this.initializeSeatDependentComponents();
     };
 
@@ -106,7 +106,7 @@ export default class GameScene extends Phaser.Scene {
       this.initializeSeatDependentComponents();
     }
 
-    console.log("GameScene: Initialization complete");
+    console.log("GameScene: Initialization complete, waiting for room join...");
   }
 
 
@@ -128,7 +128,7 @@ export default class GameScene extends Phaser.Scene {
       }
     });
     
-    console.log("GameScene: Seat-dependent components initialized");
+    console.log("GameScene: Player components initialized successfully");
   }
 
   private createDebugOverlay() {
@@ -275,6 +275,11 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number) {
+    // Guard: Don't process game loop until synced with server
+    if (!this.gameState.isSynced) {
+      return;
+    }
+    
     const clampedDelta = Math.min(delta, this.MAX_DELTA);
     
     // Apply drift correction by adjusting accumulator
