@@ -400,8 +400,9 @@ public class MatchInstance
                 {
                     id = f.FishIdHash,  // Use numeric hash for client
                     type = f.TypeId,
-                    x = f.X, // Legacy fallback - will remove once path system verified
-                    y = f.Y, // Legacy fallback - will remove once path system verified
+                    // Only send position on spawn - client calculates from path afterwards
+                    x = isNew ? f.X : 0,
+                    y = isNew ? f.Y : 0,
                     path = isNew ? f.CachedPathData : null, // Only send path data on spawn
                     isNewSpawn = isNew
                 };
