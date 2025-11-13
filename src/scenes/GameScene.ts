@@ -107,6 +107,14 @@ export default class GameScene extends Phaser.Scene {
       this.fishSpriteManager.removeFish(fishId);
     };
 
+    // Spawn any fish that already exist in the game state (when joining existing game)
+    console.log(`Checking for existing fish in game state... Found ${this.gameState.fish.size} fish`);
+    this.gameState.fish.forEach((fishData, fishId) => {
+      const typeId = fishData[1]; // FishData is tuple: [id, type, x, y, path, isNewSpawn]
+      console.log(`🐟 Spawning existing fish ${fishId} (type ${typeId})`);
+      this.fishSpriteManager.spawnFish(fishId, typeId);
+    });
+
     this.gameState.onBulletSpawned = (bulletData) => {
       if (!this.clientBullets.has(bulletData[0])) {
         console.log(`💥 Bullet spawned from server: id=${bulletData[0]}, pos=(${bulletData[1]}, ${bulletData[2]})`);
