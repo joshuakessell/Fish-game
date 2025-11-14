@@ -1,5 +1,6 @@
 import { PathData } from "./paths/PathData";
 import { PathComputer } from "./paths/PathComputer";
+import { debugLog } from "../config/DebugConfig";
 
 /**
  * Manages fish paths and computes positions per frame
@@ -24,7 +25,7 @@ export class FishPathManager {
       return;
     }
 
-    console.log(`✅ Registered path for fish ${fishId}: type=${pathData.pathType}, points=${pathData.controlPoints.length}, startTick=${pathData.startTick}`);
+    debugLog('pathRegistration', `✅ Registered path for fish ${fishId}: type=${pathData.pathType}, points=${pathData.controlPoints.length}, startTick=${pathData.startTick}`);
     this.fishPaths.set(fishId, pathData);
   }
 

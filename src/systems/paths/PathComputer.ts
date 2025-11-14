@@ -3,6 +3,7 @@ import { LinearPath } from "./LinearPath";
 import { SinePath } from "./SinePath";
 import { BezierPath } from "./BezierPath";
 import { CircularPath } from "./CircularPath";
+import { debugLog } from "../../config/DebugConfig";
 
 /**
  * Utility to compute fish positions from PathData
@@ -53,7 +54,7 @@ export class PathComputer {
     }
 
     const position = this.evaluatePathAtTime(pathData, t);
-    console.log(`PathComputer: fish ${pathData.fishId} at t=${t.toFixed(3)}, pos=${position ? `(${position[0].toFixed(1)}, ${position[1].toFixed(1)})` : 'null'}`);
+    debugLog('pathComputation', `PathComputer: fish ${pathData.fishId} at t=${t.toFixed(3)}, pos=${position ? `(${position[0].toFixed(1)}, ${position[1].toFixed(1)})` : 'null'}`);
     return position;
   }
 

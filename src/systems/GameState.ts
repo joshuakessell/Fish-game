@@ -3,6 +3,7 @@ import { MessagePackHubProtocol } from "@microsoft/signalr-protocol-msgpack";
 import { FishData, PlayerData, BulletData } from "../types/GameTypes";
 import { FishPathManager } from "./FishPathManager";
 import { deserializePathData } from "./paths/PathData";
+import { debugLog } from "../config/DebugConfig";
 
 interface ServerPlayerState {
   PlayerId: string;
@@ -251,14 +252,14 @@ export class GameState {
           if (this.onTickSnapped) {
             this.onTickSnapped();
           }
-          console.log(`✅ FIRST SYNC: Tick snapped to server tick ${this.currentTick}, accumulator will be reset`);
+          debugLog('stateDelta', `✅ FIRST SYNC: Tick snapped to server tick ${this.currentTick}, accumulator will be reset`);
         } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
           this.currentTick = tick;
           this.tickDrift = 0;
           if (this.onTickSnapped) {
             this.onTickSnapped();
           }
-          console.log(`✅ TICK SNAP: Large drift corrected, tick=${this.currentTick}, accumulator will be reset`);
+          debugLog('stateDelta', `✅ TICK SNAP: Large drift corrected, tick=${this.currentTick}, accumulator will be reset`);
         }
 
         // Apply gentle drift correction AFTER snap check
@@ -287,7 +288,7 @@ export class GameState {
       }
 
       if (fish && fish.length > 0) {
-        console.log(`📦 Received ${fish.length} fish in StateDelta`);
+        debugLog('stateDelta', `📦 Received ${fish.length} fish in StateDelta`);
         const currentFishIds = new Set(this.fish.keys());
         const incomingFishIds = new Set<number>();
 
@@ -362,7 +363,7 @@ export class GameState {
 
   private updateFish(fishData: FishData) {
     const isNew = !this.fish.has(fishData[0]);
-    console.log(`🔄 Updating fish ${fishData[0]} (type ${fishData[1]}), isNew=${isNew}, hasPath=${!!fishData[4]}, pos=(${fishData[2]}, ${fishData[3]})`);
+    debugLog('fishUpdates', `🔄 Updating fish ${fishData[0]} (type ${fishData[1]}), isNew=${isNew}, hasPath=${!!fishData[4]}, pos=(${fishData[2]}, ${fishData[3]})`);
 
     // Store fish data BEFORE triggering spawn callback
     this.fish.set(fishData[0], fishData);
@@ -372,16 +373,14 @@ export class GameState {
       const pathData = deserializePathData(fishData[4]);
       if (pathData) {
         this.fishPathManager.registerFishPath(fishData[0], pathData);
-        console.log(
-          `Registered path for fish ${fishData[0]}, type: ${pathData.pathType}`,
-        );
+        debugLog('fishUpdates', `Registered path for fish ${fishData[0]}, type: ${pathData.pathType}`);
       } else {
         console.error(`Failed to deserialize path for fish ${fishData[0]}`);
       }
     }
 
     if (isNew && this.onFishSpawned) {
-      console.log(`🎯 Calling onFishSpawned for fish ${fishData[0]}, type ${fishData[1]}`);
+      debugLog('fishUpdates', `🎯 Calling onFishSpawned for fish ${fishData[0]}, type ${fishData[1]}`);
       this.onFishSpawned(fishData[0], fishData[1]);
     } else if (isNew && !this.onFishSpawned) {
       console.warn(`⚠️ New fish ${fishData[0]} but no onFishSpawned callback set!`);
