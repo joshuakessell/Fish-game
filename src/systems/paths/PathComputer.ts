@@ -38,10 +38,16 @@ export class PathComputer {
 
     let t = elapsedSeconds / pathData.duration;
 
-    // Always clamp to endpoint for late-joiners to see completed fish
-    // This ensures fish that finished their path appear at their final position
+    // Handle paths that exceed duration
     if (t > 1.0) {
-      t = 1.0;
+      if (pathData.loop) {
+        // Looping paths: wrap t to [0,1) range while avoiding zero-collapse at exact multiples
+        // Using subtraction instead of modulo prevents t=0 when elapsed time is an exact multiple
+        t -= Math.floor(t);
+      } else {
+        // Non-looping paths: clamp to endpoint for late-joiners
+        t = 1.0;
+      }
     }
 
     return this.evaluatePathAtTime(pathData, t);
