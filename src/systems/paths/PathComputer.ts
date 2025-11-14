@@ -95,13 +95,14 @@ export class PathComputer {
       return null;
     }
 
+    // Scale normalized coordinates [0,1] to screen space [0,1800]×[0,900]
     const start: [number, number] = [
-      pathData.controlPoints[0][0],
-      pathData.controlPoints[0][1],
+      pathData.controlPoints[0][0] * 1800,
+      pathData.controlPoints[0][1] * 900,
     ];
     const end: [number, number] = [
-      pathData.controlPoints[1][0],
-      pathData.controlPoints[1][1],
+      pathData.controlPoints[1][0] * 1800,
+      pathData.controlPoints[1][1] * 900,
     ];
 
     const path = new LinearPath(
@@ -124,14 +125,16 @@ export class PathComputer {
       return null;
     }
 
+    // Scale normalized coordinates [0,1] to screen space [0,1800]×[0,900]
     const start: [number, number] = [
-      pathData.controlPoints[0][0],
-      pathData.controlPoints[0][1],
+      pathData.controlPoints[0][0] * 1800,
+      pathData.controlPoints[0][1] * 900,
     ];
     const end: [number, number] = [
-      pathData.controlPoints[1][0],
-      pathData.controlPoints[1][1],
+      pathData.controlPoints[1][0] * 1800,
+      pathData.controlPoints[1][1] * 900,
     ];
+    // Amplitude is absolute pixels, not normalized
     const amplitude = pathData.controlPoints[2][0];
     const frequency = pathData.controlPoints[2][1];
 
@@ -157,21 +160,22 @@ export class PathComputer {
       return null;
     }
 
+    // Scale normalized coordinates [0,1] to screen space [0,1800]×[0,900]
     const p0: [number, number] = [
-      pathData.controlPoints[0][0],
-      pathData.controlPoints[0][1],
+      pathData.controlPoints[0][0] * 1800,
+      pathData.controlPoints[0][1] * 900,
     ];
     const p1: [number, number] = [
-      pathData.controlPoints[1][0],
-      pathData.controlPoints[1][1],
+      pathData.controlPoints[1][0] * 1800,
+      pathData.controlPoints[1][1] * 900,
     ];
     const p2: [number, number] = [
-      pathData.controlPoints[2][0],
-      pathData.controlPoints[2][1],
+      pathData.controlPoints[2][0] * 1800,
+      pathData.controlPoints[2][1] * 900,
     ];
     const p3: [number, number] = [
-      pathData.controlPoints[3][0],
-      pathData.controlPoints[3][1],
+      pathData.controlPoints[3][0] * 1800,
+      pathData.controlPoints[3][1] * 900,
     ];
 
     const path = new BezierPath(
@@ -196,10 +200,12 @@ export class PathComputer {
       return null;
     }
 
+    // Scale normalized coordinates [0,1] to screen space [0,1800]×[0,900]
     const center: [number, number] = [
-      pathData.controlPoints[0][0],
-      pathData.controlPoints[0][1],
+      pathData.controlPoints[0][0] * 1800,
+      pathData.controlPoints[0][1] * 900,
     ];
+    // Radii are absolute pixels, not normalized (already in correct units)
     const radiusX = pathData.controlPoints[1][0];
     const radiusY = pathData.controlPoints[1][1];
     const startAngle = pathData.controlPoints[2][0];
