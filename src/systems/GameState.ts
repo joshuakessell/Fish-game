@@ -2,6 +2,7 @@ import * as signalR from "@microsoft/signalr";
 import { MessagePackHubProtocol } from "@microsoft/signalr-protocol-msgpack";
 import { FishData, PlayerData, BulletData } from "../types/GameTypes";
 import { FishPathManager } from "./FishPathManager";
+import { deserializePathData } from "./paths/PathData";
 
 interface ServerPlayerState {
   PlayerId: string;
@@ -366,12 +367,17 @@ export class GameState {
     // Store fish data BEFORE triggering spawn callback
     this.fish.set(fishData[0], fishData);
 
-    // Only register path if fish doesn't have one yet (prevents re-registration every tick)
+    // Deserialize and register path if fish doesn't have one yet (prevents re-registration every tick)
     if (fishData[4] && !this.fishPathManager.hasFishPath(fishData[0])) {
-      this.fishPathManager.registerFishPath(fishData[0], fishData[4]);
-      console.log(
-        `Registered path for fish ${fishData[0]}, type: ${fishData[4].pathType}`,
-      );
+      const pathData = deserializePathData(fishData[4]);
+      if (pathData) {
+        this.fishPathManager.registerFishPath(fishData[0], pathData);
+        console.log(
+          `Registered path for fish ${fishData[0]}, type: ${pathData.pathType}`,
+        );
+      } else {
+        console.error(`Failed to deserialize path for fish ${fishData[0]}`);
+      }
     }
 
     if (isNew && this.onFishSpawned) {

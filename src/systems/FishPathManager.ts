@@ -19,6 +19,12 @@ export class FishPathManager {
       return;
     }
 
+    if (!pathData.controlPoints || pathData.controlPoints.length === 0) {
+      console.error(`❌ PathData for fish ${fishId} has no controlPoints!`, pathData);
+      return;
+    }
+
+    console.log(`✅ Registered path for fish ${fishId}: type=${pathData.pathType}, points=${pathData.controlPoints.length}, startTick=${pathData.startTick}`);
     this.fishPaths.set(fishId, pathData);
   }
 
@@ -34,6 +40,7 @@ export class FishPathManager {
   ): [number, number] | null {
     const pathData = this.fishPaths.get(fishId);
     if (!pathData) {
+      console.warn(`⚠️ No path registered for fish ${fishId}, cannot compute position`);
       return null;
     }
 

@@ -1,4 +1,4 @@
-import { PathData } from "../systems/paths/PathData";
+import { PathDataTuple } from "../systems/paths/PathData";
 
 // MessagePack array format from server: [id, type, x, y, path, isNewSpawn]
 export type FishData = [
@@ -6,7 +6,7 @@ export type FishData = [
   number,        // [1] type
   number,        // [2] x
   number,        // [3] y
-  PathData | null, // [4] path
+  PathDataTuple | null, // [4] path (raw array from server)
   boolean        // [5] isNewSpawn
 ];
 

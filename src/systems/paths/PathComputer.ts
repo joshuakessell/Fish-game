@@ -24,11 +24,13 @@ export class PathComputer {
       !pathData.controlPoints ||
       pathData.controlPoints.length === 0
     ) {
+      console.warn(`PathComputer: No valid pathData or controlPoints for fish ${pathData?.fishId}`);
       return null;
     }
 
     const elapsedTicks = currentTick - pathData.startTick;
     if (elapsedTicks < 0) {
+      console.warn(`PathComputer: Negative elapsed ticks for fish ${pathData.fishId}: currentTick=${currentTick}, startTick=${pathData.startTick}`);
       return null;
     }
 
@@ -50,7 +52,9 @@ export class PathComputer {
       }
     }
 
-    return this.evaluatePathAtTime(pathData, t);
+    const position = this.evaluatePathAtTime(pathData, t);
+    console.log(`PathComputer: fish ${pathData.fishId} at t=${t.toFixed(3)}, pos=${position ? `(${position[0].toFixed(1)}, ${position[1].toFixed(1)})` : 'null'}`);
+    return position;
   }
 
   /**
@@ -95,14 +99,14 @@ export class PathComputer {
       return null;
     }
 
-    // Scale normalized coordinates [0,1] to screen space [0,1800]×[0,900]
+    // Server already sends pixel coordinates [0-1800, 0-900]
     const start: [number, number] = [
-      pathData.controlPoints[0][0] * 1800,
-      pathData.controlPoints[0][1] * 900,
+      pathData.controlPoints[0][0],
+      pathData.controlPoints[0][1],
     ];
     const end: [number, number] = [
-      pathData.controlPoints[1][0] * 1800,
-      pathData.controlPoints[1][1] * 900,
+      pathData.controlPoints[1][0],
+      pathData.controlPoints[1][1],
     ];
 
     const path = new LinearPath(
@@ -125,16 +129,15 @@ export class PathComputer {
       return null;
     }
 
-    // Scale normalized coordinates [0,1] to screen space [0,1800]×[0,900]
+    // Server already sends pixel coordinates [0-1800, 0-900]
     const start: [number, number] = [
-      pathData.controlPoints[0][0] * 1800,
-      pathData.controlPoints[0][1] * 900,
+      pathData.controlPoints[0][0],
+      pathData.controlPoints[0][1],
     ];
     const end: [number, number] = [
-      pathData.controlPoints[1][0] * 1800,
-      pathData.controlPoints[1][1] * 900,
+      pathData.controlPoints[1][0],
+      pathData.controlPoints[1][1],
     ];
-    // Amplitude is absolute pixels, not normalized
     const amplitude = pathData.controlPoints[2][0];
     const frequency = pathData.controlPoints[2][1];
 
@@ -160,22 +163,22 @@ export class PathComputer {
       return null;
     }
 
-    // Scale normalized coordinates [0,1] to screen space [0,1800]×[0,900]
+    // Server already sends pixel coordinates [0-1800, 0-900]
     const p0: [number, number] = [
-      pathData.controlPoints[0][0] * 1800,
-      pathData.controlPoints[0][1] * 900,
+      pathData.controlPoints[0][0],
+      pathData.controlPoints[0][1],
     ];
     const p1: [number, number] = [
-      pathData.controlPoints[1][0] * 1800,
-      pathData.controlPoints[1][1] * 900,
+      pathData.controlPoints[1][0],
+      pathData.controlPoints[1][1],
     ];
     const p2: [number, number] = [
-      pathData.controlPoints[2][0] * 1800,
-      pathData.controlPoints[2][1] * 900,
+      pathData.controlPoints[2][0],
+      pathData.controlPoints[2][1],
     ];
     const p3: [number, number] = [
-      pathData.controlPoints[3][0] * 1800,
-      pathData.controlPoints[3][1] * 900,
+      pathData.controlPoints[3][0],
+      pathData.controlPoints[3][1],
     ];
 
     const path = new BezierPath(
@@ -200,12 +203,11 @@ export class PathComputer {
       return null;
     }
 
-    // Scale normalized coordinates [0,1] to screen space [0,1800]×[0,900]
+    // Server already sends pixel coordinates [0-1800, 0-900]
     const center: [number, number] = [
-      pathData.controlPoints[0][0] * 1800,
-      pathData.controlPoints[0][1] * 900,
+      pathData.controlPoints[0][0],
+      pathData.controlPoints[0][1],
     ];
-    // Radii are absolute pixels, not normalized (already in correct units)
     const radiusX = pathData.controlPoints[1][0];
     const radiusY = pathData.controlPoints[1][1];
     const startAngle = pathData.controlPoints[2][0];
