@@ -75,7 +75,7 @@ public class SinePath : IPath
                 new[] { _amplitude, _frequency } // Store wave parameters
             },
             Duration = distance / _speed,
-            Loop = true
+            Loop = false  // Fish should exit screen smoothly, not loop back
         };
     }
 }

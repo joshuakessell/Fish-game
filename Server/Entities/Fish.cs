@@ -28,7 +28,7 @@ public class Fish
     public bool IsExplosive { get; set; }
     public bool IsChainLightningEligible { get; set; } = true;
 
-    public static Fish CreateFish(int typeId, long currentTick, int spawnEdge = -1, int groupIndex = 0)
+    public static Fish CreateFish(int typeId, long currentTick, int spawnEdge = -1, int groupIndex = 0, long groupId = 0)
     {
         // Lookup fish definition from catalog
         var fishDef = FishCatalog.GetFish(typeId);
@@ -47,7 +47,8 @@ public class Fish
             fishDef,
             (int)currentTick,
             spawnEdge,
-            groupIndex
+            groupIndex,
+            groupId
         );
         
         // Get initial position from path

@@ -68,7 +68,7 @@ public class CircularPath : IPath
                 new[] { _startAngle, _clockwise ? 1f : 0f }
             },
             Duration = circumference / _speed,
-            Loop = true
+            Loop = false  // Fish should exit screen smoothly, not loop back
         };
     }
 }
