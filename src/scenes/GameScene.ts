@@ -5,6 +5,7 @@ import { RewardAnimationManager } from "../systems/RewardAnimationManager";
 import { BettingUI } from "../entities/BettingUI";
 import { BulletData } from "../types/GameTypes";
 import { Bullet } from "../entities/Bullet";
+import { debugLog } from "../config/DebugConfig";
 
 export default class GameScene extends Phaser.Scene {
   private gameState: GameState;
@@ -300,6 +301,14 @@ export default class GameScene extends Phaser.Scene {
     // Apply drift correction by adjusting accumulator
     const correction = this.gameState.accumulatorAdjustment;
     this.accumulator += clampedDelta + correction;
+    
+    // VALIDATION: Check for accumulator anomalies
+    if (this.accumulator > 1000) {
+      console.error(`[VALIDATION] Accumulator exceeds 1000: ${this.accumulator.toFixed(2)}ms | Delta: ${delta.toFixed(2)}ms | Correction: ${correction.toFixed(2)}ms | Tick: ${this.gameState.currentTick}`);
+      debugLog('validation', `[ACC ANOMALY] Accumulator: ${this.accumulator.toFixed(2)}ms, Delta: ${delta.toFixed(2)}ms, Correction: ${correction.toFixed(2)}ms, Tick: ${this.gameState.currentTick}`);
+      // Clamp to prevent runaway accumulation
+      this.accumulator = Math.min(this.accumulator, 500);
+    }
     
     // Reset correction after applying
     this.gameState.accumulatorAdjustment = 0;

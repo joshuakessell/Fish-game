@@ -41,6 +41,12 @@ export class PathComputer {
 
     let t = elapsedSeconds / pathData.duration;
 
+    // VALIDATION: Check for progress anomalies
+    if (t > 1.1) {
+      console.error(`[VALIDATION] Path progress exceeds 110%: ${(t * 100).toFixed(2)}% | Fish: ${pathData.fishId} | Elapsed: ${elapsedSeconds.toFixed(2)}s | Duration: ${pathData.duration.toFixed(2)}s | CurrentTick: ${currentTick} | StartTick: ${pathData.startTick}`);
+      debugLog('validation', `[PROG ANOMALY] t: ${(t * 100).toFixed(2)}%, FishId: ${pathData.fishId}, Elapsed: ${elapsedSeconds.toFixed(2)}s, Duration: ${pathData.duration.toFixed(2)}s, Loop: ${pathData.loop}`);
+    }
+
     // Handle paths that exceed duration
     if (t > 1.0) {
       if (pathData.loop) {

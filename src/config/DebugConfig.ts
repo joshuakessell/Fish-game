@@ -37,6 +37,7 @@ export const DebugChannels = {
   fishUpdates: true,        // GameState fish spawn/update events
   stateDelta: true,         // StateDelta processing (tick sync, fish counts)
   fishSprites: true,        // FishSprite creation/destruction
+  validation: true,         // Validation warnings for anomalies (ACC > 1000, PROG > 100%)
 };
 
 export type DebugChannel = keyof typeof DebugChannels;

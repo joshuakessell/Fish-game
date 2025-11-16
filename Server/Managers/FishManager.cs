@@ -5,8 +5,8 @@ namespace OceanKing.Server.Managers;
 public class FishManager
 {
     private readonly Dictionary<string, Fish> _activeFish = new();
-    private const int MIN_FISH_COUNT = 18;
-    private const int MAX_FISH_COUNT = 24;
+    private readonly int MIN_FISH_COUNT;
+    private readonly int MAX_FISH_COUNT;
     private const int ARENA_WIDTH = 1800;
     private const int ARENA_HEIGHT = 900;
     
@@ -21,6 +21,13 @@ public class FishManager
     private long _lastWaveRiderSpawnTick = 0;
     private const int WAVE_RIDER_SPAWN_INTERVAL = 150;
     private bool _waveRiderSpawnFromLeft = true;
+    
+    public FishManager()
+    {
+        MIN_FISH_COUNT = Random.Shared.Next(20, 31);
+        MAX_FISH_COUNT = Random.Shared.Next(MIN_FISH_COUNT + 5, 41);
+        Console.WriteLine($"[FISH MANAGER] Session fish count range: {MIN_FISH_COUNT}-{MAX_FISH_COUNT}");
+    }
 
     public void UpdateFish(float deltaTime, long currentTick)
     {

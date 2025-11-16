@@ -384,9 +384,11 @@ public class PathGenerator
         float perpY = dirX;
         
         // Calculate formation offsets in LOCAL movement space
-        float offsetMultiplier = 30f; // Spacing between fish in formation
+        // Spacing based on largest formation fish hitbox (Clownfish: 18f radius)
+        // Minimum safe spacing = 2 * 18f + buffer = 50f
+        float offsetMultiplier = 50f; // Spacing between fish in formation (lateral)
         float lateralOffset = groupIndex * offsetMultiplier;  // Perpendicular to movement
-        float longitudinalOffset = groupIndex * 15f;  // Along movement direction (positive=forward, negative=trailing)
+        float longitudinalOffset = groupIndex * 20f;  // Along movement direction (positive=forward, negative=trailing)
         
         // Apply offsets to start position in LOCAL space
         float[] start = new float[2];
@@ -398,24 +400,28 @@ public class PathGenerator
         end[0] = baseEnd[0] + (perpX * lateralOffset) + (dirX * longitudinalOffset);
         end[1] = baseEnd[1] + (perpY * lateralOffset) + (dirY * longitudinalOffset);
         
-        // Clamp values to ensure they're within bounds
-        start[0] = MathF.Max(0f, MathF.Min(CANVAS_WIDTH, start[0]));
-        start[1] = MathF.Max(0f, MathF.Min(CANVAS_HEIGHT, start[1]));
-        end[0] = MathF.Max(0f, MathF.Min(CANVAS_WIDTH, end[0]));
-        end[1] = MathF.Max(0f, MathF.Min(CANVAS_HEIGHT, end[1]));
+        // Add buffer zone to prevent fish from getting stuck at exact boundaries
+        // Allow fish to spawn slightly outside and exit slightly outside for smooth transitions
+        const float EDGE_BUFFER = 50f;
+        start[0] = MathF.Max(-EDGE_BUFFER, MathF.Min(CANVAS_WIDTH + EDGE_BUFFER, start[0]));
+        start[1] = MathF.Max(-EDGE_BUFFER, MathF.Min(CANVAS_HEIGHT + EDGE_BUFFER, start[1]));
+        end[0] = MathF.Max(-EDGE_BUFFER, MathF.Min(CANVAS_WIDTH + EDGE_BUFFER, end[0]));
+        end[1] = MathF.Max(-EDGE_BUFFER, MathF.Min(CANVAS_HEIGHT + EDGE_BUFFER, end[1]));
         
         return (start, end);
     }
     
     private static float[] GeneratePointOnEdge(int edge, SeededRandom rng)
     {
+        // Spawn slightly outside boundaries to prevent fish from getting stuck at edges
+        const float SPAWN_OFFSET = -10f; // Start slightly off-screen
         return edge switch
         {
-            0 => new[] { 0f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Left - spawn AT edge
-            1 => new[] { CANVAS_WIDTH, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Right - spawn AT edge
-            2 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), 0f }, // Top - spawn AT edge
-            3 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), CANVAS_HEIGHT }, // Bottom - spawn AT edge
-            _ => new[] { 0f, 0f }
+            0 => new[] { SPAWN_OFFSET, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Left - spawn slightly outside
+            1 => new[] { CANVAS_WIDTH - SPAWN_OFFSET, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Right - spawn slightly outside
+            2 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), SPAWN_OFFSET }, // Top - spawn slightly outside
+            3 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), CANVAS_HEIGHT - SPAWN_OFFSET }, // Bottom - spawn slightly outside
+            _ => new[] { CANVAS_WIDTH / 2f, CANVAS_HEIGHT / 2f } // Default to center instead of 0,0
         };
     }
 }
