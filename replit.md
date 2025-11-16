@@ -4,6 +4,8 @@
 This project is a casino-style betting table game, "Ocean King 3," where up to 6 players shoot at exotic fish in a large aquarium. Built with ASP.NET Core 8, SignalR for real-time communication, and Phaser 3 for client-side rendering, it features a fullscreen 1800×900 canvas with responsive scaling and dynamic HTML overlay controls. The game uses parametric path-based fish movement with deterministic client-server synchronization, significantly reducing bandwidth. The core vision is an engaging, fast-paced arcade fishing experience with competitive casino mechanics, targeting a high Return-To-Player (RTP) of 97%, and emphasizing real-time interaction, rich visual effects, and a streamlined fullscreen user experience for the online multiplayer casino game market.
 
 ## Recent Changes (November 16, 2025)
+- **CRITICAL FIX - Reward System:** Fixed type mismatch in KillPayoutEvent.FishId (string → int) that prevented reward animations and credit updates. All fish kills (regular and boss) now correctly send numeric hash IDs to client, enabling proper sprite lookup and reward animation flow.
+- **Boss Kill Rewards:** Added PayoutEvent creation in ProcessBossKillResult to ensure boss kills trigger visual rewards (coin animations, floating text) in addition to credit updates.
 - **Debug Validation System:** Added validation flags to catch ACC > 1000ms and PROG > 110% anomalies for debugging fish behavior issues
 - **Fish Edge Exit Fix:** Implemented EDGE_BUFFER (50f) and SPAWN_OFFSET (-10f) to allow fish to properly exit screen boundaries instead of getting stuck at exact edges (0, 0, 1800, 900)
 - **Variable Fish Count:** Changed from fixed 18-24 fish to randomized 20-40 range per session (MIN_FISH_COUNT: 20-30, MAX_FISH_COUNT: 25-40)
