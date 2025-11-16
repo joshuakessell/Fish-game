@@ -102,9 +102,9 @@ public class PathGenerator
     
     private static void CleanupOldCacheEntries(long currentTick)
     {
-        // Remove entries older than 150 ticks (5 seconds at 30 TPS)
+        // Remove entries older than 450 ticks (15 seconds at 30 TPS)
         var keysToRemove = _groupParametersCache
-            .Where(kvp => currentTick - kvp.Value.CreatedTick > 150)
+            .Where(kvp => currentTick - kvp.Value.CreatedTick > 450)
             .Select(kvp => kvp.Key)
             .ToList();
         
@@ -231,7 +231,7 @@ public class PathGenerator
         // Use pre-computed shared parameters for the group
         if (sharedParams.PathType == PathType.Sine)
         {
-            return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, sharedParams.Amplitude, sharedParams.Frequency);
+            return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, sharedParams.BaseAnchorStart, sharedParams.BaseAnchorEnd, sharedParams.Amplitude, sharedParams.Frequency);
         }
         else
         {
@@ -250,7 +250,7 @@ public class PathGenerator
         var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex, sharedParams);
         
         // Use pre-computed shared parameters for bonus fish sine waves
-        return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, sharedParams.BonusAmplitude, sharedParams.BonusFrequency);
+        return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, sharedParams.BaseAnchorStart, sharedParams.BaseAnchorEnd, sharedParams.BonusAmplitude, sharedParams.BonusFrequency);
     }
     
     /// <summary>
@@ -260,7 +260,7 @@ public class PathGenerator
     {
         float amplitude = 40f + ((seed % 41) * (80f - 40f) / 40f);
         float frequency = 3f + ((seed % 4) * (6f - 3f) / 3f);
-        return new SinePath(fishId, seed, startTick, speed, start, end, amplitude, frequency);
+        return new SinePath(fishId, seed, startTick, speed, start, end, start, end, amplitude, frequency);
     }
     
     private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex, int groupAnchorSeed, SharedGroupParameters sharedParams)
@@ -350,6 +350,7 @@ public class PathGenerator
     /// <summary>
     /// Generate start and end points based on specified spawn edge
     /// Uses pre-computed base anchors from SharedGroupParameters and applies formation offsets
+    /// in LOCAL movement space (perpendicular and parallel to direction vector)
     /// </summary>
     private static (float[] start, float[] end) GenerateEdgeToEdgePointsFromSpawnEdge(SeededRandom rng, int spawnEdge, int groupIndex, SharedGroupParameters sharedParams)
     {
@@ -359,71 +360,43 @@ public class PathGenerator
             return GenerateEdgeToEdgePoints(rng);
         }
         
-        // Calculate 2D formation offsets for diamond patterns
-        // For diamond formations, negative indices create left/up offsets, positive create right/down
-        float offsetMultiplier = 30f; // Spacing between fish in formation
-        float lateralOffset = groupIndex * offsetMultiplier;  // Perpendicular to movement
-        float longitudinalOffset = MathF.Abs(groupIndex) * 15f;  // Along movement direction
-        
         // Use pre-computed base anchors from SharedGroupParameters
         float[] baseStart = sharedParams.BaseAnchorStart;
         float[] baseEnd = sharedParams.BaseAnchorEnd;
-        int startEdge = sharedParams.StartEdge;
-        int endEdge = sharedParams.EndEdge;
         
-        // Apply formation offsets to base start position based on edge
+        // Compute movement direction vector (normalized)
+        float dx = baseEnd[0] - baseStart[0];
+        float dy = baseEnd[1] - baseStart[1];
+        float distance = MathF.Sqrt(dx * dx + dy * dy);
+        
+        // Avoid division by zero
+        if (distance < 0.001f)
+        {
+            return (baseStart, baseEnd);
+        }
+        
+        float dirX = dx / distance;
+        float dirY = dy / distance;
+        
+        // Compute perpendicular vector (rotate direction by 90 degrees)
+        // For 2D: perpendicular of (x, y) is (-y, x)
+        float perpX = -dirY;
+        float perpY = dirX;
+        
+        // Calculate formation offsets in LOCAL movement space
+        float offsetMultiplier = 30f; // Spacing between fish in formation
+        float lateralOffset = groupIndex * offsetMultiplier;  // Perpendicular to movement
+        float longitudinalOffset = groupIndex * 15f;  // Along movement direction (positive=forward, negative=trailing)
+        
+        // Apply offsets to start position in LOCAL space
         float[] start = new float[2];
-        if (startEdge == 0)
-        {
-            // Left edge - offset vertically (lateral) and push inward (longitudinal)
-            start[0] = baseStart[0] + longitudinalOffset;
-            start[1] = baseStart[1] + lateralOffset;
-        }
-        else if (startEdge == 1)
-        {
-            // Right edge - offset vertically (lateral) and push inward (longitudinal)
-            start[0] = baseStart[0] - longitudinalOffset;
-            start[1] = baseStart[1] + lateralOffset;
-        }
-        else if (startEdge == 2)
-        {
-            // Top edge - offset horizontally (lateral) and push inward (longitudinal)
-            start[0] = baseStart[0] + lateralOffset;
-            start[1] = baseStart[1] + longitudinalOffset;
-        }
-        else
-        {
-            // Bottom edge - offset horizontally (lateral) and push inward (longitudinal)
-            start[0] = baseStart[0] + lateralOffset;
-            start[1] = baseStart[1] - longitudinalOffset;
-        }
+        start[0] = baseStart[0] + (perpX * lateralOffset) + (dirX * longitudinalOffset);
+        start[1] = baseStart[1] + (perpY * lateralOffset) + (dirY * longitudinalOffset);
         
-        // Apply formation offsets to base end position based on edge
+        // Apply SAME offsets to end position in LOCAL space (maintains formation)
         float[] end = new float[2];
-        if (endEdge == 0)
-        {
-            // Left edge exit - apply Y offset (lateral) and push inward from edge (longitudinal)
-            end[0] = baseEnd[0] + longitudinalOffset;
-            end[1] = baseEnd[1] + lateralOffset;
-        }
-        else if (endEdge == 1)
-        {
-            // Right edge exit - apply Y offset (lateral) and push inward from edge (longitudinal)
-            end[0] = baseEnd[0] - longitudinalOffset;
-            end[1] = baseEnd[1] + lateralOffset;
-        }
-        else if (endEdge == 2)
-        {
-            // Top edge exit - apply X offset (lateral) and push inward from edge (longitudinal)
-            end[0] = baseEnd[0] + lateralOffset;
-            end[1] = baseEnd[1] + longitudinalOffset;
-        }
-        else
-        {
-            // Bottom edge exit - apply X offset (lateral) and push inward from edge (longitudinal)
-            end[0] = baseEnd[0] + lateralOffset;
-            end[1] = baseEnd[1] - longitudinalOffset;
-        }
+        end[0] = baseEnd[0] + (perpX * lateralOffset) + (dirX * longitudinalOffset);
+        end[1] = baseEnd[1] + (perpY * lateralOffset) + (dirY * longitudinalOffset);
         
         // Clamp values to ensure they're within bounds
         start[0] = MathF.Max(0f, MathF.Min(CANVAS_WIDTH, start[0]));
