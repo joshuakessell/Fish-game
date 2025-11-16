@@ -47,6 +47,17 @@ The game employs a client-server architecture, utilizing ASP.NET Core 8 for serv
     - Parametric Path-Based Movement for all fish, with client-side prediction for bandwidth optimization.
     - Deterministic Synchronization ensures consistent fish trajectories across client and server.
     - Dynamic Fish Spawning based on weight, including guaranteed special and boss fish.
+    - **Fish Schooling System:** Cohesive group formations with type-specific behaviors:
+        - **Clownfish (typeId 0):** Spawn in rows of 3-5 fish with sequential formation offsets
+        - **Neon Tetra (typeId 1):** Spawn in small rows of 2-4 fish
+        - **Butterflyfish (typeId 2):** Spawn in diamond formations of 4-8 fish with signed indices (0, -3, 3, -1, 1, -5, 5, -2)
+        - **Implementation:** Unique groupId system with pre-computed shared base anchor coordinates per group
+        - **LOCAL Movement Space:** Formation offsets applied perpendicular (lateral) and parallel (longitudinal) to direction vector
+        - **Signed Offsets:** Positive indices push forward, negative trail behind for proper diamond formations
+        - **SinePath Synchronization:** Wave oscillations based on shared base anchors for perfect phase alignment
+        - **Cache Management:** 450-tick (15-second) lifetime ensures stable formation parameters throughout spawn
+        - **Path Randomization:** Enhanced amplitude/frequency ranges (15-80px, 1.5-7Hz) for visual variety
+        - **Smooth Exit Behavior:** Loop=false on all paths prevents fish from jumping back at path end
     - 6 Turret System with specific positioning.
     - Advanced Shooting with targeting, auto-fire (4 shots/second at 250ms intervals), and server-side homing bullets.
     - **Auto-Targeting:** Type-specific auto-targeting with visual crosshair indicator that follows targeted fish. Exclusive mode - manual firing exits auto-target. Intelligent retargeting to same-type fish when target is destroyed.
