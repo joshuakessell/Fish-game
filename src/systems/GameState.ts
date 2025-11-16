@@ -274,14 +274,20 @@ export class GameState {
       // CRITICAL: Process payout events BEFORE fish removals
       // This ensures reward animations can capture fish positions before sprites are destroyed
       if (payoutEvents && payoutEvents.length > 0) {
+        console.log(`📥 [GameState] Received ${payoutEvents.length} PayoutEvents from server`);
         for (const event of payoutEvents) {
           const isOwnKill = event.playerSlot === this.myPlayerSlot;
+          console.log(`💰 [GameState] Processing PayoutEvent: fishId=${event.fishId}, payout=${event.payout}, playerSlot=${event.playerSlot}, isOwnKill=${isOwnKill}`);
           
           if (this.onPayoutEvent) {
+            console.log(`   → Calling onPayoutEvent callback`);
             this.onPayoutEvent(event.fishId, event.payout, event.playerSlot, isOwnKill);
+          } else {
+            console.warn(`   ⚠️ onPayoutEvent callback not set!`);
           }
           
           if (isOwnKill && this.onPayoutReceived) {
+            console.log(`   → Calling onPayoutReceived callback (own kill)`);
             this.onPayoutReceived(event.fishId, event.payout);
           }
         }
@@ -349,9 +355,13 @@ export class GameState {
             const newCredits = playerData.credits;
 
             if (oldCredits !== newCredits) {
+              console.log(`💳 [GameState] Player credits updated: ${oldCredits} → ${newCredits} (${newCredits > oldCredits ? '+' : ''}${newCredits - oldCredits})`);
               this.playerAuth.credits = newCredits;
               if (this.onCreditsChanged) {
+                console.log(`   → Calling onCreditsChanged callback`);
                 this.onCreditsChanged();
+              } else {
+                console.warn(`   ⚠️ onCreditsChanged callback not set!`);
               }
             }
           }

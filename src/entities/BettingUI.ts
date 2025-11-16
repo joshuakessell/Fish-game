@@ -202,6 +202,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
   public updateBankDisplay() {
     const credits = this.gameState.playerAuth?.credits || 0;
     const formattedCredits = this.formatNumber(credits);
+    console.log(`🏦 [BettingUI] updateBankDisplay called - Credits: ${credits} (formatted: ${formattedCredits})`);
     this.bankText.setText(`Bank: ${formattedCredits}`);
   }
 

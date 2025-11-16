@@ -33,19 +33,26 @@ export class RewardAnimationManager {
     playerSlot: number,
     isOwnKill: boolean,
   ): void {
+    console.log(`🎬 [RewardAnimationManager] playRewardAnimation called: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`);
+    
     const fishSprite = this.fishSpriteManager.getFishSprites().get(fishId);
     if (!fishSprite) {
-      console.warn(`Cannot play reward animation: fish ${fishId} sprite not found`);
+      console.warn(`   ⚠️ Cannot play reward animation: fish ${fishId} sprite not found`);
       return;
     }
 
     const fishPosition = { x: fishSprite.x, y: fishSprite.y };
+    console.log(`   → Fish position: (${fishPosition.x}, ${fishPosition.y})`);
+    
     const bankPosition = this.bankPositions.get(playerSlot);
 
     if (!bankPosition) {
-      console.warn(`Cannot play reward animation: bank position for slot ${playerSlot} not found`);
+      console.warn(`   ⚠️ Cannot play reward animation: bank position for slot ${playerSlot} not found`);
       return;
     }
+    
+    console.log(`   → Bank position for slot ${playerSlot}: (${bankPosition.x}, ${bankPosition.y})`);
+    console.log(`   → Creating floating text and coin animation`);
 
     this.createFloatingText(fishPosition, payout, isOwnKill);
     this.createCoinJumpAnimation(fishPosition, bankPosition, isOwnKill);

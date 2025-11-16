@@ -303,12 +303,15 @@ public class MatchInstance
 
         _fishManager.RemoveFish(kill.FishId);
         
+        // Add payout event for client animation (use numeric hash ID for client compatibility)
         _payoutEvents.Add(new KillPayoutEvent
         {
-            FishId = kill.FishId,
+            FishId = fish.FishIdHash, // Use numeric hash instead of string GUID
             Payout = (int)payout,
             PlayerSlot = player.PlayerSlot
         });
+        
+        Console.WriteLine($"💰 [PayoutEvent] FishId={fish.FishIdHash}, Payout={payout}, PlayerSlot={player.PlayerSlot}");
 
         if (hotSeatMultiplier > 1.0f)
         {
@@ -334,6 +337,24 @@ public class MatchInstance
             
             player.Credits += finalPayout;
             player.TotalEarned += finalPayout;
+            
+            // Create PayoutEvents for each destroyed fish in the boss kill sequence
+            if (result.DestroyedFishIds.Count > 0)
+            {
+                // Use the first destroyed fish for the main payout animation
+                var firstFish = _fishManager.GetFish(result.DestroyedFishIds[0]);
+                if (firstFish != null)
+                {
+                    _payoutEvents.Add(new KillPayoutEvent
+                    {
+                        FishId = firstFish.FishIdHash,
+                        Payout = (int)finalPayout,
+                        PlayerSlot = player.PlayerSlot
+                    });
+                    
+                    Console.WriteLine($"💰 [PayoutEvent] Boss kill FishId={firstFish.FishIdHash}, Payout={finalPayout}, PlayerSlot={player.PlayerSlot}");
+                }
+            }
             
             if (hotSeatMultiplier > 1.0f)
             {
@@ -377,6 +398,16 @@ public class MatchInstance
     {
         var roundState = _roundManager.GetRoundState();
         var activeSequences = _killSequenceHandler.GetActiveSequences();
+        
+        // Debug logging for payout events
+        if (_payoutEvents.Count > 0)
+        {
+            Console.WriteLine($"📤 [Broadcast] Sending {_payoutEvents.Count} PayoutEvents to clients:");
+            foreach (var pe in _payoutEvents)
+            {
+                Console.WriteLine($"   - FishId={pe.FishId}, Payout={pe.Payout}, PlayerSlot={pe.PlayerSlot}");
+            }
+        }
         
         var delta = new StateDelta
         {
@@ -666,7 +697,7 @@ public class KillEvent
 public class KillPayoutEvent
 {
     [Key(0)]
-    public string FishId { get; set; } = string.Empty;
+    public int FishId { get; set; } // Numeric hash ID for client compatibility
     
     [Key(1)]
     public int Payout { get; set; }
