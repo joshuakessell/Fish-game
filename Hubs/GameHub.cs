@@ -342,6 +342,8 @@ public class GameHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        Console.WriteLine($"[OnDisconnectedAsync] Connection {Context.ConnectionId} disconnected. Exception: {(exception != null ? exception.Message : "none")}");
+        
         if (_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
         {
             if (_connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerId))

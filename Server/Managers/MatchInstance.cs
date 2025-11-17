@@ -224,7 +224,7 @@ public class MatchInstance
         // Validate fire rate
         if (!player.CanFire())
         {
-            Console.WriteLine($"[FIRE] Rejected: Player {player.Name} fire rate limit (last fire: {(DateTime.UtcNow - player.LastFireTime).TotalMilliseconds:F0}ms ago)");
+            Console.WriteLine($"[FIRE] Rejected: Player {player.DisplayName} fire rate limit (last fire: {(DateTime.UtcNow - player.LastFireTime).TotalMilliseconds:F0}ms ago)");
             return;
         }
 
@@ -232,7 +232,7 @@ public class MatchInstance
         var cost = player.BetValue;
         if (player.Credits < cost)
         {
-            Console.WriteLine($"[FIRE] Rejected: Player {player.Name} insufficient credits ({player.Credits} < {cost})");
+            Console.WriteLine($"[FIRE] Rejected: Player {player.DisplayName} insufficient credits ({player.Credits} < {cost})");
             return;
         }
 
@@ -266,7 +266,7 @@ public class MatchInstance
         };
 
         _projectileManager.AddProjectile(projectile);
-        Console.WriteLine($"[FIRE] ✅ Player {player.Name} fired at ({command.X:F1}, {command.Y:F1}), cost={cost}, target={command.TargetFishId}, nonce={command.ClientNonce}");
+        Console.WriteLine($"[FIRE] ✅ Player {player.DisplayName} fired at ({command.X:F1}, {command.Y:F1}), cost={cost}, target={command.TargetFishId}, nonce={command.ClientNonce}");
     }
 
     private void HandleSetBetValue(GameCommand command)

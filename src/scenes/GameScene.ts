@@ -49,6 +49,8 @@ export default class GameScene extends Phaser.Scene {
   private readonly BULLET_SPEED = 800;
   private readonly MAX_BULLETS_PER_PLAYER = 30;
   private readonly BULLET_TIMEOUT_MS = 60000;
+  
+  private isJoiningRoom = false;
 
   constructor() {
     super({ key: "GameScene" });
@@ -95,17 +97,22 @@ export default class GameScene extends Phaser.Scene {
     };
 
     // DEV MODE: Auto-join room after callbacks are set up
-    if (this.gameState.devModeSeat !== null) {
+    if (this.gameState.devModeSeat !== null && !this.isJoiningRoom && this.gameState.myPlayerSlot === null) {
+      this.isJoiningRoom = true;
       const seat = this.gameState.devModeSeat;
       const roomId = "match_1";
       console.log(`GameScene [DEV]: Auto-joining ${roomId} at seat ${seat} (callbacks ready)`);
       
       this.gameState.joinRoom(roomId, seat).then(joined => {
+        this.isJoiningRoom = false;
         if (!joined) {
           console.error("GameScene [DEV]: Failed to join room");
         } else {
           console.log("GameScene [DEV]: Successfully joined room");
         }
+      }).catch(err => {
+        this.isJoiningRoom = false;
+        console.error("GameScene [DEV]: Join room error:", err);
       });
     } else if (this.gameState.myPlayerSlot !== null) {
       // Normal mode: already joined from lobby, initialize immediately
