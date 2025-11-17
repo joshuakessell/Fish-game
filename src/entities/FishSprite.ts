@@ -17,7 +17,7 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
     x: number,
     y: number,
   ) {
-    const texture = FishSprite.getTextureForType(typeId);
+    const texture = FishSprite.getTextureForType(typeId, scene);
     super(scene, x, y, texture);
 
     this.fishId = fishId;
@@ -99,47 +99,54 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
   }
 
   private updateRotation(velocity: { x: number; y: number }): void {
-    // Only rotate if fish is actually moving
     const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+    
     if (speed < 0.1) {
       return;
     }
-
-    // Calculate target angle from velocity
-    let targetAngle = Math.atan2(velocity.y, velocity.x);
-
-    // Special constraint for manta ray (Type 14): clamp rotation to ±45°
+    
+    const targetAngle = Math.atan2(velocity.y, velocity.x);
+    
+    // Special handling for Type 14 (manta ray)
     if (this.typeId === 14) {
-      const maxRotation = Math.PI / 4; // 45 degrees in radians
-      targetAngle = Phaser.Math.Clamp(targetAngle, -maxRotation, maxRotation);
+      // Use flipX for left vs right
+      this.setFlipX(velocity.x < 0);
+      
+      // Apply small tilt based on vertical movement only
+      const tiltAngle = Math.atan2(velocity.y, Math.abs(velocity.x));
+      const clampedTilt = Phaser.Math.Clamp(tiltAngle, -Math.PI / 4, Math.PI / 4);
+      
+      this.rotation = Phaser.Math.Linear(
+        this.rotation || 0,
+        clampedTilt,
+        0.15
+      );
+    } else {
+      // Normal rotation for other fish
+      this.rotation = Phaser.Math.Linear(
+        this.rotation || 0,
+        targetAngle,
+        0.15
+      );
     }
-
-    // Smooth rotation using linear interpolation
-    const smoothedAngle = Phaser.Math.Linear(this.previousRotation, targetAngle, 0.15);
-    this.setRotation(smoothedAngle);
-    this.previousRotation = smoothedAngle;
   }
 
-  private static getTextureForType(typeId: number): string {
-    const availableSprites: { [key: number]: string } = {
-      0: "fish-0",
-      1: "fish-1",
-      2: "fish-2",
-      6: "fish-6",
-      9: "fish-9",
-      12: "fish-12",
-      14: "fish-14",
-      21: "fish-21",
-    };
-
-    if (availableSprites[typeId]) {
-      return availableSprites[typeId];
+  private static getTextureForType(typeId: number, scene: Phaser.Scene): string {
+    const spritesheetKey = `fish-${typeId}`;
+    const staticKey = `fish-${typeId}-static`;
+    
+    // Try spritesheet first
+    if (scene.textures.exists(spritesheetKey)) {
+      return spritesheetKey;
     }
-
-    console.warn(
-      `No sprite available for fish typeId ${typeId}, using fallback fish-0`,
-    );
-    return "fish-0";
+    
+    // Fall back to static image
+    if (scene.textures.exists(staticKey)) {
+      return staticKey;
+    }
+    
+    // Ultimate fallback
+    return 'fish-0-static';
   }
 
   private static getScaleForType(typeId: number): number {
