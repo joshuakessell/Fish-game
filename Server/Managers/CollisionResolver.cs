@@ -23,6 +23,12 @@ public class CollisionResolver
     {
         var kills = new List<KillEvent>();
 
+        // Debug: Log that collision detection is running
+        if (projectiles.Count > 0 && fish.Count > 0)
+        {
+            Console.WriteLine($"[COLLISION] Checking {projectiles.Count} projectiles against {fish.Count} fish");
+        }
+
         foreach (var projectile in projectiles)
         {
             if (projectile.IsSpent) continue;
@@ -33,6 +39,13 @@ public class CollisionResolver
                 var dy = projectile.Y - f.Y;
                 var distanceSquared = dx * dx + dy * dy;
                 var radiusSum = f.HitboxRadius + 5f;
+
+                // Debug: Log close projectiles to understand coordinate space
+                if (distanceSquared <= (radiusSum * radiusSum * 4)) // Log when within 2x hit radius
+                {
+                    var distance = Math.Sqrt(distanceSquared);
+                    Console.WriteLine($"[COLLISION] Projectile at ({projectile.X:F1}, {projectile.Y:F1}) near Fish {f.FishId} at ({f.X:F1}, {f.Y:F1}) - Distance: {distance:F1}, HitRadius: {radiusSum:F1}");
+                }
 
                 if (distanceSquared <= radiusSum * radiusSum)
                 {
@@ -114,11 +127,16 @@ public class CollisionResolver
                             
                             if (roll < killProbability)
                             {
+                                Console.WriteLine($"[KILL] Fish {f.FishId} (type {f.TypeId}) killed! Roll {roll:F3} < Probability {killProbability:F3}");
                                 kills.Add(new KillEvent
                                 {
                                     FishId = f.FishId,
                                     ProjectileId = projectile.ProjectileId
                                 });
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[MISS] Fish {f.FishId} (type {f.TypeId}) survived. Roll {roll:F3} >= Probability {killProbability:F3}");
                             }
                         }
                     }
