@@ -36,8 +36,13 @@ if (gameContainer) {
   
   const mobileEntryManager = new MobileEntryManager(gameContainer);
   
-  // Start Phaser game when entry flow is complete
+  // Set the callback for when the game should start
   mobileEntryManager.onGameStart(() => {
+    console.log('MobileEntryManager: Starting Phaser game');
     new Phaser.Game(config);
   });
+  
+  // Now initialize the manager - this will check orientation and start the flow
+  // This must be called AFTER setting the callback
+  mobileEntryManager.initialize();
 }

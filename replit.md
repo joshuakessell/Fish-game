@@ -1,7 +1,7 @@
 # Ocean King 3 - Casino Betting Table Game
 
 ## Overview
-This project is "Ocean King 3," a casino-style betting table game where up to 6 players shoot at exotic fish in a large aquarium. Built with ASP.NET Core 8, SignalR for real-time communication, and Phaser 3 for client-side rendering, it targets a high Return-To-Player (RTP) of 97%. The game emphasizes real-time interaction, rich visual effects, and a streamlined fullscreen user experience for the online multiplayer casino game market, featuring responsive scaling and dynamic HTML overlay controls. It utilizes parametric path-based fish movement with deterministic client-server synchronization to reduce bandwidth.
+This project is "Ocean King 3," a casino-style betting table game where up to 6 players shoot at exotic fish in a large aquarium. Built with ASP.NET Core 8, SignalR for real-time communication, and Phaser 3 for client-side rendering, it targets a high Return-To-Player (RTP) of 97%. The game emphasizes real-time interaction, rich visual effects, and a streamlined fullscreen user experience for the online multiplayer casino game market, featuring responsive scaling and dynamic HTML overlay controls. It utilizes parametric path-based fish movement with deterministic client-server synchronization to reduce bandwidth. The game features a mobile-optimized entry flow with orientation detection, swipe-to-start prompts, and scroll-locked fullscreen gameplay.
 
 ## User Preferences
 - Language: C#

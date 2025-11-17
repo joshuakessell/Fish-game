@@ -20,6 +20,17 @@ export class MobileEntryManager {
         
         this.initializeEventListeners();
         
+        // Don't check orientation yet - wait for initialize() to be called
+        // after the game start callback has been set
+    }
+    
+    /**
+     * Initialize the manager and check orientation
+     * This should be called after setting the game start callback
+     */
+    public initialize(): void {
+        console.log('MobileEntryManager: Initializing...');
+        
         // Check orientation immediately
         this.checkOrientation();
         
@@ -386,12 +397,26 @@ export class MobileEntryManager {
      * Starts the game and removes the overlay
      */
     private startGame(): void {
+        console.log('MobileEntryManager: startGame() called');
+        
+        // Check if overlay still exists
+        if (!this.overlayElement) {
+            console.warn('MobileEntryManager: Overlay element not found');
+            return;
+        }
+        
         // Fade out overlay
         this.overlayElement.style.opacity = '0';
+        console.log('MobileEntryManager: Fading out overlay');
         
         setTimeout(() => {
-            // Remove overlay
-            this.overlayElement.remove();
+            console.log('MobileEntryManager: Removing overlay and starting game');
+            
+            // Remove overlay if it still exists
+            if (this.overlayElement && this.overlayElement.parentNode) {
+                this.overlayElement.remove();
+                console.log('MobileEntryManager: Overlay removed');
+            }
             
             // Reset body styles
             document.body.style.height = '100vh';
@@ -402,7 +427,10 @@ export class MobileEntryManager {
             
             // Call the game start callback
             if (this.gameStartCallback) {
+                console.log('MobileEntryManager: Calling game start callback');
                 this.gameStartCallback();
+            } else {
+                console.error('MobileEntryManager: No game start callback set!');
             }
         }, 500);
     }
