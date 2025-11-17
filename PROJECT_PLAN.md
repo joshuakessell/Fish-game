@@ -93,110 +93,151 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL ||
 
 ---
 
-## 2. Animation System Implementation
+## 2. Animation System Implementation ✅ **COMPLETED**
 
-### 2.1 Spritesheet Structure
+### 2.1 Spritesheet Structure (ACTUAL IMPLEMENTATION)
 
-#### Frame Layout per Fish Type
-- **Swimming Animation:** 8 frames
-- **Idle Animation:** 4 frames  
-- **Turn Animation:** 4 frames
-- **Death Animation:** 6 frames
-- **Total per Fish:** 22 frames
+#### Frame Layout - Simplified 8-Frame Swim Loops
+- **Swimming Animation ONLY:** 8 frames (extracted from 25-frame source at indices 0, 3, 6, 9, 12, 15, 18, 21)
+- **Death Animation:** Tween-based spiral rotation + fade (no sprite frames needed)
+- **Directional Facing:** Rotation-based (sprite rotates to match velocity angle)
+- **Total per Fish:** 8 frames per spritesheet
 
-#### Resolution Standards
-- **Small Fish (types 0-2):** 64x32 pixels per frame
-- **Medium Fish (types 6, 9):** 96x48 pixels per frame
-- **Large Fish (types 12, 14):** 128x64 pixels per frame
-- **Boss Fish (special):** 192x96 pixels per frame
+#### Actual Frame Dimensions per Fish Type
+| Fish Type | Type ID | Frame Size | Total Spritesheet Size | File Name |
+|-----------|---------|------------|----------------------|-----------|
+| Clownfish | 0 | 72×32 | 576×32 (8 frames) | fish-0.png |
+| Neon Tetra | 1 | 72×32 | 576×32 (8 frames) | fish-1.png |
+| Butterflyfish | 2 | 80×40 | 640×40 (8 frames) | fish-2.png |
+| Lionfish | 6 | 128×56 | 1024×56 (8 frames) | fish-6.png |
+| Triggerfish | 9 | 120×48 | 960×48 (8 frames) | fish-9.png |
+| Hammerhead Shark | 12 | 160×40 | 1280×40 (8 frames) | fish-12.png |
+| Giant Manta Ray | 14 | 224×96 | 1792×96 (8 frames) | fish-14.png |
+| Wave Rider | 21 | 112×48 | 896×48 (8 frames) | fish-21.png |
+
+**Design Decision:** Simplified from complex multi-state animations (swim/idle/turn/death) to:
+- Single 8-frame swim loop (10fps, snappy arcade feel)
+- Rotation handles all directional facing
+- Tweens handle death effects
 
 ### 2.2 Phaser Animation Implementation
 
-#### Loading Spritesheets
+#### Loading Spritesheets (BootScene.ts)
 ```typescript
-// In BootScene.preload()
-this.load.spritesheet('fish-0-sheet', 'assets/spritesheets/clownfish.png', {
-  frameWidth: 64,
+// Spritesheet loads with fallback to static images
+this.load.spritesheet('fish-0', 'assets/spritesheets/fish/fish-0.png', {
+  frameWidth: 72,
   frameHeight: 32
 });
+this.load.image('fish-0-static', 'assets/static/fish-0.png'); // Fallback
 
-// Create animations
-this.anims.create({
-  key: 'fish-0-swim',
-  frames: this.anims.generateFrameNumbers('fish-0-sheet', { start: 0, end: 7 }),
-  frameRate: 10,
-  repeat: -1
-});
+// Animation creation (auto-detects if spritesheet exists)
+private createFishAnimations(): void {
+  const fishConfigs = [
+    { typeId: 0, frames: 8 },   // Clownfish
+    { typeId: 1, frames: 8 },   // Neon Tetra
+    { typeId: 2, frames: 8 },   // Butterflyfish
+    { typeId: 6, frames: 8 },   // Lionfish
+    { typeId: 9, frames: 8 },   // Triggerfish
+    { typeId: 12, frames: 8 },  // Hammerhead
+    { typeId: 14, frames: 8 },  // Manta Ray
+    { typeId: 21, frames: 8 },  // Wave Rider
+  ];
 
-this.anims.create({
-  key: 'fish-0-death',
-  frames: this.anims.generateFrameNumbers('fish-0-sheet', { start: 18, end: 23 }),
-  frameRate: 15,
-  repeat: 0
-});
+  fishConfigs.forEach(config => {
+    const key = `fish-${config.typeId}`;
+    if (this.textures.exists(key)) {
+      this.anims.create({
+        key: `${key}-swim`,
+        frames: this.anims.generateFrameNumbers(key, { 
+          start: 0, 
+          end: config.frames - 1 
+        }),
+        frameRate: 10,
+        repeat: -1
+      });
+    }
+  });
+}
 ```
 
-#### Directional Rotation System
+#### Rotation-Based Directional Facing (FishSprite.ts)
 ```typescript
-// In FishSprite class
-public updateRotation(velocity: { x: number, y: number }): void {
-  // Calculate angle from velocity
-  const angle = Math.atan2(velocity.y, velocity.x);
-  
-  // Smooth rotation with lerp
-  const targetRotation = angle;
-  this.rotation = Phaser.Math.Linear(this.rotation, targetRotation, 0.1);
-  
-  // Flip sprite if swimming left vs right
-  if (Math.abs(angle) > Math.PI / 2) {
-    this.setFlipY(true);
-    this.rotation = angle - Math.PI;
+// Automatic rotation based on velocity from path
+updateRotation(velocity: { x: number; y: number }): void {
+  const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+  if (speed < 0.1) return; // Don't rotate if stationary
+
+  const targetAngle = Math.atan2(velocity.y, velocity.x);
+
+  // Special handling for Type 14 (Manta Ray)
+  if (this.typeId === 14) {
+    // Use flipX for left vs right facing
+    this.setFlipX(velocity.x < 0);
+    
+    // Only tilt vertically (clamped to ±45°)
+    const tiltAngle = Math.atan2(velocity.y, Math.abs(velocity.x));
+    const clampedTilt = Phaser.Math.Clamp(tiltAngle, -Math.PI / 4, Math.PI / 4);
+    
+    this.rotation = Phaser.Math.Linear(this.rotation || 0, clampedTilt, 0.15);
   } else {
-    this.setFlipY(false);
-    this.rotation = angle;
+    // Normal fish: full rotation to match velocity angle
+    this.rotation = Phaser.Math.Linear(this.rotation || 0, targetAngle, 0.15);
   }
 }
 ```
 
-### 2.3 Death Animation Sequence
+**Manta Ray Constraint Rationale:** Type 14 uses `flipX` for horizontal facing and limits rotation to ±45° vertical tilt to prevent unnatural upside-down or sideways orientations, maintaining realistic manta ray gliding appearance.
+
+### 2.3 Death Animation - Tween-Based Spiral Effect
 
 ```typescript
 public playDeathSequence(): Promise<void> {
-  return new Promise((resolve) => {
-    // 1. White flash
+  return new Promise<void>((resolve) => {
+    const baseScale = FishSprite.getScaleForType(this.typeId);
+    
+    // 1. White flash (100ms, yoyo)
     this.scene.tweens.add({
       targets: this,
       tint: 0xffffff,
       duration: 100,
-      yoyo: true
+      yoyo: true,
+      repeat: 1,
     });
-    
-    // 2. Scale pop
+
+    // 2. Scale pop (1.0 → 1.2 → 1.0, 200ms)
     this.scene.tweens.add({
       targets: this,
-      scaleX: this.scaleX * 1.5,
-      scaleY: this.scaleY * 1.5,
+      scaleX: baseScale * 1.2,
+      scaleY: baseScale * 1.2,
       duration: 200,
-      ease: 'Back.easeOut'
+      yoyo: true,
+      ease: 'Cubic.easeOut',
     });
-    
-    // 3. Play death animation
-    this.play('fish-death');
-    
-    // 4. Fade out
+
+    // 3. Spiral rotation (3 full spins = 1080°, 1 second)
+    this.scene.tweens.add({
+      targets: this,
+      angle: { from: 0, to: 1080 },
+      duration: 1000,
+      ease: 'Cubic.easeOut',
+    });
+
+    // 4. Fade out (alpha 1.0 → 0, 400ms)
     this.scene.tweens.add({
       targets: this,
       alpha: 0,
-      duration: 500,
-      delay: 300,
+      duration: 400,
       onComplete: () => {
-        this.destroy();
+        this.setVisible(false);
         resolve();
       }
     });
   });
 }
 ```
+
+**Design Decision:** Tween-based death effects instead of sprite frames reduces asset count from 6 frames × 8 fish types = 48 frames to **zero additional frames**, while providing smooth, customizable death animations.
 
 ### 2.4 Coin Animation System
 
