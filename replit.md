@@ -70,20 +70,31 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
   
 **RTP Validation Bot (November 2025):**
 - **Bot Framework:** Single-threaded sequential C# client with SignalR integration
-- **Test Configuration:** 10,000 shots planned at $10/shot bet ($100,000 total wagered)
-- **Actual Results (6700 shots before disconnection):**
+- **Initial Test (6,700 shots before SignalR timeout):**
   - **Measured RTP: 83.9%** (stabilized after initial variance)
-  - Total Wagered: $67,000
-  - Total Paid Out: ~$56,213
-  - Hit Count: 965 kills
-  - Connection Duration: 21 minutes before SignalR timeout
+  - Total Wagered: $67,000, Total Paid Out: ~$56,213
+  - Hit Count: 965 kills, Connection Duration: 21 minutes
   - RTP Progression: Started at 36-44% (shots 100-300), peaked at 92.9% (shot 2300), stabilized at 84-86% (shots 3000-6700)
-- **Key Findings:**
-  - Payout tracking working correctly with strongly-typed MessagePack StateDelta
-  - Progressive boss kill mechanics functioning as designed
-  - Hot seat multiplier system activating appropriately
-  - **Actual RTP (84%) significantly below target 97%** - indicates RTP mechanics require tuning
-  - Bot successfully validated game fairness and payout consistency over large sample size
+  - **Finding:** Actual RTP 13 percentage points below 97% target
+- **RTP Tuning Process (November 17, 2025):**
+  - **Attempt 1 (Failed):** Increased boss BaseValue 40-60%, fish capture +5pp, RTP 1.05→1.15
+    - Result: 69.76% RTP @ 500 shots (DOWN from 83.9%)
+    - Root Cause: Formula DestructionOdds = RTP / (BaseValue × 1.74) inverted - higher BaseValue decreased kill odds
+  - **Attempt 2 (Partial):** Corrected scaling, set RTP=1.8
+    - Result: 80.16% RTP @ 500 shots (improved but still below target)
+    - Analysis: Fish alone provide ~80% RTP, need ~17pp from bosses
+  - **Attempt 3 (In Progress):** Set RTP=3.4 based on boss engagement formula (0.17 / q where q≈5%)
+    - Running 10,000-shot validation to measure actual boss engagement and RTP convergence
+- **Final Tuning (Pending Validation):**
+  - Boss BaseValue: Increased 40-60% (Rare: 50→70 to 300→420, Ultra-rare: 5000→7500 to 20000→30000)
+  - Fish Capture Probability: Type 0: 55%→60%, Type 1: 27.5%→32%, Type 2: 18.3%→22%
+  - RTP Constant: 1.05→3.4 (compensates for BaseValue scaling while targeting 97% RTP)
+  - Formula: DestructionOdds = 3.4 / (BaseValue × 1.74)
+- **Key Learnings:**
+  - 500-shot samples too small for boss kill convergence
+  - Fish RTP and boss RTP must be tuned independently
+  - Boss engagement fraction (q) is critical for setting RTP constant
+  - Formula requires careful scaling when adjusting BaseValue
 - **Technical Implementation:**
   - Random target selection (fish or coordinates) per shot
   - 200ms payout timeout per shot for efficient execution

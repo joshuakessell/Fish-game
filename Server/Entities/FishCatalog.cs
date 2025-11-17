@@ -47,8 +47,8 @@ public static class FishCatalog
             BaseRewardValue = 1,
             Category = FishCategory.SmallFish,
             PayoutMultiplier = 2,
-            CaptureProbability = 0.55f,  // 55% - Very easy to catch
-            ExpectedValue = 1.10f,
+            CaptureProbability = 0.60f,  // 60% - Very easy to catch (increased from 55%)
+            ExpectedValue = 1.20f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
             HitboxRadius = 18f,
@@ -64,8 +64,8 @@ public static class FishCatalog
             BaseRewardValue = 1,
             Category = FishCategory.SmallFish,
             PayoutMultiplier = 4,
-            CaptureProbability = 0.275f,  // 27.5% - Easy to catch
-            ExpectedValue = 1.10f,
+            CaptureProbability = 0.32f,  // 32% - Easy to catch (increased from 27.5%)
+            ExpectedValue = 1.28f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
             HitboxRadius = 16f,
@@ -81,8 +81,8 @@ public static class FishCatalog
             BaseRewardValue = 1,
             Category = FishCategory.SmallFish,
             PayoutMultiplier = 6,
-            CaptureProbability = 0.183f,  // 18.3% - Moderate chance
-            ExpectedValue = 1.10f,
+            CaptureProbability = 0.22f,  // 22% - Moderate chance (increased from 18.3%)
+            ExpectedValue = 1.32f,
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 20,
             HitboxRadius = 17f,

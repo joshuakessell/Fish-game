@@ -29,10 +29,11 @@ public class BossDefinition
 
 public static class BossCatalog
 {
-    // WARNING: RTP set to 1.05 (105%) for DEVELOPER TESTING ONLY
-    // TODO: Replace with configuration-based RTP before production deployment
-    // Production RTP should be 0.97 (97%)
-    private const float RTP = 1.05f;
+    // RTP set to 3.4 based on architect analysis:
+    // Fish provide ~80% RTP, need ~17pp from bosses
+    // Formula: RTP = 0.17 / q, where q≈5% boss engagement fraction
+    // DestructionOdds = RTP / (BaseValue * AVG_MULTIPLIER)
+    private const float RTP = 3.4f;
     private const float AVG_MULTIPLIER = 1.74f;
 
     private static float CalculateDestructionOdds(decimal baseValue)
@@ -49,8 +50,8 @@ public static class BossCatalog
         {
             TypeId = 2,
             Name = "Giant Tuna",
-            BaseValue = 50m,
-            DestructionOdds = CalculateDestructionOdds(50m),
+            BaseValue = 70m,
+            DestructionOdds = CalculateDestructionOdds(70m),
             HitboxRadius = 50f,
             BaseSpeed = 80f,
             MovementPatternId = 0,
@@ -63,8 +64,8 @@ public static class BossCatalog
         {
             TypeId = 3,
             Name = "Dragon Turtle",
-            BaseValue = 500m,
-            DestructionOdds = CalculateDestructionOdds(500m),
+            BaseValue = 700m,
+            DestructionOdds = CalculateDestructionOdds(700m),
             HitboxRadius = 80f,
             BaseSpeed = 60f,
             MovementPatternId = 0,
@@ -77,8 +78,8 @@ public static class BossCatalog
         {
             TypeId = 4,
             Name = "Bomb Crab",
-            BaseValue = 200m,
-            DestructionOdds = CalculateDestructionOdds(200m),
+            BaseValue = 280m,
+            DestructionOdds = CalculateDestructionOdds(280m),
             HitboxRadius = 55f,
             BaseSpeed = 50f,
             MovementPatternId = 0,
@@ -91,8 +92,8 @@ public static class BossCatalog
         {
             TypeId = 5,
             Name = "Lightning Eel",
-            BaseValue = 150m,
-            DestructionOdds = CalculateDestructionOdds(150m),
+            BaseValue = 210m,
+            DestructionOdds = CalculateDestructionOdds(210m),
             HitboxRadius = 48f,
             BaseSpeed = 90f,
             MovementPatternId = 2,
@@ -105,8 +106,8 @@ public static class BossCatalog
         {
             TypeId = 6,
             Name = "Vortex Starfish",
-            BaseValue = 300m,
-            DestructionOdds = CalculateDestructionOdds(300m),
+            BaseValue = 420m,
+            DestructionOdds = CalculateDestructionOdds(420m),
             HitboxRadius = 60f,
             BaseSpeed = 40f,
             MovementPatternId = 1,
@@ -122,8 +123,8 @@ public static class BossCatalog
         {
             TypeId = 9,
             Name = "Kaiju Megalodon",
-            BaseValue = 5000m,
-            DestructionOdds = CalculateDestructionOdds(5000m),
+            BaseValue = 7500m,
+            DestructionOdds = CalculateDestructionOdds(7500m),
             HitboxRadius = 120f,
             BaseSpeed = 70f,
             MovementPatternId = 0,
@@ -137,8 +138,8 @@ public static class BossCatalog
         {
             TypeId = 10,
             Name = "Emperor Kraken",
-            BaseValue = 8000m,
-            DestructionOdds = CalculateDestructionOdds(8000m),
+            BaseValue = 12000m,
+            DestructionOdds = CalculateDestructionOdds(12000m),
             HitboxRadius = 140f,
             BaseSpeed = 50f,
             MovementPatternId = 1,
@@ -152,8 +153,8 @@ public static class BossCatalog
         {
             TypeId = 11,
             Name = "Cosmic Leviathan",
-            BaseValue = 10000m,
-            DestructionOdds = CalculateDestructionOdds(10000m),
+            BaseValue = 15000m,
+            DestructionOdds = CalculateDestructionOdds(15000m),
             HitboxRadius = 150f,
             BaseSpeed = 60f,
             MovementPatternId = 2,
@@ -166,8 +167,8 @@ public static class BossCatalog
         {
             TypeId = 12,
             Name = "Samurai Swordfish",
-            BaseValue = 6000m,
-            DestructionOdds = CalculateDestructionOdds(6000m),
+            BaseValue = 9000m,
+            DestructionOdds = CalculateDestructionOdds(9000m),
             HitboxRadius = 110f,
             BaseSpeed = 120f,
             MovementPatternId = 0,
@@ -180,8 +181,8 @@ public static class BossCatalog
         {
             TypeId = 13,
             Name = "Carnival King Crab",
-            BaseValue = 7000m,
-            DestructionOdds = CalculateDestructionOdds(7000m),
+            BaseValue = 10500m,
+            DestructionOdds = CalculateDestructionOdds(10500m),
             HitboxRadius = 130f,
             BaseSpeed = 45f,
             MovementPatternId = 1,
@@ -194,8 +195,8 @@ public static class BossCatalog
         {
             TypeId = 14,
             Name = "Wizard Octopus",
-            BaseValue = 9000m,
-            DestructionOdds = CalculateDestructionOdds(9000m),
+            BaseValue = 13500m,
+            DestructionOdds = CalculateDestructionOdds(13500m),
             HitboxRadius = 125f,
             BaseSpeed = 55f,
             MovementPatternId = 2,
@@ -208,8 +209,8 @@ public static class BossCatalog
         {
             TypeId = 15,
             Name = "Rocket Hammerhead",
-            BaseValue = 5500m,
-            DestructionOdds = CalculateDestructionOdds(5500m),
+            BaseValue = 8250m,
+            DestructionOdds = CalculateDestructionOdds(8250m),
             HitboxRadius = 100f,
             BaseSpeed = 150f,
             MovementPatternId = 0,
@@ -222,8 +223,8 @@ public static class BossCatalog
         {
             TypeId = 16,
             Name = "Pirate Captain Whale",
-            BaseValue = 12000m,
-            DestructionOdds = CalculateDestructionOdds(12000m),
+            BaseValue = 18000m,
+            DestructionOdds = CalculateDestructionOdds(18000m),
             HitboxRadius = 160f,
             BaseSpeed = 40f,
             MovementPatternId = 1,
@@ -236,8 +237,8 @@ public static class BossCatalog
         {
             TypeId = 17,
             Name = "Nuclear Submarine",
-            BaseValue = 15000m,
-            DestructionOdds = CalculateDestructionOdds(15000m),
+            BaseValue = 22500m,
+            DestructionOdds = CalculateDestructionOdds(22500m),
             HitboxRadius = 145f,
             BaseSpeed = 65f,
             MovementPatternId = 0,
@@ -250,8 +251,8 @@ public static class BossCatalog
         {
             TypeId = 18,
             Name = "Phoenix Firebird",
-            BaseValue = 8500m,
-            DestructionOdds = CalculateDestructionOdds(8500m),
+            BaseValue = 12750m,
+            DestructionOdds = CalculateDestructionOdds(12750m),
             HitboxRadius = 115f,
             BaseSpeed = 140f,
             MovementPatternId = 2,
@@ -264,8 +265,8 @@ public static class BossCatalog
         {
             TypeId = 19,
             Name = "Alien Mothership",
-            BaseValue = 20000m,
-            DestructionOdds = CalculateDestructionOdds(20000m),
+            BaseValue = 30000m,
+            DestructionOdds = CalculateDestructionOdds(30000m),
             HitboxRadius = 170f,
             BaseSpeed = 35f,
             MovementPatternId = 1,
