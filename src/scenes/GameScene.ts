@@ -172,7 +172,13 @@ export default class GameScene extends Phaser.Scene {
 
     this.gameState.onFishRemoved = async (fishId: number) => {
       console.log(`🐟 Fish removed callback: fishId=${fishId}`);
-      await this.fishSpriteManager.removeFish(fishId);
+      // Simply remove the sprite without animation - death animation handled by PayoutEvent
+      const sprite = this.fishSpriteManager.getFishSprites().get(fishId);
+      if (sprite) {
+        sprite.destroy();
+        this.fishSpriteManager.getFishSprites().delete(fishId);
+        console.log(`✅ Removed fish ${fishId} sprite (no death animation - natural exit)`);
+      }
 
       if (this.autoTargetMode && fishId === this.currentTarget) {
         console.log(`Targeted fish ${fishId} removed, retargeting...`);
