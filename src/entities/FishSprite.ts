@@ -8,6 +8,7 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
 
   private previousPosition: [number, number] | null = null;
   private currentPosition: [number, number] | null = null;
+  private previousRotation: number = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -34,6 +35,15 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
 
     this.previousPosition = [x, y];
     this.currentPosition = [x, y];
+
+    // Play swim animation if available
+    const animKey = `fish-${typeId}-swim`;
+    if (this.scene.anims.exists(animKey)) {
+      this.play(animKey);
+      console.log(`🎬 Playing animation: ${animKey}`);
+    } else {
+      console.log(`📷 Using static texture for fish-${typeId} (no animation available)`);
+    }
 
     this.setInteractive();
     
@@ -71,6 +81,13 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
 
     this.setPosition(x, y);
 
+    // Calculate velocity from position delta and update rotation
+    const velocity = {
+      x: this.currentPosition[0] - this.previousPosition[0],
+      y: this.currentPosition[1] - this.previousPosition[1],
+    };
+    this.updateRotation(velocity);
+
     // Debug: log if fish becomes invisible or has alpha issues
     if (!this.visible || this.alpha < 0.1) {
       console.warn(`⚠️ Fish ${this.fishId} visibility issue - visible: ${this.visible}, alpha: ${this.alpha}`);
@@ -79,6 +96,28 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
 
   private lerp(start: number, end: number, alpha: number): number {
     return start + (end - start) * alpha;
+  }
+
+  private updateRotation(velocity: { x: number; y: number }): void {
+    // Only rotate if fish is actually moving
+    const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+    if (speed < 0.1) {
+      return;
+    }
+
+    // Calculate target angle from velocity
+    let targetAngle = Math.atan2(velocity.y, velocity.x);
+
+    // Special constraint for manta ray (Type 14): clamp rotation to ±45°
+    if (this.typeId === 14) {
+      const maxRotation = Math.PI / 4; // 45 degrees in radians
+      targetAngle = Phaser.Math.Clamp(targetAngle, -maxRotation, maxRotation);
+    }
+
+    // Smooth rotation using linear interpolation
+    const smoothedAngle = Phaser.Math.Linear(this.previousRotation, targetAngle, 0.15);
+    this.setRotation(smoothedAngle);
+    this.previousRotation = smoothedAngle;
   }
 
   private static getTextureForType(typeId: number): string {
@@ -127,6 +166,7 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
     return new Promise<void>((resolve) => {
       const baseScale = FishSprite.getScaleForType(this.typeId);
       
+      // White flash effect
       this.scene.tweens.add({
         targets: this,
         tint: 0xffffff,
@@ -135,6 +175,7 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
         repeat: 1,
       });
 
+      // Scale pop effect
       this.scene.tweens.add({
         targets: this,
         scaleX: baseScale * 1.2,
@@ -144,10 +185,19 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
         ease: 'Cubic.easeOut',
       });
 
+      // Spiral rotation: 3 full spins (Math.PI * 6 radians)
+      this.scene.tweens.add({
+        targets: this,
+        angle: this.angle + 360 * 3, // 3 full rotations
+        duration: 1000,
+        ease: 'Cubic.easeOut',
+      });
+
+      // Fade out to alpha 0
       this.scene.tweens.add({
         targets: this,
         alpha: 0,
-        duration: 400,
+        duration: 1000,
         onComplete: () => {
           this.setVisible(false);
           resolve();
