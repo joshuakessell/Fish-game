@@ -31,6 +31,9 @@ public class MatchInstance
     // Hot seat system
     private readonly HotSeatManager _hotSeatManager;
     
+    // Random number generator for deterministic testing
+    private readonly Random _random;
+    
     // Game loop
     private Thread? _gameLoopThread;
     private bool _isRunning;
@@ -51,15 +54,16 @@ public class MatchInstance
     // Payout events for broadcasting
     private List<KillPayoutEvent> _payoutEvents = new();
 
-    public MatchInstance(string matchId, MatchManager matchManager, IHubContext<GameHub> hubContext, bool isSolo = false)
+    public MatchInstance(string matchId, MatchManager matchManager, IHubContext<GameHub> hubContext, bool isSolo = false, Random? random = null)
     {
         MatchId = matchId;
         _matchManager = matchManager;
         _hubContext = hubContext;
         _isSolo = isSolo;
+        _random = random ?? Random.Shared;
         
         _playerManager = new PlayerManager();
-        _fishManager = new FishManager();
+        _fishManager = new FishManager(_random);
         _projectileManager = new ProjectileManager();
         _bossShotTracker = new BossShotTracker();
         _collisionResolver = new CollisionResolver(_playerManager, _bossShotTracker);
@@ -68,7 +72,7 @@ public class MatchInstance
         _killSequenceHandler = new KillSequenceHandler(_fishManager);
         _interactionManager = new InteractionManager();
         
-        _hotSeatManager = new HotSeatManager();
+        _hotSeatManager = new HotSeatManager(_random);
     }
 
     public bool CanJoin() => !_isSolo && _playerManager.GetPlayerCount() < MatchManager.MAX_PLAYERS_PER_MATCH;
@@ -292,7 +296,7 @@ public class MatchInstance
         var multipliers = new[] { 1m, 2m, 3m, 5m, 10m, 20m };
         var weights = new[] { 70, 15, 8, 5, 1.5f, 0.5f };
         var totalWeight = weights.Sum();
-        var randomValue = Random.Shared.NextSingle() * totalWeight;
+        var randomValue = _random.NextSingle() * totalWeight;
         
         decimal multiplier = 1m;
         float cumulativeWeight = 0f;

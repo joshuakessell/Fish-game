@@ -216,9 +216,10 @@ public class PathGenerator
     
     private static int GenerateSeed(int fishId, int tick, int spawnEdge, int groupIndex)
     {
-        // Combine fish ID, tick, spawn edge, group index and counter for unique seed
+        // Combine fish ID, tick, spawn edge, group index for deterministic seed
         // Use 64-bit arithmetic to prevent overflow before modulo
-        long combined = ((long)fishId * 31L + (long)tick * 17L + (long)spawnEdge * 13L + (long)groupIndex * 7L + _seedCounter++);
+        // Note: Removed _seedCounter to ensure deterministic behavior for testing
+        long combined = ((long)fishId * 31L + (long)tick * 17L + (long)spawnEdge * 13L + (long)groupIndex * 7L);
         return (int)(combined % int.MaxValue);
     }
     

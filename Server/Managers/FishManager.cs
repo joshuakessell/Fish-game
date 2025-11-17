@@ -7,6 +7,7 @@ public class FishManager
     private readonly Dictionary<string, Fish> _activeFish = new();
     private readonly int MIN_FISH_COUNT;
     private readonly int MAX_FISH_COUNT;
+    private readonly Random _random;
     private const int ARENA_WIDTH = 1800;
     private const int ARENA_HEIGHT = 900;
     
@@ -22,10 +23,11 @@ public class FishManager
     private const int WAVE_RIDER_SPAWN_INTERVAL = 150;
     private bool _waveRiderSpawnFromLeft = true;
     
-    public FishManager()
+    public FishManager(Random? random = null)
     {
-        MIN_FISH_COUNT = Random.Shared.Next(20, 31);
-        MAX_FISH_COUNT = Random.Shared.Next(MIN_FISH_COUNT + 5, 41);
+        _random = random ?? Random.Shared;
+        MIN_FISH_COUNT = _random.Next(20, 31);
+        MAX_FISH_COUNT = _random.Next(MIN_FISH_COUNT + 5, 41);
         Console.WriteLine($"[FISH MANAGER] Session fish count range: {MIN_FISH_COUNT}-{MAX_FISH_COUNT}");
     }
 
@@ -91,7 +93,7 @@ public class FishManager
         {
             if (currentTick - _lastSpawnTick >= MIN_TICKS_BETWEEN_SPAWNS)
             {
-                if (Random.Shared.Next(10) < 7)
+                if (_random.Next(10) < 7)
                 {
                     SpawnRandomFish(currentTick);
                     _lastSpawnTick = currentTick;
@@ -135,7 +137,7 @@ public class FishManager
         if (fishDef == null) return;
 
         // Select random spawn edge/direction (0-7)
-        int spawnEdge = Random.Shared.Next(8);
+        int spawnEdge = _random.Next(8);
         
         // Single fish gets its own unique group ID (no formation)
         long groupId = Interlocked.Increment(ref _groupIdCounter);
@@ -162,7 +164,7 @@ public class FishManager
             }
         }
         
-        int randomValue = Random.Shared.Next(totalWeight);
+        int randomValue = _random.Next(totalWeight);
         int cumulativeWeight = 0;
         int selectedTypeId = 0;
         
@@ -208,7 +210,7 @@ public class FishManager
         int groupSize;
         if (minCount > 0 && maxCount > 0)
         {
-            groupSize = Random.Shared.Next(minCount, maxCount + 1);
+            groupSize = _random.Next(minCount, maxCount + 1);
         }
         else
         {
@@ -219,7 +221,7 @@ public class FishManager
         long groupId = Interlocked.Increment(ref _groupIdCounter);
         
         // Select a spawn edge for the entire group (0-7)
-        int spawnEdge = Random.Shared.Next(8);
+        int spawnEdge = _random.Next(8);
         
         // Spawn fish in formation
         for (int i = 0; i < groupSize; i++)
