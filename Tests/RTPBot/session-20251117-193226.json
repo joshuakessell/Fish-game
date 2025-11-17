@@ -1,0 +1,1015 @@
+{
+  "BotId": "e3b50976-0f0e-4042-bb23-909539a9a5a8",
+  "StartTime": "2025-11-17T19:32:26.7399489Z",
+  "EndTime": "2025-11-17T19:32:48.4491552Z",
+  "StartingCredits": 10000,
+  "CurrentCredits": 10214,
+  "Shots": [
+    {
+      "Timestamp": "2025-11-17T19:32:29.403982Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "086dcbcc-2504-40f3-9e18-ab364bccff13",
+      "TargetFishId": 973122818
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:29.6243411Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "aeba8810-c2c4-4c1b-b36c-77135a9318a7",
+      "TargetFishId": 99725545
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:29.8293136Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "ad932537-28de-4cb4-9bc7-45d64e7c593a",
+      "TargetFishId": 469333423
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:30.0312535Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "7889c34c-a882-4bf7-8a9d-99ee1c827d2b",
+      "TargetFishId": 960389561
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:30.2337909Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "78140246-553e-4772-92a0-f8e3c792c278",
+      "TargetFishId": 60784422
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:30.4373266Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "a83b6e19-630e-4c6c-add9-85f35458ea48",
+      "TargetFishId": 1470006144
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:30.6464899Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "7fd0f04b-ea92-4d18-9e1f-01e4e79db08c",
+      "TargetFishId": 1824233907
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:30.8494887Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "9bde316c-4b69-43fa-89bf-7c106732e578",
+      "TargetFishId": 1102833073
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:31.0547542Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "1dc4c5b7-71c8-4f5b-95c3-38b4006cd0e5",
+      "TargetFishId": 1601644066
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:31.2561622Z",
+      "BetAmount": 10,
+      "TargetX": 1799.77734375,
+      "TargetY": 833.1808471679688,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "308403be-4bab-4b33-8808-a82c07314f43",
+      "TargetFishId": 480556001
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:31.4588073Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "007272da-7a8e-4540-893e-d67b6473bba0",
+      "TargetFishId": 99725545
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:31.6641093Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "969022ce-1a58-4b1c-9a70-b06cfe35a35a",
+      "TargetFishId": 60784422
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:31.8686206Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "10d519f9-3278-4de3-ac60-84027ae28776",
+      "TargetFishId": 60784422
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:32.0713281Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "882495ca-d70e-4c57-8bc9-5f874097ae78",
+      "TargetFishId": 1102833073
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:32.2750824Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "8da4ea50-1c61-4fc7-9ed9-1493c0af1d42",
+      "TargetFishId": 440179044
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:32.4824698Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "dc82086e-9896-4762-9c31-de1613afcb1b",
+      "TargetFishId": 440179044
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:32.6847245Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "d5088e7a-50b2-4a24-999d-4e5df6479595",
+      "TargetFishId": 1862157940
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:32.8861078Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "f220f485-d4f9-4d6c-a751-ac7c7fca5651",
+      "TargetFishId": 205707016
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:33.0919182Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "ff09e22e-787d-4972-9937-7777c57b5250",
+      "TargetFishId": 469333423
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:33.2960773Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "b6029451-dc20-450a-883f-c346c7804839",
+      "TargetFishId": 332127041
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:33.5006325Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "5334dad5-3bf2-4275-9828-bce7ef561a37",
+      "TargetFishId": 1178789951
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:33.7031514Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "3afbaa7d-4f4f-427e-8116-3b2e9a060958",
+      "TargetFishId": 1367484093
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:33.9082531Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "fa6439ec-b532-43c5-af97-1df1f148cd15",
+      "TargetFishId": 485905674
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:34.1127648Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "3d1649fa-c620-4a68-adb6-d33a8fa59c7a",
+      "TargetFishId": 205707016
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:34.3162362Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "316e2c4f-6f5e-48b0-ab18-e996d78b36eb",
+      "TargetFishId": 1597726056
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:34.5188425Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "b16eb431-b98a-47f9-9a2a-44a1452c0007",
+      "TargetFishId": 400926056
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:34.7209207Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 64,
+      "FishTypeKilled": 2121294303,
+      "Nonce": "03a75e68-ff15-4d55-b048-b95b028b9578",
+      "TargetFishId": 332127041
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:34.8229576Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "aa04f43d-6e7a-46e0-93a3-b26e67976ceb",
+      "TargetFishId": 1187870560
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:35.0259318Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 120,
+      "FishTypeKilled": 1601644066,
+      "Nonce": "ff210bce-c006-45a7-a668-26c9530cc92c",
+      "TargetFishId": 1014920715
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:35.085994Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 20,
+      "FishTypeKilled": 60784422,
+      "Nonce": "c3f6b4f3-c639-47d8-80e5-7a481b24fc0c",
+      "TargetFishId": 2028439777
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:35.2522001Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "08544db2-7dcd-4cc4-9503-bb3b00a64da7",
+      "TargetFishId": 524562320
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:35.4555556Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 20,
+      "FishTypeKilled": 205707016,
+      "Nonce": "d789d0ea-0f28-4935-9542-31e9213d89b1",
+      "TargetFishId": 36550130
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:35.6495007Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "dcc9bd09-f99a-47d9-89ba-bf2f3819add7",
+      "TargetFishId": 2028439777
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:35.8516273Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 40,
+      "FishTypeKilled": 1597726056,
+      "Nonce": "f929a49a-cfcf-4ac0-a521-e179add1995b",
+      "TargetFishId": 1295171266
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:35.9859764Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "7238ed15-d2ba-4546-81e8-a1a3e259f0ee",
+      "TargetFishId": 1295171266
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:36.1877169Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "67c040e4-2753-4329-904e-b5698ed84a0b",
+      "TargetFishId": 1984071945
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:36.3900585Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "df6c4315-f135-491d-a9f9-1c17ca63bcc2",
+      "TargetFishId": 1244715743
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:36.5934779Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "ba6c1af1-f44c-49db-a934-c56c71687d83",
+      "TargetFishId": 624556010
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:36.7968116Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "b85d11f9-84a3-48c9-b552-ac454c15ea95",
+      "TargetFishId": 1200564195
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:36.9983525Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 40,
+      "FishTypeKilled": 2027915595,
+      "Nonce": "0e540bfe-6c1b-4013-86af-293617d3cb62",
+      "TargetFishId": 469333423
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:37.1152627Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "38f28994-27e9-4c9b-a6af-df9886ab313c",
+      "TargetFishId": 1014920715
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:37.319463Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "099d7ed2-d221-4986-afc9-95f560c628f3",
+      "TargetFishId": 1506349441
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:37.5209674Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "7e8af2e3-666b-4274-a89d-226181b948bf",
+      "TargetFishId": 469333423
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:37.7252999Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "e0bb4787-6f02-433b-ada8-21c145e64979",
+      "TargetFishId": 99725545
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:37.9273889Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "2f6b388e-37d2-4252-84d0-6c449503e939",
+      "TargetFishId": 1593377923
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:38.1304504Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "af7124b4-b23e-4d9a-8196-e970bfd27963",
+      "TargetFishId": 1676272527
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:38.3319295Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "303a56e6-8a9f-4cbb-a28e-b63d81de7246",
+      "TargetFishId": 1244715743
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:38.5329314Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "74b9680c-ee85-4670-ac53-4901aa587923",
+      "TargetFishId": 1187870560
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:38.7369184Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "e6b87c9c-849a-46d9-b5f0-3230f18118e8",
+      "TargetFishId": 1631047055
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:38.9412109Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "c183d41d-b05a-423c-9bda-be0c786e0110",
+      "TargetFishId": 542148925
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:39.1438633Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "7d59309a-71be-480e-8963-f046d961005d",
+      "TargetFishId": 400926056
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:39.3457501Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "bdd82002-7316-4fa7-84fd-86f202bc9697",
+      "TargetFishId": 440179044
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:39.5530261Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 20,
+      "FishTypeKilled": 1631047055,
+      "Nonce": "e210a0b0-6054-449f-8ad3-89f00d154244",
+      "TargetFishId": 1984071945
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:39.6506503Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "1f2b7b85-9312-49a3-911a-c7c15ae6ae3a",
+      "TargetFishId": 2028439777
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:39.8571398Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "8ed568c7-2115-4acc-b473-4a49d01d5813",
+      "TargetFishId": 1984071945
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:40.0620063Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 200,
+      "FishTypeKilled": 440179044,
+      "Nonce": "3c6090bb-30b9-478b-8eb8-e1bfd5e7131d",
+      "TargetFishId": 1244715743
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:40.2177495Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "c269005a-2243-4016-b950-bda91efd092d",
+      "TargetFishId": 1014920715
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:40.4209462Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "69eb1adb-3420-4a10-9827-29aeac40ce20",
+      "TargetFishId": 1897631553
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:40.622065Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "f18d6487-9863-4819-b57e-5dfaecefe61a",
+      "TargetFishId": 1676272527
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:40.8241993Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "4a0c7ad7-6389-4933-84cc-55e6af2bce89",
+      "TargetFishId": 1014920715
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:41.0268756Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "1a3844aa-809a-4c4c-93dd-066bd96792db",
+      "TargetFishId": 436523192
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:41.2295456Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "ecb95eb7-ddde-424f-ad9c-ac454b586e7f",
+      "TargetFishId": 2060166283
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:41.4488825Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 40,
+      "FishTypeKilled": 1178789951,
+      "Nonce": "cbf12e1f-f563-40d9-a278-7b199563ed94",
+      "TargetFishId": 812754532
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:41.4612365Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "0bb33c35-561c-4b03-af04-b3f601db0656",
+      "TargetFishId": 538806790
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:41.6628585Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "9985fb66-4f74-4f70-9ea3-5c645f9584fa",
+      "TargetFishId": 366208788
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:41.8666523Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "4545ee24-f60c-4865-95c6-5b1c7a58123a",
+      "TargetFishId": 1187870560
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:42.0707465Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "1c548dcd-1c97-400d-9d6e-e37403a5467d",
+      "TargetFishId": 203006069
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:42.2736431Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "a0550b33-2172-4c1f-8b5f-f58ea28cec83",
+      "TargetFishId": 524562320
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:42.4779486Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "cc7e58b3-d714-4e48-825d-0bca347f7795",
+      "TargetFishId": 1250151437
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:42.6803624Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 20,
+      "FishTypeKilled": 203006069,
+      "Nonce": "86653e98-8981-493c-a7d2-255267419191",
+      "TargetFishId": 1506349441
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:42.8542727Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "ff40d68d-bc0e-4c69-a958-830f54d635e2",
+      "TargetFishId": 1897631553
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:43.0571392Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "c3b9e578-bd7a-4eea-b164-88d391ff97b4",
+      "TargetFishId": 475398637
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:43.2582557Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "9f7e264d-ebe6-441d-9571-561a44c2ac22",
+      "TargetFishId": 1200564195
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:43.4617093Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "188986ba-f5e2-4acb-bf22-30cf63d60e3f",
+      "TargetFishId": 1982895274
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:43.6664988Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "3c113560-69e4-44e1-a15b-b863ae2d4e2d",
+      "TargetFishId": 624556010
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:43.8683488Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "6dcba241-1a5d-48b1-801d-df9282e4a910",
+      "TargetFishId": 400926056
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:44.0717968Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "7a8f8a92-4628-4bf5-893f-bb8d768ef2dd",
+      "TargetFishId": 341118712
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:44.2733081Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "f9fdb12f-34d4-4adf-bfb4-98ed7e01738d",
+      "TargetFishId": 2060166283
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:44.4750618Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "81791fc6-8d49-4dbe-8080-eaa9c415632d",
+      "TargetFishId": 1506349441
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:44.6812614Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 400,
+      "FishTypeKilled": 1897631553,
+      "Nonce": "fc8063d8-a7d5-4a9c-9f1a-6f8ad5cb9300",
+      "TargetFishId": 690402552
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:44.6848922Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 50,
+      "FishTypeKilled": 152897301,
+      "Nonce": "be3fb642-d20a-4973-a89e-18d980e187d0",
+      "TargetFishId": 1676272527
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:44.8185215Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "ab9cb7ac-a2a6-4f45-9f37-e518876610e0",
+      "TargetFishId": 1869563049
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:45.0202781Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "fe1bb294-f8ae-4971-893f-30dc9579539a",
+      "TargetFishId": 806221517
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:45.2223991Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "606e377e-f585-44af-a138-48c51f8cd6bf",
+      "TargetFishId": 438730715
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:45.4244189Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "b1e3cfb5-ccb7-4304-a558-37de5c9d6d87",
+      "TargetFishId": 406506139
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:45.626729Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "bd428079-d115-4ff8-8fcd-54b6501f1865",
+      "TargetFishId": 806221517
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:45.8288355Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "f2779bb6-00f2-44af-a808-b99f29113f25",
+      "TargetFishId": 1594798486
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:46.0309411Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "60438971-4a5e-4f0a-b17a-524435034075",
+      "TargetFishId": 79694817
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:46.2322221Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "d650305f-d3c4-4ca1-a8ca-b2289b47ddb9",
+      "TargetFishId": 1595336172
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:46.4384849Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 80,
+      "FishTypeKilled": 475398637,
+      "Nonce": "42a5155c-55c9-4d6f-9279-f7e52bbab191",
+      "TargetFishId": 406506139
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:46.5493441Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "abbed7db-bbf2-42f4-b719-9d4a80506bd4",
+      "TargetFishId": 890364543
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:46.7503126Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "64c7c6c1-22ec-4a06-95c0-8587739e3739",
+      "TargetFishId": 406506139
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:46.9523216Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "83fc9543-f49f-44cb-a7de-972b8ff8d6e5",
+      "TargetFishId": 1915633937
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:47.1543395Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "9f30e4fb-7c1f-4fde-a373-774c299f509d",
+      "TargetFishId": 1869563049
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:47.3593751Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "c0d1aa86-fea4-42ed-83b8-edfe11f6dbb7",
+      "TargetFishId": 1244715743
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:47.5618808Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": 40,
+      "FishTypeKilled": 258800705,
+      "Nonce": "03e9941d-a020-4baa-adad-c85b6204000e",
+      "TargetFishId": 806221517
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:47.616247Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "17f45773-c86e-4cce-9d02-c062fb414481",
+      "TargetFishId": 1766500571
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:47.8208257Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "a1cd81b3-748b-43e0-a226-736191f3c1db",
+      "TargetFishId": 396130978
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:48.0268789Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "1dfe40fa-d71b-4ae2-be3a-3bb7515bda68",
+      "TargetFishId": 1766500571
+    },
+    {
+      "Timestamp": "2025-11-17T19:32:48.2282926Z",
+      "BetAmount": 10,
+      "TargetX": 0,
+      "TargetY": 0,
+      "PayoutReceived": null,
+      "FishTypeKilled": null,
+      "Nonce": "431d78af-f6bd-4969-8aa1-23ea1481add2",
+      "TargetFishId": 1271421907
+    }
+  ],
+  "TotalWagered": 1000,
+  "TotalPaidOut": 1154,
+  "CurrentRTP": 1.154,
+  "TotalShots": 100,
+  "HitCount": 14,
+  "HitRate": 0.14
+}

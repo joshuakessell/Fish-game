@@ -193,7 +193,8 @@ public class RTPBotClient : IAsyncDisposable
 
             await _hubConnection.InvokeAsync("Fire", x, y, dirX, dirY, nonce, targetFishId);
 
-            var payoutReceived = await _payoutSignal.WaitAsync(TimeSpan.FromSeconds(2));
+            // Wait 200ms for payout (payouts arrive almost instantly, this is just a safety buffer)
+            var payoutReceived = await _payoutSignal.WaitAsync(TimeSpan.FromMilliseconds(200));
             
             if (!payoutReceived)
             {
@@ -231,86 +232,38 @@ public class RTPBotClient : IAsyncDisposable
     {
         if (_hubConnection == null) return;
 
-        _hubConnection.On<object[]>("StateDelta", (stateDelta) =>
+        _hubConnection.On<StateDelta>("StateDelta", (stateDelta) =>
         {
-            try
+            foreach (var payoutEvent in stateDelta.PayoutEvents)
             {
-                if (stateDelta.Length < 10)
+                Console.WriteLine($"💰 Payout received: FishId={payoutEvent.FishId}, Payout={payoutEvent.Payout}, PlayerSlot={payoutEvent.PlayerSlot}");
+                
+                if (payoutEvent.PlayerSlot == _playerSlot && _pendingShot != null)
                 {
-                    return;
-                }
-
-                if (stateDelta[5] is object[] fishArray && fishArray.Length > 0)
-                {
-                    var newFishList = new List<FishPosition>();
+                    _pendingShot.PayoutReceived = payoutEvent.Payout;
+                    _pendingShot.FishTypeKilled = payoutEvent.FishId;
                     
-                    foreach (var fishObj in fishArray)
+                    Console.WriteLine($"✅ Matched payout to pending shot: {payoutEvent.Payout} credits for fish {payoutEvent.FishId}");
+                    
+                    if (_payoutSignal.CurrentCount == 0)
                     {
-                        if (fishObj is object[] fishData && fishData.Length >= 5)
-                        {
-                            var fishId = Convert.ToInt32(fishData[0]);
-                            var typeId = Convert.ToInt32(fishData[1]);
-                            var x = Convert.ToSingle(fishData[2]);
-                            var y = Convert.ToSingle(fishData[3]);
-                            
-                            newFishList.Add(new FishPosition
-                            {
-                                FishId = fishId,
-                                TypeId = typeId,
-                                X = x,
-                                Y = y
-                            });
-                        }
-                    }
-
-                    _currentFish = newFishList;
-                }
-
-                if (stateDelta[9] is object[] payoutEvents && payoutEvents.Length > 0)
-                {
-                    foreach (var eventObj in payoutEvents)
-                    {
-                        if (eventObj is object[] eventData && eventData.Length >= 3)
-                        {
-                            var fishId = Convert.ToInt32(eventData[0]);
-                            var payout = Convert.ToInt32(eventData[1]);
-                            var playerSlot = Convert.ToInt32(eventData[2]);
-
-                            if (playerSlot == _playerSlot && _pendingShot != null)
-                            {
-                                _pendingShot.PayoutReceived = payout;
-                                _pendingShot.FishTypeKilled = fishId;
-                                
-                                if (_payoutSignal.CurrentCount == 0)
-                                {
-                                    _payoutSignal.Release();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (stateDelta[4] is object[] players && players.Length > 0)
-                {
-                    foreach (var playerObj in players)
-                    {
-                        if (playerObj is System.Collections.IDictionary playerDict)
-                        {
-                            if (playerDict.Contains("PlayerSlot") && 
-                                Convert.ToInt32(playerDict["PlayerSlot"]!) == _playerSlot)
-                            {
-                                if (playerDict.Contains("Credits"))
-                                {
-                                    _session.CurrentCredits = Convert.ToInt32(playerDict["Credits"]!);
-                                }
-                            }
-                        }
+                        _payoutSignal.Release();
                     }
                 }
             }
-            catch (Exception ex)
+
+            _currentFish = stateDelta.Fish.Select(f => new FishPosition
             {
-                Console.WriteLine($"⚠️ StateDelta processing error: {ex.Message}");
+                FishId = f.id,
+                TypeId = f.type,
+                X = f.x,
+                Y = f.y
+            }).ToList();
+
+            var myPlayer = stateDelta.Players.FirstOrDefault(p => p.PlayerSlot == _playerSlot);
+            if (myPlayer != null)
+            {
+                _session.CurrentCredits = (int)myPlayer.Credits;
             }
         });
 
