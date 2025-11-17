@@ -11,6 +11,7 @@ public class ProjectileManager
     {
         projectile.NumericId = _nextProjectileId++;
         _activeProjectiles[projectile.ProjectileId] = projectile;
+        Console.WriteLine($"[PROJECTILE] Added projectile at ({projectile.X:F1}, {projectile.Y:F1}) with direction ({projectile.DirectionX:F1}, {projectile.DirectionY:F1}), TargetFish: {projectile.TargetFishId}");
     }
 
     public void UpdateProjectiles(float deltaTime, List<Fish>? activeFish = null)
