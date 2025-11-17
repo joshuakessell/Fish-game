@@ -76,22 +76,9 @@ public class Fish
         // Set DestructionOdds (capture probability from catalog)
         fish.DestructionOdds = fishDef.CaptureProbability;
         
-        // Set despawn time based on category
-        switch (fishDef.Category)
-        {
-            case FishCategory.SmallFish:
-                fish.DespawnTick = currentTick + 600; // 20 seconds
-                break;
-            case FishCategory.MediumFish:
-                fish.DespawnTick = currentTick + 900; // 30 seconds
-                break;
-            case FishCategory.LargeFish:
-                fish.DespawnTick = currentTick + 1200; // 40 seconds
-                break;
-            case FishCategory.BonusFish:
-                fish.DespawnTick = currentTick + 1800; // 60 seconds
-                break;
-        }
+        // Set despawn time based on actual path duration (not category)
+        // This ensures fish are removed exactly when their path completes
+        fish.DespawnTick = currentTick + (long)(pathData.Duration * 30f); // Duration in seconds * 30 TPS
         
         return fish;
     }

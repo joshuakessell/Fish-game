@@ -215,21 +215,34 @@ public class MatchInstance
     private void HandleFireCommand(GameCommand command)
     {
         var player = _playerManager.GetPlayer(command.PlayerId);
-        if (player == null) return;
+        if (player == null)
+        {
+            Console.WriteLine($"[FIRE] Rejected: Player {command.PlayerId} not found");
+            return;
+        }
 
         // Validate fire rate
-        if (!player.CanFire()) return;
+        if (!player.CanFire())
+        {
+            Console.WriteLine($"[FIRE] Rejected: Player {player.Name} fire rate limit (last fire: {(DateTime.UtcNow - player.LastFireTime).TotalMilliseconds:F0}ms ago)");
+            return;
+        }
 
         // Validate credits
         var cost = player.BetValue;
-        if (player.Credits < cost) return;
+        if (player.Credits < cost)
+        {
+            Console.WriteLine($"[FIRE] Rejected: Player {player.Name} insufficient credits ({player.Credits} < {cost})");
+            return;
+        }
 
         // Validate projectile coordinates are within play area boundaries
         // Client now sends coordinates directly in 0-1800 × 0-900 space (no offset)
         if (command.X < 0 || command.X > ARENA_WIDTH || 
             command.Y < 0 || command.Y > ARENA_HEIGHT)
         {
-            return; // Reject fire command if outside play area
+            Console.WriteLine($"[FIRE] Rejected: Out of bounds ({command.X:F1}, {command.Y:F1})");
+            return;
         }
 
         // Deduct credits immediately (authoritative)
@@ -253,6 +266,7 @@ public class MatchInstance
         };
 
         _projectileManager.AddProjectile(projectile);
+        Console.WriteLine($"[FIRE] ✅ Player {player.Name} fired at ({command.X:F1}, {command.Y:F1}), cost={cost}, target={command.TargetFishId}, nonce={command.ClientNonce}");
     }
 
     private void HandleSetBetValue(GameCommand command)
