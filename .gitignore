@@ -6,6 +6,19 @@ project.lock.json
 nupkg/
 temp.json
 
+# Python
+.pythonlibs/
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.uv/
+pyproject.toml
+uv.lock
+
 # Visual Studio Code
 .vscode
 

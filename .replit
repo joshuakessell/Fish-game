@@ -13,7 +13,7 @@ requiredFiles = [".replit", "replit.nix"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["poppler_utils", "imagemagick"]
+packages = ["freetype", "imagemagick", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "poppler_utils", "tcl", "tk", "zlib"]
 
 [deployment]
 run = ["dotnet", "run"]
