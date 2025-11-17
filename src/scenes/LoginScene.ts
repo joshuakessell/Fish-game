@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 
 export default class LoginScene extends Phaser.Scene {
+  private nameInput!: HTMLInputElement;
+  private errorText?: Phaser.GameObjects.Text;
+
   constructor() {
     super({ key: 'LoginScene' });
   }
@@ -30,11 +33,28 @@ export default class LoginScene extends Phaser.Scene {
     });
     subtitle.setOrigin(0.5);
 
-    // Guest login button
-    const loginButton = this.add.rectangle(900, 500, 300, 80, 0x00aa00);
+    // Name input label
+    const nameLabel = this.add.text(900, 380, 'Enter Your Name:', {
+      fontSize: '28px',
+      color: '#FFF',
+    });
+    nameLabel.setOrigin(0.5);
+
+    // Create HTML input field for name
+    this.createNameInput();
+
+    // Error message text (hidden initially)
+    this.errorText = this.add.text(900, 540, '', {
+      fontSize: '20px',
+      color: '#FF4444',
+    });
+    this.errorText.setOrigin(0.5);
+
+    // Login button
+    const loginButton = this.add.rectangle(900, 600, 300, 80, 0x00aa00);
     loginButton.setInteractive({ useHandCursor: true });
 
-    const loginText = this.add.text(900, 500, 'Play as Guest', {
+    const loginText = this.add.text(900, 600, 'Enter Lobby', {
       fontSize: '32px',
       color: '#FFF',
       fontStyle: 'bold',
@@ -52,25 +72,92 @@ export default class LoginScene extends Phaser.Scene {
 
     // Click handler
     loginButton.on('pointerdown', () => {
-      this.handleGuestLogin();
+      this.handleLogin();
     });
+
+    // Allow Enter key to submit
+    this.nameInput.addEventListener('keypress', (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        this.handleLogin();
+      }
+    });
+
+    // Focus on input
+    this.nameInput.focus();
   }
 
-  private async handleGuestLogin() {
-    console.log('LoginScene: Guest login clicked');
+  private createNameInput() {
+    // Create HTML input element
+    this.nameInput = document.createElement('input');
+    this.nameInput.type = 'text';
+    this.nameInput.placeholder = 'Your Name';
+    this.nameInput.maxLength = 20;
+    this.nameInput.style.cssText = `
+      position: absolute;
+      font-size: 28px;
+      padding: 12px 20px;
+      width: 400px;
+      text-align: center;
+      border: 3px solid #FFD700;
+      border-radius: 8px;
+      background: rgba(0, 26, 51, 0.9);
+      color: #FFF;
+      outline: none;
+      font-family: Arial, sans-serif;
+      z-index: 1000;
+    `;
 
-    const guestName = 'Player' + Math.floor(Math.random() * 1000);
+    // Position the input field
+    this.positionNameInput();
+
+    // Add to DOM
+    document.body.appendChild(this.nameInput);
+
+    // Reposition on window resize
+    this.scale.on('resize', this.positionNameInput, this);
+  }
+
+  private positionNameInput() {
+    const canvas = this.game.canvas;
+    const canvasRect = canvas.getBoundingClientRect();
+
+    // Calculate position relative to canvas (centered at y=450 in game coords)
+    const scaleX = canvasRect.width / 1800;
+    const scaleY = canvasRect.height / 900;
+
+    const centerX = canvasRect.left + (900 * scaleX);
+    const centerY = canvasRect.top + (450 * scaleY);
+
+    this.nameInput.style.left = `${centerX}px`;
+    this.nameInput.style.top = `${centerY}px`;
+    this.nameInput.style.transform = `translate(-50%, -50%) scale(${Math.min(scaleX, scaleY)})`;
+  }
+
+  private async handleLogin() {
+    const playerName = this.nameInput.value.trim();
+
+    // Validate name
+    if (playerName.length < 2) {
+      this.showError('Name must be at least 2 characters');
+      return;
+    }
+
+    if (playerName.length > 20) {
+      this.showError('Name must be 20 characters or less');
+      return;
+    }
+
+    console.log(`LoginScene: Logging in as ${playerName}`);
 
     // Import GameState
     const { GameState } = await import('../systems/GameState');
     const gameState = GameState.getInstance();
 
     // Perform guest login via backend API
-    const loginSuccess = await gameState.guestLogin(guestName);
+    const loginSuccess = await gameState.guestLogin(playerName);
 
     if (!loginSuccess) {
-      console.error('LoginScene: Guest login failed');
-      // TODO: Show error message to user
+      this.showError('Login failed. Please try again.');
       return;
     }
 
@@ -78,12 +165,36 @@ export default class LoginScene extends Phaser.Scene {
     const connected = await gameState.connectToSignalR();
 
     if (!connected) {
-      console.error('LoginScene: SignalR connection failed');
-      // TODO: Show error message to user
+      this.showError('Connection failed. Please try again.');
       return;
     }
 
     console.log('LoginScene: Login and SignalR connection successful');
+
+    // Clean up input
+    this.cleanupInput();
+
+    // Transition to lobby
     this.scene.start('LobbyScene');
+  }
+
+  private showError(message: string) {
+    if (this.errorText) {
+      this.errorText.setText(message);
+      this.time.delayedCall(3000, () => {
+        this.errorText?.setText('');
+      });
+    }
+  }
+
+  private cleanupInput() {
+    if (this.nameInput && this.nameInput.parentNode) {
+      this.nameInput.parentNode.removeChild(this.nameInput);
+    }
+  }
+
+  shutdown() {
+    this.cleanupInput();
+    this.scale.off('resize', this.positionNameInput, this);
   }
 }

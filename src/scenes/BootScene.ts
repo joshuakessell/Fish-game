@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 
 export default class BootScene extends Phaser.Scene {
   // DEV MODE: Skip login/lobby and auto-join game with seat 1
-  private readonly DEV_MODE = true;
+  private readonly DEV_MODE = false;
 
   constructor() {
     super({ key: 'BootScene' });
