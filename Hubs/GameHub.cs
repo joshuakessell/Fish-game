@@ -228,6 +228,23 @@ public class GameHub : Hub
                 }
             }
             
+            // Remove stale connection if this user is already in the match (handles browser refresh/multiple tabs)
+            var allPlayers = existingMatch.GetAllPlayers();
+            var existingPlayer = allPlayers.FirstOrDefault(p => p.PlayerId == userId && p.ConnectionId != Context.ConnectionId);
+            if (existingPlayer != null)
+            {
+                Console.WriteLine($"[JoinRoom] Removing stale connection for user {userId} (player {existingPlayer.DisplayName}) before reconnecting");
+                existingMatch.RemovePlayer(existingPlayer.PlayerId);
+                
+                // Clean up old connection mappings
+                if (!string.IsNullOrEmpty(existingPlayer.ConnectionId))
+                {
+                    _connectionToMatch.Remove(existingPlayer.ConnectionId);
+                    _connectionToPlayer.Remove(existingPlayer.ConnectionId);
+                    await Groups.RemoveFromGroupAsync(existingPlayer.ConnectionId, matchId);
+                }
+            }
+            
             var lobbyManager = _gameServer.GetLobbyManager();
             var match = lobbyManager.JoinRoom(matchId, Context.ConnectionId, seatIndex);
             
