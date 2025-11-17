@@ -20,6 +20,7 @@ Console.WriteLine($"   Seat Number:     {config.SeatNumber}");
 Console.WriteLine($"   Bet Amount:      {config.BetAmount} credits");
 Console.WriteLine($"   Total Shots:     {config.TotalShots:N0}");
 Console.WriteLine($"   Bot Name:        {config.BotName}");
+Console.WriteLine($"   Boss Targeting:  {(config.BossTargetingOnly ? "ENABLED (TypeId >= 2)" : "Disabled (Random)")}");
 Console.WriteLine();
 
 await using var bot = new RTPBotClient(config);

@@ -8,4 +8,5 @@ public class BotConfig
     public int BetAmount { get; set; } = 10;
     public int TotalShots { get; set; } = 10000;
     public string BotName { get; set; } = "RTPBot";
+    public bool BossTargetingOnly { get; set; } = false;
 }

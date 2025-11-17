@@ -219,13 +219,27 @@ public class RTPBotClient : IAsyncDisposable
     {
         if (_currentFish.Count > 0)
         {
-            var fish = _currentFish[_random.Next(_currentFish.Count)];
+            List<FishPosition> targetFish;
+            
+            if (_config.BossTargetingOnly)
+            {
+                targetFish = _currentFish.Where(f => f.TypeId >= 2).ToList();
+                
+                if (targetFish.Count == 0)
+                {
+                    return (_random.Next(100, 1700), _random.Next(100, 800), null);
+                }
+            }
+            else
+            {
+                targetFish = _currentFish;
+            }
+            
+            var fish = targetFish[_random.Next(targetFish.Count)];
             return (fish.X, fish.Y, fish.FishId);
         }
 
-        var randomX = _random.Next(100, 1700);
-        var randomY = _random.Next(100, 800);
-        return (randomX, randomY, null);
+        return (_random.Next(100, 1700), _random.Next(100, 800), null);
     }
 
     private void SetupSignalRHandlers()
