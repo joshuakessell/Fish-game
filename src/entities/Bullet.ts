@@ -1,5 +1,5 @@
-import Phaser from "phaser";
-import { FishSprite } from "./FishSprite";
+import Phaser from 'phaser';
+import { FishSprite } from './FishSprite';
 
 export interface BulletConfig {
   id: number;
@@ -44,11 +44,17 @@ export class Bullet {
     this.graphics.setDepth(50);
   }
 
-  public updateFromServer(x: number, y: number, directionX: number, directionY: number, syncDirection: boolean = true): void {
+  public updateFromServer(
+    x: number,
+    y: number,
+    directionX: number,
+    directionY: number,
+    syncDirection: boolean = true,
+  ): void {
     // Always sync position from server (authoritative)
     this.x = x;
     this.y = y;
-    
+
     // Only sync direction for non-homing bullets
     // Homing bullets calculate their own direction based on target tracking
     if (syncDirection) {
@@ -65,7 +71,7 @@ export class Bullet {
       this.graphics.fillEllipse(0, 0, 22, 8);
       this.graphics.lineStyle(2, 0xff66ff);
       this.graphics.strokeEllipse(0, 0, 22, 8);
-      
+
       this.graphics.fillStyle(0xffffff, 0.6);
       this.graphics.fillCircle(-4, 0, 3);
     } else {

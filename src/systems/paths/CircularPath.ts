@@ -1,4 +1,4 @@
-import { PathData, PathType } from "./PathData";
+import { PathData, PathType } from './PathData';
 
 /**
  * Circular or elliptical movement pattern
@@ -64,8 +64,7 @@ export class CircularPath {
   getPathData(): PathData {
     const a = this.radiusX;
     const b = this.radiusY;
-    const circumference =
-      Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+    const circumference = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
 
     return {
       fishId: this.fishId,

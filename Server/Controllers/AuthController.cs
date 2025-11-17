@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OceanKing.Server.Services;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 namespace OceanKing.Server.Controllers;
 
@@ -9,11 +11,11 @@ namespace OceanKing.Server.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly JwtTokenService _tokenService;
+    private readonly IConfiguration _configuration;
     
-    public AuthController(JwtTokenService tokenService)
+    public AuthController(IConfiguration configuration)
     {
-        _tokenService = tokenService;
+        _configuration = configuration;
     }
     
     [HttpPost("guest")]
@@ -30,7 +32,7 @@ public class AuthController : ControllerBase
         var guestCredits = 10000; // Increased from 1000 for better testing
         
         // Generate JWT token with all guest data embedded
-        var token = _tokenService.GenerateToken(
+        var token = GenerateJwtToken(
             guestId.ToString(),
             guestName,
             guestCredits,
@@ -80,6 +82,35 @@ public class AuthController : ControllerBase
             Credits = credits,
             IsGuest = isGuest
         });
+    }
+    
+    private string GenerateJwtToken(string userId, string name, int credits, bool isGuest, string role)
+    {
+        var jwtSecretKey = _configuration["JwtSettings:SecretKey"] ?? "OceanKing3SecretKey2025MinLength32Chars!";
+        var jwtIssuer = _configuration["JwtSettings:Issuer"] ?? "OceanKing3";
+        var jwtAudience = _configuration["JwtSettings:Audience"] ?? "OceanKing3Players";
+        
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Name, name),
+            new Claim(ClaimTypes.Role, role),
+            new Claim("credits", credits.ToString()),
+            new Claim("isGuest", isGuest.ToString())
+        };
+        
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        
+        var token = new JwtSecurityToken(
+            issuer: jwtIssuer,
+            audience: jwtAudience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(24),
+            signingCredentials: credentials
+        );
+        
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
 

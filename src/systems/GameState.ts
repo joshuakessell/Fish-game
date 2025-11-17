@@ -1,9 +1,9 @@
-import * as signalR from "@microsoft/signalr";
-import { MessagePackHubProtocol } from "@microsoft/signalr-protocol-msgpack";
-import { FishData, PlayerData, BulletData } from "../types/GameTypes";
-import { FishPathManager } from "./FishPathManager";
-import { deserializePathData } from "./paths/PathData";
-import { debugLog } from "../config/DebugConfig";
+import * as signalR from '@microsoft/signalr';
+import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack';
+import { FishData, PlayerData, BulletData } from '../types/GameTypes';
+import { FishPathManager } from './FishPathManager';
+import { deserializePathData } from './paths/PathData';
+import { debugLog } from '../config/DebugConfig';
 
 interface ServerPlayerState {
   PlayerId: string;
@@ -17,16 +17,16 @@ interface ServerPlayerState {
 
 // MessagePack sends this as an array with indices [0-9], not object with properties
 type StateDelta = [
-  number,                    // [0] Tick
-  number,                    // [1] RoundNumber
-  number,                    // [2] TimeRemainingTicks
-  boolean,                   // [3] IsRoundTransitioning
-  ServerPlayerState[],       // [4] Players
-  FishData[],                // [5] Fish
-  BulletData[],              // [6] Projectiles
-  any[],                     // [7] ActiveBossSequences
-  any[],                     // [8] PendingInteractions
-  Array<{ fishId: number; payout: number; playerSlot: number }>  // [9] PayoutEvents
+  number, // [0] Tick
+  number, // [1] RoundNumber
+  number, // [2] TimeRemainingTicks
+  boolean, // [3] IsRoundTransitioning
+  ServerPlayerState[], // [4] Players
+  FishData[], // [5] Fish
+  BulletData[], // [6] Projectiles
+  any[], // [7] ActiveBossSequences
+  any[], // [8] PendingInteractions
+  Array<{ fishId: number; payout: number; playerSlot: number }>, // [9] PayoutEvents
 ];
 
 export class GameState {
@@ -72,14 +72,14 @@ export class GameState {
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
 
-  public onFishSpawned: ((fishId: number, typeId: number) => void) | null =
-    null;
+  public onFishSpawned: ((fishId: number, typeId: number) => void) | null = null;
   public onFishRemoved: ((fishId: number) => void) | null = null;
   public onBulletSpawned: ((bulletData: BulletData) => void) | null = null;
   public onBulletRemoved: ((bulletId: number) => void) | null = null;
-  public onPayoutEvent: ((fishId: number, payout: number, playerSlot: number, isOwnKill: boolean) => void) | null = null;
-  public onPayoutReceived: ((fishId: number, payout: number) => void) | null =
-    null;
+  public onPayoutEvent:
+    | ((fishId: number, payout: number, playerSlot: number, isOwnKill: boolean) => void)
+    | null = null;
+  public onPayoutReceived: ((fishId: number, payout: number) => void) | null = null;
   public onCreditsChanged: (() => void) | null = null;
   public onTickSnapped: (() => void) | null = null;
 
@@ -100,16 +100,16 @@ export class GameState {
 
   public async guestLogin(name: string): Promise<boolean> {
     try {
-      const response = await fetch("/api/auth/guest", {
-        method: "POST",
+      const response = await fetch('/api/auth/guest', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name }),
       });
 
       if (!response.ok) {
-        console.error("Guest login failed:", response.statusText);
+        console.error('Guest login failed:', response.statusText);
         return false;
       }
 
@@ -122,10 +122,10 @@ export class GameState {
         isGuest: data.isGuest,
       };
 
-      console.log("Guest login successful:", this.playerAuth);
+      console.log('Guest login successful:', this.playerAuth);
       return true;
     } catch (error) {
-      console.error("Guest login error:", error);
+      console.error('Guest login error:', error);
       return false;
     }
   }
@@ -136,10 +136,17 @@ export class GameState {
     }
 
     try {
+      // Determine backend URL from environment or infer from window location
+      const backendUrl =
+        import.meta.env.VITE_BACKEND_URL ||
+        (typeof window !== 'undefined'
+          ? window.location.origin.replace(':5000', ':8080')
+          : 'http://localhost:8080');
+
       // Connect directly to backend on port 8080 to bypass Vite proxy
       // The Vite proxy kills the WebSocket when StateDeltas are sent
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:8080/gamehub", {
+        .withUrl(`${backendUrl}/gamehub`, {
           accessTokenFactory: () => this.playerAuth!.token,
           skipNegotiation: true,
           transport: signalR.HttpTransportType.WebSockets,
@@ -151,16 +158,16 @@ export class GameState {
 
       // Add connection lifecycle event handlers
       this.connection.onclose((error) => {
-        console.error("❌ SignalR connection closed:", error || "No error provided");
+        console.error('❌ SignalR connection closed:', error || 'No error provided');
         this.isConnected = false;
       });
 
       this.connection.onreconnecting((error) => {
-        console.warn("🔄 SignalR attempting to reconnect:", error || "No error provided");
+        console.warn('🔄 SignalR attempting to reconnect:', error || 'No error provided');
       });
 
       this.connection.onreconnected((connectionId) => {
-        console.log("✅ SignalR reconnected with connectionId:", connectionId);
+        console.log('✅ SignalR reconnected with connectionId:', connectionId);
         this.isConnected = true;
       });
 
@@ -168,10 +175,10 @@ export class GameState {
 
       await this.connection.start();
       this.isConnected = true;
-      console.log("Connected to SignalR game hub");
+      console.log('Connected to SignalR game hub');
       return true;
     } catch (error) {
-      console.error("SignalR connection failed:", error);
+      console.error('SignalR connection failed:', error);
       this.isConnected = false;
       return false;
     }
@@ -181,67 +188,38 @@ export class GameState {
     if (this.connection) {
       this.connection.stop();
       this.isConnected = false;
-      console.log("Disconnected from SignalR");
+      console.log('Disconnected from SignalR');
     }
   }
 
   public async joinRoom(roomId: string, seat: number): Promise<boolean> {
     if (!this.connection || !this.isConnected) {
-      console.error("Cannot join room: not connected to SignalR");
+      console.error('Cannot join room: not connected to SignalR');
       return false;
     }
 
     try {
-      const result = await this.connection.invoke("JoinRoom", roomId, seat) as any;
-      
+      const result = (await this.connection.invoke('JoinRoom', roomId, seat)) as any;
+
       if (!result || !result.success) {
-        console.error("JoinRoom failed:", result?.message || "Unknown error");
+        console.error('JoinRoom failed:', result?.message || 'Unknown error');
         return false;
       }
-      
+
       this.currentRoomId = roomId;
       this.myPlayerSlot = seat;
-      console.log(`✅ Joined room ${roomId} at seat ${seat} - waiting for first StateDelta before initializing gameplay`);
-      
+      console.log(
+        `✅ Joined room ${roomId} at seat ${seat} - waiting for first StateDelta before initializing gameplay`,
+      );
+
       // DO NOT call onRoomJoined here - wait for first StateDelta to arrive
       // This ensures the SignalR connection is stable and receiving server updates
-      
+
       return true;
     } catch (error) {
-      console.error("Failed to join room:", error);
+      console.error('Failed to join room:', error);
       return false;
     }
-  }
-
-  public waitForRoomJoin(): Promise<void> {
-    // If already joined, resolve immediately
-    if (this.myPlayerSlot !== null) {
-      return Promise.resolve();
-    }
-    
-    // If already waiting, return existing promise
-    if (this.roomJoinPromise) {
-      return this.roomJoinPromise;
-    }
-    
-    // Create new promise that resolves when room is joined
-    this.roomJoinPromise = new Promise<void>((resolve) => {
-      this.roomJoinResolve = resolve;
-    });
-    
-    return this.roomJoinPromise;
-  }
-
-  public reset() {
-    this.fish.clear();
-    this.bullets.clear();
-    this.players.clear();
-    this.currentTick = 0;
-    this.isSynced = false;
-    this.tickDrift = 0;
-    this.myPlayerSlot = null;
-    this.currentRoomId = null;
-    this.fishPathManager.clear();
   }
 
   private setupSignalRHandlers() {
@@ -249,7 +227,7 @@ export class GameState {
       return;
     }
 
-    this.connection.on("StateDelta", (update: StateDelta) => {
+    this.connection.on('StateDelta', (update: StateDelta) => {
       const tick = update[0];
       const players = update[4];
       const fish = update[5];
@@ -267,15 +245,20 @@ export class GameState {
           if (this.onTickSnapped) {
             this.onTickSnapped();
           }
-          debugLog('stateDelta', `✅ FIRST SYNC: Tick snapped to server tick ${this.currentTick}, accumulator will be reset`);
-          
+          debugLog(
+            'stateDelta',
+            `✅ FIRST SYNC: Tick snapped to server tick ${this.currentTick}, accumulator will be reset`,
+          );
+
           // Trigger room joined callback on first StateDelta (connection is stable)
           if (this.myPlayerSlot !== null) {
             if (this.onRoomJoined) {
-              console.log("🎮 GameState: First StateDelta received - triggering onRoomJoined callback");
+              console.log(
+                '🎮 GameState: First StateDelta received - triggering onRoomJoined callback',
+              );
               this.onRoomJoined();
             }
-            
+
             // Resolve waiting promise for join completion
             if (this.roomJoinResolve) {
               this.roomJoinResolve();
@@ -289,7 +272,10 @@ export class GameState {
           if (this.onTickSnapped) {
             this.onTickSnapped();
           }
-          debugLog('stateDelta', `✅ TICK SNAP: Large drift corrected, tick=${this.currentTick}, accumulator will be reset`);
+          debugLog(
+            'stateDelta',
+            `✅ TICK SNAP: Large drift corrected, tick=${this.currentTick}, accumulator will be reset`,
+          );
         }
 
         // Apply gentle drift correction AFTER snap check
@@ -307,15 +293,17 @@ export class GameState {
         console.log(`📥 [GameState] Received ${payoutEvents.length} PayoutEvents from server`);
         for (const event of payoutEvents) {
           const isOwnKill = event.playerSlot === this.myPlayerSlot;
-          console.log(`💰 [GameState] Processing PayoutEvent: fishId=${event.fishId}, payout=${event.payout}, playerSlot=${event.playerSlot}, isOwnKill=${isOwnKill}`);
-          
+          console.log(
+            `💰 [GameState] Processing PayoutEvent: fishId=${event.fishId}, payout=${event.payout}, playerSlot=${event.playerSlot}, isOwnKill=${isOwnKill}`,
+          );
+
           if (this.onPayoutEvent) {
             console.log(`   → Calling onPayoutEvent callback`);
             this.onPayoutEvent(event.fishId, event.payout, event.playerSlot, isOwnKill);
           } else {
             console.warn(`   ⚠️ onPayoutEvent callback not set!`);
           }
-          
+
           if (isOwnKill && this.onPayoutReceived) {
             console.log(`   → Calling onPayoutReceived callback (own kill)`);
             this.onPayoutReceived(event.fishId, event.payout);
@@ -350,9 +338,9 @@ export class GameState {
         for (const bulletData of projectiles) {
           incomingBulletIds.add(bulletData[0]);
           const isNew = !this.bullets.has(bulletData[0]);
-          
+
           this.bullets.set(bulletData[0], bulletData);
-          
+
           if (isNew && this.onBulletSpawned) {
             this.onBulletSpawned(bulletData);
           }
@@ -375,9 +363,9 @@ export class GameState {
             userId: serverPlayer.PlayerId,
             name: serverPlayer.DisplayName,
             credits: serverPlayer.Credits,
-            betValue: serverPlayer.BetValue
+            betValue: serverPlayer.BetValue,
           };
-          
+
           this.players.set(playerData.slot, playerData);
 
           if (playerData.slot === this.myPlayerSlot && this.playerAuth) {
@@ -385,7 +373,9 @@ export class GameState {
             const newCredits = playerData.credits;
 
             if (oldCredits !== newCredits) {
-              console.log(`💳 [GameState] Player credits updated: ${oldCredits} → ${newCredits} (${newCredits > oldCredits ? '+' : ''}${newCredits - oldCredits})`);
+              console.log(
+                `💳 [GameState] Player credits updated: ${oldCredits} → ${newCredits} (${newCredits > oldCredits ? '+' : ''}${newCredits - oldCredits})`,
+              );
               this.playerAuth.credits = newCredits;
               if (this.onCreditsChanged) {
                 console.log(`   → Calling onCreditsChanged callback`);
@@ -400,10 +390,12 @@ export class GameState {
     });
   }
 
-
   private updateFish(fishData: FishData) {
     const isNew = !this.fish.has(fishData[0]);
-    debugLog('fishUpdates', `🔄 Updating fish ${fishData[0]} (type ${fishData[1]}), isNew=${isNew}, hasPath=${!!fishData[4]}, pos=(${fishData[2]}, ${fishData[3]})`);
+    debugLog(
+      'fishUpdates',
+      `🔄 Updating fish ${fishData[0]} (type ${fishData[1]}), isNew=${isNew}, hasPath=${!!fishData[4]}, pos=(${fishData[2]}, ${fishData[3]})`,
+    );
 
     // Store fish data BEFORE triggering spawn callback
     this.fish.set(fishData[0], fishData);
@@ -413,29 +405,29 @@ export class GameState {
       const pathData = deserializePathData(fishData[4]);
       if (pathData) {
         this.fishPathManager.registerFishPath(fishData[0], pathData);
-        debugLog('fishUpdates', `Registered path for fish ${fishData[0]}, type: ${pathData.pathType}`);
+        debugLog(
+          'fishUpdates',
+          `Registered path for fish ${fishData[0]}, type: ${pathData.pathType}`,
+        );
       } else {
         console.error(`Failed to deserialize path for fish ${fishData[0]}`);
       }
     }
 
     if (isNew && this.onFishSpawned) {
-      debugLog('fishUpdates', `🎯 Calling onFishSpawned for fish ${fishData[0]}, type ${fishData[1]}`);
+      debugLog(
+        'fishUpdates',
+        `🎯 Calling onFishSpawned for fish ${fishData[0]}, type ${fishData[1]}`,
+      );
       this.onFishSpawned(fishData[0], fishData[1]);
     } else if (isNew && !this.onFishSpawned) {
       console.warn(`⚠️ New fish ${fishData[0]} but no onFishSpawned callback set!`);
     }
   }
 
-  public getFishPosition(
-    fishId: number,
-    clientTick: number,
-  ): [number, number] | null {
+  public getFishPosition(fishId: number, clientTick: number): [number, number] | null {
     // Use ONLY client-driven tick for deterministic path computation
-    const pathPosition = this.fishPathManager.getFishPosition(
-      fishId,
-      clientTick,
-    );
+    const pathPosition = this.fishPathManager.getFishPosition(fishId, clientTick);
 
     if (pathPosition) {
       return pathPosition;

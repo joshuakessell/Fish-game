@@ -1,6 +1,6 @@
-import { PathData } from "./paths/PathData";
-import { PathComputer } from "./paths/PathComputer";
-import { debugLog } from "../config/DebugConfig";
+import { PathData } from './paths/PathData';
+import { PathComputer } from './paths/PathComputer';
+import { debugLog } from '../config/DebugConfig';
 
 /**
  * Manages fish paths and computes positions per frame
@@ -25,7 +25,10 @@ export class FishPathManager {
       return;
     }
 
-    debugLog('pathRegistration', `✅ Registered path for fish ${fishId}: type=${pathData.pathType}, points=${pathData.controlPoints.length}, startTick=${pathData.startTick}`);
+    debugLog(
+      'pathRegistration',
+      `✅ Registered path for fish ${fishId}: type=${pathData.pathType}, points=${pathData.controlPoints.length}, startTick=${pathData.startTick}`,
+    );
     this.fishPaths.set(fishId, pathData);
   }
 
@@ -35,10 +38,7 @@ export class FishPathManager {
    * @param currentTick Current game tick
    * @returns Position [x, y] or null if no path or unable to compute
    */
-  getFishPosition(
-    fishId: number,
-    currentTick: number,
-  ): [number, number] | null {
+  getFishPosition(fishId: number, currentTick: number): [number, number] | null {
     const pathData = this.fishPaths.get(fishId);
     if (!pathData) {
       console.warn(`⚠️ No path registered for fish ${fishId}, cannot compute position`);

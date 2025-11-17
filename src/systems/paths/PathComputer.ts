@@ -1,9 +1,9 @@
-import { PathData, PathType } from "./PathData";
-import { LinearPath } from "./LinearPath";
-import { SinePath } from "./SinePath";
-import { BezierPath } from "./BezierPath";
-import { CircularPath } from "./CircularPath";
-import { debugLog } from "../../config/DebugConfig";
+import { PathData, PathType } from './PathData';
+import { LinearPath } from './LinearPath';
+import { SinePath } from './SinePath';
+import { BezierPath } from './BezierPath';
+import { CircularPath } from './CircularPath';
+import { debugLog } from '../../config/DebugConfig';
 
 /**
  * Utility to compute fish positions from PathData
@@ -16,22 +16,17 @@ export class PathComputer {
    * @param currentTick Current game tick
    * @returns Position [x, y] or null if unable to compute
    */
-  static computePosition(
-    pathData: PathData,
-    currentTick: number,
-  ): [number, number] | null {
-    if (
-      !pathData ||
-      !pathData.controlPoints ||
-      pathData.controlPoints.length === 0
-    ) {
+  static computePosition(pathData: PathData, currentTick: number): [number, number] | null {
+    if (!pathData || !pathData.controlPoints || pathData.controlPoints.length === 0) {
       console.warn(`PathComputer: No valid pathData or controlPoints for fish ${pathData?.fishId}`);
       return null;
     }
 
     const elapsedTicks = currentTick - pathData.startTick;
     if (elapsedTicks < 0) {
-      console.warn(`PathComputer: Negative elapsed ticks for fish ${pathData.fishId}: currentTick=${currentTick}, startTick=${pathData.startTick}`);
+      console.warn(
+        `PathComputer: Negative elapsed ticks for fish ${pathData.fishId}: currentTick=${currentTick}, startTick=${pathData.startTick}`,
+      );
       return null;
     }
 
@@ -43,8 +38,13 @@ export class PathComputer {
 
     // VALIDATION: Check for progress anomalies
     if (t > 1.1) {
-      console.error(`[VALIDATION] Path progress exceeds 110%: ${(t * 100).toFixed(2)}% | Fish: ${pathData.fishId} | Elapsed: ${elapsedSeconds.toFixed(2)}s | Duration: ${pathData.duration.toFixed(2)}s | CurrentTick: ${currentTick} | StartTick: ${pathData.startTick}`);
-      debugLog('validation', `[PROG ANOMALY] t: ${(t * 100).toFixed(2)}%, FishId: ${pathData.fishId}, Elapsed: ${elapsedSeconds.toFixed(2)}s, Duration: ${pathData.duration.toFixed(2)}s, Loop: ${pathData.loop}`);
+      console.error(
+        `[VALIDATION] Path progress exceeds 110%: ${(t * 100).toFixed(2)}% | Fish: ${pathData.fishId} | Elapsed: ${elapsedSeconds.toFixed(2)}s | Duration: ${pathData.duration.toFixed(2)}s | CurrentTick: ${currentTick} | StartTick: ${pathData.startTick}`,
+      );
+      debugLog(
+        'validation',
+        `[PROG ANOMALY] t: ${(t * 100).toFixed(2)}%, FishId: ${pathData.fishId}, Elapsed: ${elapsedSeconds.toFixed(2)}s, Duration: ${pathData.duration.toFixed(2)}s, Loop: ${pathData.loop}`,
+      );
     }
 
     // Handle paths that exceed duration
@@ -60,7 +60,10 @@ export class PathComputer {
     }
 
     const position = this.evaluatePathAtTime(pathData, t);
-    debugLog('pathComputation', `PathComputer: fish ${pathData.fishId} at t=${t.toFixed(3)}, pos=${position ? `(${position[0].toFixed(1)}, ${position[1].toFixed(1)})` : 'null'}`);
+    debugLog(
+      'pathComputation',
+      `PathComputer: fish ${pathData.fishId} at t=${t.toFixed(3)}, pos=${position ? `(${position[0].toFixed(1)}, ${position[1].toFixed(1)})` : 'null'}`,
+    );
     return position;
   }
 
@@ -70,10 +73,7 @@ export class PathComputer {
    * @param t Normalized time (0.0 to 1.0)
    * @returns Position [x, y] or null if unable to compute
    */
-  static evaluatePathAtTime(
-    pathData: PathData,
-    t: number,
-  ): [number, number] | null {
+  static evaluatePathAtTime(pathData: PathData, t: number): [number, number] | null {
     try {
       switch (pathData.pathType) {
         case PathType.Linear:
@@ -93,28 +93,19 @@ export class PathComputer {
           return null;
       }
     } catch (error) {
-      console.error("Error computing path position:", error);
+      console.error('Error computing path position:', error);
       return null;
     }
   }
 
-  private static evaluateLinear(
-    pathData: PathData,
-    t: number,
-  ): [number, number] | null {
+  private static evaluateLinear(pathData: PathData, t: number): [number, number] | null {
     if (pathData.controlPoints.length < 2) {
       return null;
     }
 
     // Server already sends pixel coordinates [0-1800, 0-900]
-    const start: [number, number] = [
-      pathData.controlPoints[0][0],
-      pathData.controlPoints[0][1],
-    ];
-    const end: [number, number] = [
-      pathData.controlPoints[1][0],
-      pathData.controlPoints[1][1],
-    ];
+    const start: [number, number] = [pathData.controlPoints[0][0], pathData.controlPoints[0][1]];
+    const end: [number, number] = [pathData.controlPoints[1][0], pathData.controlPoints[1][1]];
 
     const path = new LinearPath(
       pathData.fishId,
@@ -128,23 +119,14 @@ export class PathComputer {
     return path.getPosition(t);
   }
 
-  private static evaluateSine(
-    pathData: PathData,
-    t: number,
-  ): [number, number] | null {
+  private static evaluateSine(pathData: PathData, t: number): [number, number] | null {
     if (pathData.controlPoints.length < 3) {
       return null;
     }
 
     // Server already sends pixel coordinates [0-1800, 0-900]
-    const start: [number, number] = [
-      pathData.controlPoints[0][0],
-      pathData.controlPoints[0][1],
-    ];
-    const end: [number, number] = [
-      pathData.controlPoints[1][0],
-      pathData.controlPoints[1][1],
-    ];
+    const start: [number, number] = [pathData.controlPoints[0][0], pathData.controlPoints[0][1]];
+    const end: [number, number] = [pathData.controlPoints[1][0], pathData.controlPoints[1][1]];
     const amplitude = pathData.controlPoints[2][0];
     const frequency = pathData.controlPoints[2][1];
 
@@ -162,31 +144,16 @@ export class PathComputer {
     return path.getPosition(t);
   }
 
-  private static evaluateBezier(
-    pathData: PathData,
-    t: number,
-  ): [number, number] | null {
+  private static evaluateBezier(pathData: PathData, t: number): [number, number] | null {
     if (pathData.controlPoints.length < 4) {
       return null;
     }
 
     // Server already sends pixel coordinates [0-1800, 0-900]
-    const p0: [number, number] = [
-      pathData.controlPoints[0][0],
-      pathData.controlPoints[0][1],
-    ];
-    const p1: [number, number] = [
-      pathData.controlPoints[1][0],
-      pathData.controlPoints[1][1],
-    ];
-    const p2: [number, number] = [
-      pathData.controlPoints[2][0],
-      pathData.controlPoints[2][1],
-    ];
-    const p3: [number, number] = [
-      pathData.controlPoints[3][0],
-      pathData.controlPoints[3][1],
-    ];
+    const p0: [number, number] = [pathData.controlPoints[0][0], pathData.controlPoints[0][1]];
+    const p1: [number, number] = [pathData.controlPoints[1][0], pathData.controlPoints[1][1]];
+    const p2: [number, number] = [pathData.controlPoints[2][0], pathData.controlPoints[2][1]];
+    const p3: [number, number] = [pathData.controlPoints[3][0], pathData.controlPoints[3][1]];
 
     const path = new BezierPath(
       pathData.fishId,
@@ -202,19 +169,13 @@ export class PathComputer {
     return path.getPosition(t);
   }
 
-  private static evaluateCircular(
-    pathData: PathData,
-    t: number,
-  ): [number, number] | null {
+  private static evaluateCircular(pathData: PathData, t: number): [number, number] | null {
     if (pathData.controlPoints.length < 3) {
       return null;
     }
 
     // Server already sends pixel coordinates [0-1800, 0-900]
-    const center: [number, number] = [
-      pathData.controlPoints[0][0],
-      pathData.controlPoints[0][1],
-    ];
+    const center: [number, number] = [pathData.controlPoints[0][0], pathData.controlPoints[0][1]];
     const radiusX = pathData.controlPoints[1][0];
     const radiusY = pathData.controlPoints[1][1];
     const startAngle = pathData.controlPoints[2][0];

@@ -1,4 +1,4 @@
-import { PathData, PathType } from "./PathData";
+import { PathData, PathType } from './PathData';
 
 /**
  * Straight line movement from start to end point
@@ -48,8 +48,7 @@ export class LinearPath {
    */
   getPathData(): PathData {
     const distance = Math.sqrt(
-      Math.pow(this.end[0] - this.start[0], 2) +
-        Math.pow(this.end[1] - this.start[1], 2),
+      Math.pow(this.end[0] - this.start[0], 2) + Math.pow(this.end[1] - this.start[1], 2),
     );
 
     return {

@@ -271,21 +271,6 @@ public class FishManager
             _ => linearIndex * 2  // Fallback with spacing
         };
     }
-    
-    private float GetSpeedForType(int typeId)
-    {
-        return typeId switch
-        {
-            0 => 100f + Random.Shared.NextSingle() * 20f,
-            1 => 100f + Random.Shared.NextSingle() * 20f,
-            2 => 100f + Random.Shared.NextSingle() * 20f,
-            6 => 60f + Random.Shared.NextSingle() * 10f,
-            9 => 60f + Random.Shared.NextSingle() * 10f,
-            12 => 100f + Random.Shared.NextSingle() * 20f,
-            14 => 81.25f + Random.Shared.NextSingle() * 15f,
-            _ => 80f
-        };
-    }
 
     public Fish? GetFish(string fishId)
     {

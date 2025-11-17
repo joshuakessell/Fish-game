@@ -29,62 +29,6 @@ public class GameHub : Hub
         return (userId, name, credits);
     }
 
-    // DEPRECATED: Use JoinRoom or CreateSoloGame instead
-    // This method kept for backward compatibility but requires authentication
-    [Obsolete("Use JoinRoom or CreateSoloGame for proper lobby flow")]
-    public async Task<object> JoinMatch(string displayName)
-    {
-        try
-        {
-            var (userId, name, credits) = GetUserFromContext();
-            
-            // Use the actual name from JWT claims, not the passed displayName
-            var actualName = string.IsNullOrEmpty(name) ? displayName : name;
-            
-            var matchManager = _gameServer.GetMatchManager();
-            var match = matchManager.FindOrCreateMatch(Context.ConnectionId);
-
-            if (match == null)
-            {
-                return new { success = false, message = "No available matches" };
-            }
-
-            var player = match.AddPlayer(Context.ConnectionId, actualName, Context.ConnectionId);
-            
-            if (player == null)
-            {
-                return new { success = false, message = "Match is full" };
-            }
-            
-            // Sync credits from JWT to player state
-            player.Credits = credits;
-
-            _connectionToMatch[Context.ConnectionId] = match.MatchId;
-            _connectionToPlayer[Context.ConnectionId] = player.PlayerId;
-
-            await Groups.AddToGroupAsync(Context.ConnectionId, match.MatchId);
-
-            var availableSlots = match.GetAvailableSlots();
-            
-            Console.WriteLine($"Player {actualName} (JWT user {userId}) joined match {match.MatchId} with {credits} credits");
-
-            return new
-            {
-                success = true,
-                matchId = match.MatchId,
-                playerId = player.PlayerId,
-                playerSlot = player.PlayerSlot,
-                credits = player.Credits,
-                availableSlots = availableSlots
-            };
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error in JoinMatch: {ex.Message}");
-            return new { success = false, message = ex.Message };
-        }
-    }
-
     public void Fire(float x, float y, float directionX, float directionY, string clientNonce = "", int? targetFishId = null)
     {
         if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))

@@ -1,6 +1,6 @@
-import Phaser from "phaser";
-import { FishSprite } from "../entities/FishSprite";
-import { GameState } from "./GameState";
+import Phaser from 'phaser';
+import { FishSprite } from '../entities/FishSprite';
+import { GameState } from './GameState';
 
 export class FishSpriteManager {
   private fishSprites: Map<number, FishSprite> = new Map();
@@ -19,11 +19,8 @@ export class FishSpriteManager {
     }
 
     // Try to get path-based position first
-    let initialPosition = this.gameState.getFishPosition(
-      fishId,
-      this.gameState.currentTick,
-    );
-    
+    let initialPosition = this.gameState.getFishPosition(fishId, this.gameState.currentTick);
+
     // Fall back to server-provided x/y if path not yet available
     if (!initialPosition) {
       const fishData = this.gameState.fish.get(fishId);

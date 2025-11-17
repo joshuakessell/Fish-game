@@ -1,7 +1,7 @@
-import Phaser from "phaser";
-import { GameState } from "./GameState";
-import { FishSpriteManager } from "./FishSpriteManager";
-import { getPlayerBankPosition } from "../utils/PlayerSeatLayout";
+import Phaser from 'phaser';
+import { GameState } from './GameState';
+import { FishSpriteManager } from './FishSpriteManager';
+import { getPlayerBankPosition } from '../utils/PlayerSeatLayout';
 
 export class RewardAnimationManager {
   private scene: Phaser.Scene;
@@ -9,11 +9,7 @@ export class RewardAnimationManager {
   private fishSpriteManager: FishSpriteManager;
   private bankPositions: Map<number, { x: number; y: number }> = new Map();
 
-  constructor(
-    scene: Phaser.Scene,
-    gameState: GameState,
-    fishSpriteManager: FishSpriteManager,
-  ) {
+  constructor(scene: Phaser.Scene, gameState: GameState, fishSpriteManager: FishSpriteManager) {
     this.scene = scene;
     this.gameState = gameState;
     this.fishSpriteManager = fishSpriteManager;
@@ -33,8 +29,10 @@ export class RewardAnimationManager {
     playerSlot: number,
     isOwnKill: boolean,
   ): void {
-    console.log(`🎬 [RewardAnimationManager] playRewardAnimation called: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`);
-    
+    console.log(
+      `🎬 [RewardAnimationManager] playRewardAnimation called: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`,
+    );
+
     const fishSprite = this.fishSpriteManager.getFishSprites().get(fishId);
     if (!fishSprite) {
       console.warn(`   ⚠️ Cannot play reward animation: fish ${fishId} sprite not found`);
@@ -43,15 +41,19 @@ export class RewardAnimationManager {
 
     const fishPosition = { x: fishSprite.x, y: fishSprite.y };
     console.log(`   → Fish position: (${fishPosition.x}, ${fishPosition.y})`);
-    
+
     const bankPosition = this.bankPositions.get(playerSlot);
 
     if (!bankPosition) {
-      console.warn(`   ⚠️ Cannot play reward animation: bank position for slot ${playerSlot} not found`);
+      console.warn(
+        `   ⚠️ Cannot play reward animation: bank position for slot ${playerSlot} not found`,
+      );
       return;
     }
-    
-    console.log(`   → Bank position for slot ${playerSlot}: (${bankPosition.x}, ${bankPosition.y})`);
+
+    console.log(
+      `   → Bank position for slot ${playerSlot}: (${bankPosition.x}, ${bankPosition.y})`,
+    );
     console.log(`   → Creating floating text and coin animation`);
 
     this.createFloatingText(fishPosition, payout, isOwnKill);
@@ -63,14 +65,14 @@ export class RewardAnimationManager {
     payout: number,
     isOwnKill: boolean,
   ): void {
-    const fontSize = isOwnKill ? "32px" : "24px";
-    const color = isOwnKill ? "#FFD700" : "#C0C0C0";
-    const strokeColor = isOwnKill ? "#8B4513" : "#666666";
+    const fontSize = isOwnKill ? '32px' : '24px';
+    const color = isOwnKill ? '#FFD700' : '#C0C0C0';
+    const strokeColor = isOwnKill ? '#8B4513' : '#666666';
 
     const text = this.scene.add.text(position.x, position.y, `+${payout}`, {
       fontSize: fontSize,
       color: color,
-      fontStyle: "bold",
+      fontStyle: 'bold',
       stroke: strokeColor,
       strokeThickness: 4,
     });
@@ -82,7 +84,7 @@ export class RewardAnimationManager {
       y: position.y - 80,
       alpha: 0,
       duration: 1200,
-      ease: "Cubic.easeOut",
+      ease: 'Cubic.easeOut',
       onComplete: () => {
         text.destroy();
       },
@@ -114,7 +116,7 @@ export class RewardAnimationManager {
       targets: { progress: 0 },
       progress: 1,
       duration: 800,
-      ease: "Cubic.easeInOut",
+      ease: 'Cubic.easeInOut',
       onUpdate: (tween) => {
         const value = tween.getValue();
         pathProgress = value !== null ? value : 0;

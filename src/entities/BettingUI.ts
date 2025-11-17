@@ -1,5 +1,5 @@
-import Phaser from "phaser";
-import { GameState } from "../systems/GameState";
+import Phaser from 'phaser';
+import { GameState } from '../systems/GameState';
 
 export class BettingUI extends Phaser.GameObjects.Container {
   private gameState: GameState;
@@ -42,17 +42,17 @@ export class BettingUI extends Phaser.GameObjects.Container {
     this.minusButton.lineStyle(2, 0x004499, 1);
     this.minusButton.strokeCircle(-70, 0, 25);
 
-    const minusText = this.scene.add.text(-70, 0, "-", {
-      fontSize: "48px",
-      color: "#ffffff",
-      fontStyle: "bold",
+    const minusText = this.scene.add.text(-70, 0, '-', {
+      fontSize: '48px',
+      color: '#ffffff',
+      fontStyle: 'bold',
     });
     minusText.setOrigin(0.5, 0.5);
 
     this.minusHitArea = this.scene.add.zone(-70, 0, 50, 50);
     this.minusHitArea.setInteractive({ useHandCursor: true });
 
-    this.minusHitArea.on("pointerdown", () => {
+    this.minusHitArea.on('pointerdown', () => {
       if (this.gameState.decreaseBet()) {
         this.updateBetDisplay();
         this.playButtonFeedback(this.minusButton, -100, 0);
@@ -60,7 +60,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
       }
     });
 
-    this.minusHitArea.on("pointerover", () => {
+    this.minusHitArea.on('pointerover', () => {
       if (this.gameState.currentBet > this.gameState.MIN_BET) {
         this.minusButton.clear();
         this.minusButton.fillStyle(0x0088ee, 1);
@@ -70,7 +70,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
       }
     });
 
-    this.minusHitArea.on("pointerout", () => {
+    this.minusHitArea.on('pointerout', () => {
       this.minusButton.clear();
       this.minusButton.fillStyle(0x0066cc, 1);
       this.minusButton.fillCircle(-70, 0, 25);
@@ -91,18 +91,13 @@ export class BettingUI extends Phaser.GameObjects.Container {
     betCircle.lineStyle(3, 0x8b6914, 1);
     betCircle.strokeCircle(0, 0, 45);
 
-    this.betText = this.scene.add.text(
-      0,
-      0,
-      this.gameState.currentBet.toString(),
-      {
-        fontSize: "40px",
-        color: "#ffffff",
-        fontStyle: "bold",
-        stroke: "#8B6914",
-        strokeThickness: 3,
-      },
-    );
+    this.betText = this.scene.add.text(0, 0, this.gameState.currentBet.toString(), {
+      fontSize: '40px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      stroke: '#8B6914',
+      strokeThickness: 3,
+    });
     this.betText.setOrigin(0.5, 0.5);
 
     this.add([betCircle, this.betText]);
@@ -117,17 +112,17 @@ export class BettingUI extends Phaser.GameObjects.Container {
     this.plusButton.lineStyle(2, 0x004499, 1);
     this.plusButton.strokeCircle(70, 0, 25);
 
-    const plusText = this.scene.add.text(70, 0, "+", {
-      fontSize: "48px",
-      color: "#ffffff",
-      fontStyle: "bold",
+    const plusText = this.scene.add.text(70, 0, '+', {
+      fontSize: '48px',
+      color: '#ffffff',
+      fontStyle: 'bold',
     });
     plusText.setOrigin(0.5, 0.5);
 
     this.plusHitArea = this.scene.add.zone(70, 0, 50, 50);
     this.plusHitArea.setInteractive({ useHandCursor: true });
 
-    this.plusHitArea.on("pointerdown", () => {
+    this.plusHitArea.on('pointerdown', () => {
       if (this.gameState.increaseBet()) {
         this.updateBetDisplay();
         this.playButtonFeedback(this.plusButton, 100, 0);
@@ -135,7 +130,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
       }
     });
 
-    this.plusHitArea.on("pointerover", () => {
+    this.plusHitArea.on('pointerover', () => {
       if (this.gameState.currentBet < this.gameState.MAX_BET) {
         this.plusButton.clear();
         this.plusButton.fillStyle(0x0088ee, 1);
@@ -145,7 +140,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
       }
     });
 
-    this.plusHitArea.on("pointerout", () => {
+    this.plusHitArea.on('pointerout', () => {
       this.plusButton.clear();
       this.plusButton.fillStyle(0x0066cc, 1);
       this.plusButton.fillCircle(70, 0, 25);
@@ -167,9 +162,9 @@ export class BettingUI extends Phaser.GameObjects.Container {
     const formattedCredits = this.formatNumber(credits);
 
     this.bankText = this.scene.add.text(-185, 0, `Bank: ${formattedCredits}`, {
-      fontSize: "20px",
-      color: "#ffffff",
-      fontStyle: "bold",
+      fontSize: '20px',
+      color: '#ffffff',
+      fontStyle: 'bold',
     });
     this.bankText.setOrigin(0.5, 0.5);
 
@@ -177,7 +172,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
   }
 
   private createPlayerNameDisplay() {
-    const playerName = this.gameState.playerAuth?.name || "Player";
+    const playerName = this.gameState.playerAuth?.name || 'Player';
 
     const nameBg = this.scene.add.graphics();
     nameBg.fillStyle(0x8b4513, 0.8);
@@ -186,9 +181,9 @@ export class BettingUI extends Phaser.GameObjects.Container {
     nameBg.strokeRoundedRect(140, -20, 120, 40, 5);
 
     this.playerNameText = this.scene.add.text(200, 0, playerName, {
-      fontSize: "20px",
-      color: "#ffffff",
-      fontStyle: "bold",
+      fontSize: '20px',
+      color: '#ffffff',
+      fontStyle: 'bold',
     });
     this.playerNameText.setOrigin(0.5, 0.5);
 
@@ -202,12 +197,14 @@ export class BettingUI extends Phaser.GameObjects.Container {
   public updateBankDisplay() {
     const credits = this.gameState.playerAuth?.credits || 0;
     const formattedCredits = this.formatNumber(credits);
-    console.log(`🏦 [BettingUI] updateBankDisplay called - Credits: ${credits} (formatted: ${formattedCredits})`);
+    console.log(
+      `🏦 [BettingUI] updateBankDisplay called - Credits: ${credits} (formatted: ${formattedCredits})`,
+    );
     this.bankText.setText(`Bank: ${formattedCredits}`);
   }
 
   private formatNumber(num: number): string {
-    return num.toLocaleString("en-US");
+    return num.toLocaleString('en-US');
   }
 
   private sendBetValueToServer() {
@@ -217,24 +214,18 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
     this.debounceTimer = window.setTimeout(() => {
       if (this.gameState.connection && this.gameState.isConnected) {
-        this.gameState.connection
-          .invoke("SetBetValue", this.gameState.currentBet)
-          .catch((err) => {
-            console.error("Failed to send bet value to server:", err);
-          });
+        this.gameState.connection.invoke('SetBetValue', this.gameState.currentBet).catch((err) => {
+          console.error('Failed to send bet value to server:', err);
+        });
         console.log(`Sent bet value to server: ${this.gameState.currentBet}`);
       }
       this.debounceTimer = null;
     }, this.DEBOUNCE_MS);
   }
 
-  private playButtonFeedback(
-    button: Phaser.GameObjects.Graphics,
-    x: number,
-    _y: number,
-  ) {
+  private playButtonFeedback(button: Phaser.GameObjects.Graphics, x: number, _y: number) {
     const adjustedX = x < 0 ? -70 : 70;
-    
+
     this.scene.tweens.add({
       targets: button,
       scaleX: 0.9,

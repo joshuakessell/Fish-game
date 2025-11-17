@@ -1,4 +1,3 @@
-using OceanKing.Server.Data;
 using OceanKing.Server.Models;
 using OceanKing.Server.Entities;
 
@@ -282,55 +281,6 @@ public class PathGenerator
         };
         
         return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, p1, p2, end);
-    }
-    
-    private static IPath GenerateCircularOrComplexPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex, int groupAnchorSeed, SharedGroupParameters sharedParams)
-    {
-        // 70% Bezier, 30% Circular for variety
-        if (rng.NextFloat() > 0.3f)
-        {
-            return GenerateBezierPath(fishId, seed, startTick, fishType, rng, spawnEdge, groupIndex, groupAnchorSeed, sharedParams);
-        }
-        
-        // Circular path - ensure entire circle stays within bounds
-        float maxRadiusX = MathF.Min(250f, CANVAS_WIDTH / 3f);
-        float maxRadiusY = MathF.Min(200f, CANVAS_HEIGHT / 3f);
-        
-        float radiusX = rng.NextFloat(100f, maxRadiusX);
-        float radiusY = rng.NextFloat(80f, maxRadiusY);
-        
-        // Center must keep entire circle within bounds
-        float[] center = new[]
-        {
-            rng.NextFloat(radiusX + 50f, CANVAS_WIDTH - radiusX - 50f),
-            rng.NextFloat(radiusY + 50f, CANVAS_HEIGHT - radiusY - 50f)
-        };
-        
-        float startAngle = rng.NextFloat(0f, MathF.PI * 2);
-        bool clockwise = rng.NextFloat() > 0.5f;
-        
-        return new CircularPath(fishId, seed, startTick, fishType.BaseSpeed, center, radiusX, radiusY, startAngle, clockwise);
-    }
-    
-    private static IPath GenerateBossPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
-    {
-        // Bosses get dramatic curved paths
-        var (start, end) = GenerateEdgeToEdgePoints(rng);
-        
-        // Large, sweeping Bezier curves - KEEP WITHIN BOUNDS
-        float[] p1 = new[]
-        {
-            MathF.Max(200f, MathF.Min(CANVAS_WIDTH - 200f, rng.NextFloat(300f, CANVAS_WIDTH - 300f))),
-            MathF.Max(100f, MathF.Min(CANVAS_HEIGHT - 100f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f)))
-        };
-        
-        float[] p2 = new[]
-        {
-            MathF.Max(200f, MathF.Min(CANVAS_WIDTH - 200f, rng.NextFloat(300f, CANVAS_WIDTH - 300f))),
-            MathF.Max(100f, MathF.Min(CANVAS_HEIGHT - 100f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f)))
-        };
-        
-        return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed * 0.7f, start, p1, p2, end);
     }
     
     /// <summary>

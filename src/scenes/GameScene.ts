@@ -1,11 +1,11 @@
-import Phaser from "phaser";
-import { GameState } from "../systems/GameState";
-import { FishSpriteManager } from "../systems/FishSpriteManager";
-import { RewardAnimationManager } from "../systems/RewardAnimationManager";
-import { BettingUI } from "../entities/BettingUI";
-import { BulletData } from "../types/GameTypes";
-import { Bullet } from "../entities/Bullet";
-import { debugLog } from "../config/DebugConfig";
+import Phaser from 'phaser';
+import { GameState } from '../systems/GameState';
+import { FishSpriteManager } from '../systems/FishSpriteManager';
+import { RewardAnimationManager } from '../systems/RewardAnimationManager';
+import { BettingUI } from '../entities/BettingUI';
+import { BulletData } from '../types/GameTypes';
+import { Bullet } from '../entities/Bullet';
+import { debugLog } from '../config/DebugConfig';
 
 export default class GameScene extends Phaser.Scene {
   private gameState: GameState;
@@ -49,24 +49,24 @@ export default class GameScene extends Phaser.Scene {
   private readonly BULLET_SPEED = 800;
   private readonly MAX_BULLETS_PER_PLAYER = 30;
   private readonly BULLET_TIMEOUT_MS = 60000;
-  
+
   private isJoiningRoom = false;
 
   constructor() {
-    super({ key: "GameScene" });
+    super({ key: 'GameScene' });
     this.gameState = GameState.getInstance();
   }
 
   preload() {
     // Load real fish images
-    this.load.image("fish-small", "/assets/fish/Small_clownfish_sprite_226a82aa.png");
-    this.load.image("fish-medium", "/assets/fish/Medium_lionfish_sprite_96d7f97c.png");
-    this.load.image("fish-large", "/assets/fish/Large_shark_sprite_e30aab34.png");
-    this.load.image("fish-boss", "/assets/fish/Boss_whale_sprite_7a904894.png");
+    this.load.image('fish-small', '/assets/fish/Small_clownfish_sprite_226a82aa.png');
+    this.load.image('fish-medium', '/assets/fish/Medium_lionfish_sprite_96d7f97c.png');
+    this.load.image('fish-large', '/assets/fish/Large_shark_sprite_e30aab34.png');
+    this.load.image('fish-boss', '/assets/fish/Boss_whale_sprite_7a904894.png');
   }
 
   create() {
-    console.log("GameScene: Creating game world");
+    console.log('GameScene: Creating game world');
 
     const graphics = this.add.graphics();
     graphics.fillGradientStyle(0x001a33, 0x001a33, 0x004d7a, 0x004d7a, 1);
@@ -92,68 +92,74 @@ export default class GameScene extends Phaser.Scene {
 
     // Register room-ready handler BEFORE joining
     this.gameState.onRoomJoined = () => {
-      console.log("🎮 GameScene: Room joined callback - initializing player components");
+      console.log('🎮 GameScene: Room joined callback - initializing player components');
       this.initializeSeatDependentComponents();
     };
 
     // DEV MODE: Auto-join room after callbacks are set up
-    if (this.gameState.devModeSeat !== null && !this.isJoiningRoom && this.gameState.myPlayerSlot === null) {
+    if (
+      this.gameState.devModeSeat !== null &&
+      !this.isJoiningRoom &&
+      this.gameState.myPlayerSlot === null
+    ) {
       this.isJoiningRoom = true;
       const seat = this.gameState.devModeSeat;
-      const roomId = "match_1";
+      const roomId = 'match_1';
       console.log(`GameScene [DEV]: Auto-joining ${roomId} at seat ${seat} (callbacks ready)`);
-      
-      this.gameState.joinRoom(roomId, seat).then(joined => {
-        this.isJoiningRoom = false;
-        if (!joined) {
-          console.error("GameScene [DEV]: Failed to join room");
-        } else {
-          console.log("GameScene [DEV]: Successfully joined room");
-        }
-      }).catch(err => {
-        this.isJoiningRoom = false;
-        console.error("GameScene [DEV]: Join room error:", err);
-      });
+
+      this.gameState
+        .joinRoom(roomId, seat)
+        .then((joined) => {
+          this.isJoiningRoom = false;
+          if (!joined) {
+            console.error('GameScene [DEV]: Failed to join room');
+          } else {
+            console.log('GameScene [DEV]: Successfully joined room');
+          }
+        })
+        .catch((err) => {
+          this.isJoiningRoom = false;
+          console.error('GameScene [DEV]: Join room error:', err);
+        });
     } else if (this.gameState.myPlayerSlot !== null) {
       // Normal mode: already joined from lobby, initialize immediately
-      console.log("GameScene: Already joined, initializing components");
+      console.log('GameScene: Already joined, initializing components');
       this.initializeSeatDependentComponents();
     }
 
-    console.log("GameScene: Initialization complete, waiting for room join...");
+    console.log('GameScene: Initialization complete, waiting for room join...');
   }
-
 
   private initializeSeatDependentComponents() {
     this.createPlayerTurret();
     this.createAutoTargetIndicator();
 
-    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.startHoldFire(pointer.x, pointer.y);
     });
 
-    this.input.on("pointerup", () => {
+    this.input.on('pointerup', () => {
       this.stopHoldFire();
     });
 
-    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (!this.autoTargetMode) {
         this.rotateTurretToPointer(pointer.x, pointer.y);
       }
     });
-    
-    console.log("GameScene: Player components initialized successfully");
+
+    console.log('GameScene: Player components initialized successfully');
   }
 
   private createDebugOverlay() {
-    this.debugText = this.add.text(10, 10, "", {
-      fontFamily: "monospace",
-      fontSize: "14px",
-      color: "#00ff00",
-      backgroundColor: "#000000",
+    this.debugText = this.add.text(10, 10, '', {
+      fontFamily: 'monospace',
+      fontSize: '14px',
+      color: '#00ff00',
+      backgroundColor: '#000000',
       padding: { x: 8, y: 8 },
       fixedWidth: 400,
-      wordWrap: { width: 400, useAdvancedWrap: false }
+      wordWrap: { width: 400, useAdvancedWrap: false },
     });
     this.debugText.setDepth(10000);
     this.debugText.setScrollFactor(0);
@@ -164,14 +170,18 @@ export default class GameScene extends Phaser.Scene {
       this.fishSpawnedCallbackCount++;
       console.log(`🐟 Fish spawned callback: fishId=${fishId}, typeId=${typeId}`);
       this.fishSpriteManager.spawnFish(fishId, typeId);
-      
+
       const fishSprite = this.fishSpriteManager.getFishSprites().get(fishId);
       if (fishSprite) {
         fishSprite.on('fish-tapped', this.handleFishTapped, this);
       }
 
-      if (this.autoTargetMode && this.currentTargetType !== null && 
-          this.currentTarget === null && typeId === this.currentTargetType) {
+      if (
+        this.autoTargetMode &&
+        this.currentTargetType !== null &&
+        this.currentTarget === null &&
+        typeId === this.currentTargetType
+      ) {
         console.log(`Fish of target type ${this.currentTargetType} spawned, resuming auto-fire`);
         this.currentTarget = fishId;
       }
@@ -189,19 +199,22 @@ export default class GameScene extends Phaser.Scene {
 
       if (this.autoTargetMode && fishId === this.currentTarget) {
         console.log(`Targeted fish ${fishId} removed, retargeting...`);
-        this.currentTarget = this.currentTargetType !== null 
-          ? this.findNearestFishOfType(this.currentTargetType)
-          : null;
+        this.currentTarget =
+          this.currentTargetType !== null
+            ? this.findNearestFishOfType(this.currentTargetType)
+            : null;
       }
     };
 
     // Spawn any fish that already exist in the game state (when joining existing game)
-    console.log(`Checking for existing fish in game state... Found ${this.gameState.fish.size} fish`);
+    console.log(
+      `Checking for existing fish in game state... Found ${this.gameState.fish.size} fish`,
+    );
     this.gameState.fish.forEach((fishData, fishId) => {
       const typeId = fishData[1]; // FishData is tuple: [id, type, x, y, path, isNewSpawn]
       console.log(`🐟 Spawning existing fish ${fishId} (type ${typeId})`);
       this.fishSpriteManager.spawnFish(fishId, typeId);
-      
+
       const fishSprite = this.fishSpriteManager.getFishSprites().get(fishId);
       if (fishSprite) {
         fishSprite.on('fish-tapped', this.handleFishTapped, this);
@@ -210,7 +223,9 @@ export default class GameScene extends Phaser.Scene {
 
     this.gameState.onBulletSpawned = (bulletData) => {
       if (!this.clientBullets.has(bulletData[0])) {
-        console.log(`💥 Bullet spawned from server: id=${bulletData[0]}, pos=(${bulletData[1]}, ${bulletData[2]})`);
+        console.log(
+          `💥 Bullet spawned from server: id=${bulletData[0]}, pos=(${bulletData[1]}, ${bulletData[2]})`,
+        );
         this.createBulletFromServer(bulletData);
       }
     };
@@ -230,13 +245,10 @@ export default class GameScene extends Phaser.Scene {
       playerSlot: number,
       isOwnKill: boolean,
     ) => {
-      console.log(`💰 Payout event: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`);
-      this.rewardAnimationManager.playRewardAnimation(
-        fishId,
-        payout,
-        playerSlot,
-        isOwnKill,
+      console.log(
+        `💰 Payout event: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`,
       );
+      this.rewardAnimationManager.playRewardAnimation(fishId, payout, playerSlot, isOwnKill);
     };
 
     this.gameState.onPayoutReceived = (fishId: number, payout: number) => {
@@ -252,14 +264,16 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.onTickSnapped = () => {
       this.tickSnappedCallbackCount++;
       this.accumulator = 0;
-      console.log(`GameScene: Tick snapped #${this.tickSnappedCallbackCount}, accumulator reset to 0`);
+      console.log(
+        `GameScene: Tick snapped #${this.tickSnappedCallbackCount}, accumulator reset to 0`,
+      );
     };
   }
 
   private cleanupSignalR() {
     if (this.gameState.connection) {
-      this.gameState.connection.off("StateDelta");
-      console.log("GameScene: SignalR handlers cleaned up");
+      this.gameState.connection.off('StateDelta');
+      console.log('GameScene: SignalR handlers cleaned up');
     }
 
     this.stopHoldFire();
@@ -279,7 +293,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.fishSpriteManager) {
       this.fishSpriteManager.clear();
     }
-    
+
     // Destroy debug text to prevent multiple instances
     if (this.debugText) {
       this.debugText.destroy();
@@ -289,18 +303,18 @@ export default class GameScene extends Phaser.Scene {
   private setupSignalRHandlers() {
     const conn = this.gameState.connection;
     if (!conn) {
-      console.error("GameScene: No SignalR connection available");
+      console.error('GameScene: No SignalR connection available');
       return;
     }
 
     // Add a StateDelta counter to track message receipt
-    conn.on("StateDelta", () => {
+    conn.on('StateDelta', () => {
       this.stateDeltaCount++;
       // Count paths registered
       this.pathsRegisteredCount = this.gameState.fishPathManager.getTrackedFishCount();
     });
 
-    console.log("GameScene: SignalR event handlers registered");
+    console.log('GameScene: SignalR event handlers registered');
   }
 
   update(time: number, delta: number) {
@@ -308,21 +322,26 @@ export default class GameScene extends Phaser.Scene {
     if (!this.gameState.isSynced) {
       return;
     }
-    
+
     const clampedDelta = Math.min(delta, this.MAX_DELTA);
-    
+
     // Apply drift correction by adjusting accumulator
     const correction = this.gameState.accumulatorAdjustment;
     this.accumulator += clampedDelta + correction;
-    
+
     // VALIDATION: Check for accumulator anomalies
     if (this.accumulator > 1000) {
-      console.error(`[VALIDATION] Accumulator exceeds 1000: ${this.accumulator.toFixed(2)}ms | Delta: ${delta.toFixed(2)}ms | Correction: ${correction.toFixed(2)}ms | Tick: ${this.gameState.currentTick}`);
-      debugLog('validation', `[ACC ANOMALY] Accumulator: ${this.accumulator.toFixed(2)}ms, Delta: ${delta.toFixed(2)}ms, Correction: ${correction.toFixed(2)}ms, Tick: ${this.gameState.currentTick}`);
+      console.error(
+        `[VALIDATION] Accumulator exceeds 1000: ${this.accumulator.toFixed(2)}ms | Delta: ${delta.toFixed(2)}ms | Correction: ${correction.toFixed(2)}ms | Tick: ${this.gameState.currentTick}`,
+      );
+      debugLog(
+        'validation',
+        `[ACC ANOMALY] Accumulator: ${this.accumulator.toFixed(2)}ms, Delta: ${delta.toFixed(2)}ms, Correction: ${correction.toFixed(2)}ms, Tick: ${this.gameState.currentTick}`,
+      );
       // Clamp to prevent runaway accumulation
       this.accumulator = Math.min(this.accumulator, 500);
     }
-    
+
     // Reset correction after applying
     this.gameState.accumulatorAdjustment = 0;
 
@@ -350,14 +369,10 @@ export default class GameScene extends Phaser.Scene {
   private updateDebugOverlay(tickProgress: number) {
     const fps = Math.round(this.game.loop.actualFps);
     const activeFish = this.fishSpriteManager.getActiveFishCount();
-    const pathMode =
-      this.gameState.fishPathManager.getTrackedFishCount() > 0 ? "ON" : "OFF";
+    const pathMode = this.gameState.fishPathManager.getTrackedFishCount() > 0 ? 'ON' : 'OFF';
     const accumulatorDrift = this.accumulator.toFixed(2);
     const tickDrift = this.gameState.tickDrift;
-    const seat =
-      this.gameState.myPlayerSlot !== null
-        ? this.gameState.myPlayerSlot
-        : "N/A";
+    const seat = this.gameState.myPlayerSlot !== null ? this.gameState.myPlayerSlot : 'N/A';
 
     this.debugText.setText([
       `Tick: ${this.gameState.currentTick}`,
@@ -366,12 +381,12 @@ export default class GameScene extends Phaser.Scene {
       `Fish: ${activeFish}`,
       `Bullets: ${this.clientBullets.size}`,
       `Paths: ${pathMode}`,
-      `Auto: ${this.autoTargetMode ? "ON" : "OFF"}`,
-      `Hold: ${this.isHoldingFire ? "Y" : "N"}`,
+      `Auto: ${this.autoTargetMode ? 'ON' : 'OFF'}`,
+      `Hold: ${this.isHoldingFire ? 'Y' : 'N'}`,
       `Acc: ${accumulatorDrift}ms`,
       `Prog: ${(tickProgress * 100).toFixed(1)}%`,
       `Drift: ${tickDrift}`,
-      `Sync: ${this.gameState.isSynced ? "Y" : "N"}`,
+      `Sync: ${this.gameState.isSynced ? 'Y' : 'N'}`,
       `SD: ${this.stateDeltaCount}`,
       `FS: ${this.fishSpawnedCallbackCount}`,
       `TS: ${this.tickSnappedCallbackCount}`,
@@ -415,16 +430,13 @@ export default class GameScene extends Phaser.Scene {
   private createPlayerTurret() {
     const seat = this.gameState.myPlayerSlot;
     if (seat === null) {
-      console.error("GameScene: No seat assigned for player");
+      console.error('GameScene: No seat assigned for player');
       return;
     }
 
     this.turretPosition = this.getTurretPosition(seat);
 
-    this.myTurret = this.add.container(
-      this.turretPosition.x,
-      this.turretPosition.y,
-    );
+    this.myTurret = this.add.container(this.turretPosition.x, this.turretPosition.y);
 
     const base = this.add.graphics();
     base.fillStyle(0xb8860b, 1);
@@ -455,11 +467,7 @@ export default class GameScene extends Phaser.Scene {
   private createBettingUI(seat: number) {
     const offsetY = 60;
 
-    this.bettingUI = new BettingUI(
-      this,
-      this.turretPosition.x,
-      this.turretPosition.y + offsetY,
-    );
+    this.bettingUI = new BettingUI(this, this.turretPosition.x, this.turretPosition.y + offsetY);
 
     this.rewardAnimationManager.setBankPosition(
       seat,
@@ -473,12 +481,7 @@ export default class GameScene extends Phaser.Scene {
   private rotateTurretToPointer(x: number, y: number) {
     if (!this.myTurret) return;
 
-    const angle = Phaser.Math.Angle.Between(
-      this.turretPosition.x,
-      this.turretPosition.y,
-      x,
-      y,
-    );
+    const angle = Phaser.Math.Angle.Between(this.turretPosition.x, this.turretPosition.y, x, y);
 
     this.turretBarrel.rotation = angle;
   }
@@ -486,7 +489,7 @@ export default class GameScene extends Phaser.Scene {
   private startHoldFire(x: number, y: number) {
     // Auto-fire exclusivity: exit auto-target mode if user tries to fire manually
     if (this.autoTargetMode) {
-      console.log("Auto-target deactivated - manual fire attempted");
+      console.log('Auto-target deactivated - manual fire attempted');
       this.stopAutoTargeting();
       return;
     }
@@ -515,9 +518,7 @@ export default class GameScene extends Phaser.Scene {
 
   private handleFishTapped(fishId: number) {
     const now = Date.now();
-    const isDoubleTap = 
-      this.lastTappedFish === fishId && 
-      now - this.lastTapTime < 300;
+    const isDoubleTap = this.lastTappedFish === fishId && now - this.lastTapTime < 300;
 
     if (isDoubleTap) {
       this.toggleAutoTargeting(fishId);
@@ -540,7 +541,7 @@ export default class GameScene extends Phaser.Scene {
   private startAutoTargeting(initialTarget?: number) {
     this.autoTargetMode = true;
     this.currentTarget = initialTarget ?? null; // Use ?? to preserve fish ID 0
-    
+
     if (initialTarget !== undefined) {
       const fishData = this.gameState.fish.get(initialTarget);
       if (fishData) {
@@ -548,7 +549,7 @@ export default class GameScene extends Phaser.Scene {
         console.log(`Auto-targeting activated for fish type ${this.currentTargetType}`);
       }
     }
-    
+
     this.updateAutoTargetIndicator();
 
     // Auto-fire at 250ms intervals (4 shots/second)
@@ -556,18 +557,18 @@ export default class GameScene extends Phaser.Scene {
       this.fireAtTarget();
     }, 250);
 
-    console.log("Auto-targeting activated");
+    console.log('Auto-targeting activated');
   }
 
   private stopAutoTargeting() {
     this.autoTargetMode = false;
     this.currentTarget = null;
     this.currentTargetType = null;
-    
+
     if (this.targetIcon) {
       this.targetIcon.setVisible(false);
     }
-    
+
     this.updateAutoTargetIndicator();
 
     if (this.autoTargetInterval) {
@@ -575,7 +576,7 @@ export default class GameScene extends Phaser.Scene {
       this.autoTargetInterval = null;
     }
 
-    console.log("Auto-targeting deactivated");
+    console.log('Auto-targeting deactivated');
   }
 
   private findNearestFish(): number | null {
@@ -589,7 +590,7 @@ export default class GameScene extends Phaser.Scene {
           this.turretPosition.x,
           this.turretPosition.y,
           sprite.x,
-          sprite.y
+          sprite.y,
         );
 
         if (distance < nearestDistance) {
@@ -615,7 +616,7 @@ export default class GameScene extends Phaser.Scene {
         this.turretPosition.x,
         this.turretPosition.y,
         fishSprite.x,
-        fishSprite.y
+        fishSprite.y,
       );
 
       if (distance < minDistance) {
@@ -631,12 +632,11 @@ export default class GameScene extends Phaser.Scene {
     if (!this.autoTargetMode) return;
 
     const fishSprites = this.fishSpriteManager.getFishSprites();
-    
+
     if (this.currentTargetType !== null) {
-      const currentFish = this.currentTarget !== null 
-        ? this.gameState.fish.get(this.currentTarget) 
-        : null;
-      
+      const currentFish =
+        this.currentTarget !== null ? this.gameState.fish.get(this.currentTarget) : null;
+
       if (!currentFish || currentFish[1] !== this.currentTargetType) {
         this.currentTarget = this.findNearestFishOfType(this.currentTargetType);
       }
@@ -646,9 +646,8 @@ export default class GameScene extends Phaser.Scene {
         return;
       }
     } else {
-      const currentTargetSprite = this.currentTarget !== null 
-        ? fishSprites.get(this.currentTarget) 
-        : null;
+      const currentTargetSprite =
+        this.currentTarget !== null ? fishSprites.get(this.currentTarget) : null;
 
       if (!currentTargetSprite || !currentTargetSprite.active) {
         this.currentTarget = this.findNearestFish();
@@ -661,9 +660,10 @@ export default class GameScene extends Phaser.Scene {
 
     const targetSprite = fishSprites.get(this.currentTarget);
     if (!targetSprite) {
-      this.currentTarget = this.currentTargetType !== null 
-        ? this.findNearestFishOfType(this.currentTargetType)
-        : this.findNearestFish();
+      this.currentTarget =
+        this.currentTargetType !== null
+          ? this.findNearestFishOfType(this.currentTargetType)
+          : this.findNearestFish();
       return;
     }
 
@@ -682,17 +682,22 @@ export default class GameScene extends Phaser.Scene {
     this.handleShoot(targetSprite.x, targetSprite.y, true, this.currentTarget);
   }
 
-  private handleShoot(x: number, y: number, isHoming: boolean = false, targetFishId: number | null = null) {
+  private handleShoot(
+    x: number,
+    y: number,
+    isHoming: boolean = false,
+    targetFishId: number | null = null,
+  ) {
     if (!this.turretPosition) {
-      console.error("GameScene: Turret position not set");
+      console.error('GameScene: Turret position not set');
       return;
     }
 
     const shotCost = this.gameState.currentBet;
     const currentCredits = this.gameState.playerAuth?.credits || 0;
-    
+
     if (currentCredits < shotCost) {
-      console.warn("Not enough credits to shoot");
+      console.warn('Not enough credits to shoot');
       return;
     }
 
@@ -710,25 +715,25 @@ export default class GameScene extends Phaser.Scene {
 
     if (this.gameState.connection && this.gameState.isConnected) {
       this.gameState.deductShotCost();
-      
+
       const nonce = `${Date.now()}-${Math.random()}`;
-      
+
       this.createFiringEffect(dirX, dirY);
-      
+
       const bulletId = this.createBullet(
         this.turretPosition.x,
         this.turretPosition.y,
         dirX,
         dirY,
         isHoming,
-        targetFishId
+        targetFishId,
       );
-      
+
       this.pendingLocalBullets.set(nonce, bulletId);
 
       this.gameState.connection
         .invoke(
-          "Fire",
+          'Fire',
           this.turretPosition.x,
           this.turretPosition.y,
           dirX,
@@ -737,10 +742,10 @@ export default class GameScene extends Phaser.Scene {
           targetFishId,
         )
         .catch((err) => {
-          console.error("Failed to send Fire command:", err);
+          console.error('Failed to send Fire command:', err);
         });
       console.log(
-        `Fired ${isHoming ? "homing" : "normal"} bullet from (${this.turretPosition.x}, ${this.turretPosition.y}) in direction (${dirX.toFixed(2)}, ${dirY.toFixed(2)}), nonce: ${nonce}`,
+        `Fired ${isHoming ? 'homing' : 'normal'} bullet from (${this.turretPosition.x}, ${this.turretPosition.y}) in direction (${dirX.toFixed(2)}, ${dirY.toFixed(2)}), nonce: ${nonce}`,
       );
     }
   }
@@ -751,7 +756,7 @@ export default class GameScene extends Phaser.Scene {
     directionX: number,
     directionY: number,
     isHoming: boolean = false,
-    targetFishId: number | null = null
+    targetFishId: number | null = null,
   ): number {
     const bulletId = this.nextBulletId--;
 
@@ -767,20 +772,22 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.clientBullets.set(bulletId, bullet);
-    
+
     return bulletId;
   }
 
   private createBulletFromServer(bulletData: BulletData) {
     const targetFishId = bulletData[7];
     const isHoming = targetFishId !== null;
-    
+
     if (bulletData[6] && bulletData[5] === this.gameState.playerAuth?.userId) {
       const localBulletId = this.pendingLocalBullets.get(bulletData[6]);
       if (localBulletId !== undefined) {
         const localBullet = this.clientBullets.get(localBulletId);
         if (localBullet) {
-          console.log(`🎯 Perfect reconciliation: removing local bullet ${localBulletId}, replacing with server bullet ${bulletData[0]} using nonce ${bulletData[6]}`);
+          console.log(
+            `🎯 Perfect reconciliation: removing local bullet ${localBulletId}, replacing with server bullet ${bulletData[0]} using nonce ${bulletData[6]}`,
+          );
           localBullet.destroy();
           this.clientBullets.delete(localBulletId);
           this.pendingLocalBullets.delete(bulletData[6]);
@@ -824,16 +831,16 @@ export default class GameScene extends Phaser.Scene {
           bullet.x,
           bullet.y,
           fishSprite.x,
-          fishSprite.y
+          fishSprite.y,
         );
-        
+
         const hitRadius = 40;
-        
+
         if (distance < hitRadius) {
           console.log(`💥 Bullet ${id} hit fish ${fishId}!`);
-          
+
           this.createHitEffect(bullet.x, bullet.y);
-          
+
           bullet.destroy();
           this.clientBullets.delete(id);
           return;
@@ -848,10 +855,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private showCreditPopup(fishId: number, payout: number) {
-    const position = this.gameState.getFishPosition(
-      fishId,
-      this.gameState.currentTick,
-    );
+    const position = this.gameState.getFishPosition(fishId, this.gameState.currentTick);
 
     let x = 900;
     let y = 450;
@@ -868,10 +872,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     const popupText = this.add.text(x, y, `+${payout}`, {
-      fontSize: "32px",
-      color: "#FFD700",
-      fontStyle: "bold",
-      stroke: "#8B6914",
+      fontSize: '32px',
+      color: '#FFD700',
+      fontStyle: 'bold',
+      stroke: '#8B6914',
       strokeThickness: 4,
     });
     popupText.setOrigin(0.5, 0.5);
@@ -882,7 +886,7 @@ export default class GameScene extends Phaser.Scene {
       y: y - 100,
       alpha: 0,
       duration: 1500,
-      ease: "Cubic.easeOut",
+      ease: 'Cubic.easeOut',
       onComplete: () => {
         popupText.destroy();
       },
@@ -902,7 +906,7 @@ export default class GameScene extends Phaser.Scene {
       scaleY: 2,
       alpha: 0,
       duration: 300,
-      ease: "Cubic.easeOut",
+      ease: 'Cubic.easeOut',
       onComplete: () => {
         flash.destroy();
       },
@@ -913,7 +917,7 @@ export default class GameScene extends Phaser.Scene {
     for (let i = 0; i < particleCount; i++) {
       const angle = (i / particleCount) * Math.PI * 2;
       const speed = 100 + Math.random() * 50;
-      
+
       const particle = this.add.circle(x, y, 4, 0xffaa00, 1);
       particle.setDepth(140);
 
@@ -923,7 +927,7 @@ export default class GameScene extends Phaser.Scene {
         y: y + Math.sin(angle) * speed,
         alpha: 0,
         duration: 400 + Math.random() * 200,
-        ease: "Cubic.easeOut",
+        ease: 'Cubic.easeOut',
         onComplete: () => {
           particle.destroy();
         },
@@ -949,7 +953,7 @@ export default class GameScene extends Phaser.Scene {
       scaleY: 1.5,
       alpha: 0,
       duration: 150,
-      ease: "Cubic.easeOut",
+      ease: 'Cubic.easeOut',
       onComplete: () => {
         flash.destroy();
       },
@@ -966,7 +970,7 @@ export default class GameScene extends Phaser.Scene {
       y: originalY - dirY * recoilDistance,
       duration: 50,
       yoyo: true,
-      ease: "Cubic.easeOut",
+      ease: 'Cubic.easeOut',
     });
 
     // Smoke puff
@@ -976,7 +980,7 @@ export default class GameScene extends Phaser.Scene {
         muzzleY + (Math.random() - 0.5) * 10,
         5 + Math.random() * 5,
         0x888888,
-        0.4
+        0.4,
       );
       smoke.setDepth(105);
 
@@ -988,7 +992,7 @@ export default class GameScene extends Phaser.Scene {
         x: smoke.x + dirX * 20 + (Math.random() - 0.5) * 20,
         y: smoke.y + dirY * 20 - 20,
         duration: 500 + Math.random() * 300,
-        ease: "Cubic.easeOut",
+        ease: 'Cubic.easeOut',
         onComplete: () => {
           smoke.destroy();
         },
@@ -1000,10 +1004,10 @@ export default class GameScene extends Phaser.Scene {
     this.autoTargetIndicator = this.add.graphics();
     this.autoTargetIndicator.setDepth(999);
 
-    this.autoTargetText = this.add.text(110, 30, "AUTO-TARGET ACTIVE", {
-      fontSize: "18px",
-      color: "#ffffff",
-      fontStyle: "bold",
+    this.autoTargetText = this.add.text(110, 30, 'AUTO-TARGET ACTIVE', {
+      fontSize: '18px',
+      color: '#ffffff',
+      fontStyle: 'bold',
     });
     this.autoTargetText.setOrigin(0.5, 0.5);
     this.autoTargetText.setDepth(1000);
