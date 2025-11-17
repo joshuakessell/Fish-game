@@ -65,10 +65,34 @@ export class MobileEntryManager {
      * Shows the portrait rotation prompt
      */
     private showRotationPrompt(): void {
-        // Clear existing content except logo
-        const logo = this.overlayElement.querySelector('h1')?.parentElement;
+        // Clear existing content
         this.overlayElement.innerHTML = '';
-        if (logo) this.overlayElement.appendChild(logo);
+        
+        // Create a container for all content
+        const contentContainer = document.createElement('div');
+        contentContainer.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            gap: 20px;
+        `;
+        
+        // Re-create logo
+        const logoContainer = document.createElement('div');
+        logoContainer.innerHTML = `
+            <h1 style="
+                color: #FFD700;
+                font-size: 48px;
+                font-weight: bold;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                margin-bottom: 40px;
+                text-align: center;
+            ">OCEAN KING 3</h1>
+        `;
+        contentContainer.appendChild(logoContainer);
         
         const promptContainer = document.createElement('div');
         promptContainer.style.cssText = `
@@ -113,19 +137,51 @@ export class MobileEntryManager {
         rotateText.textContent = 'Please rotate your device to landscape';
         promptContainer.appendChild(rotateText);
         
-        this.overlayElement.appendChild(promptContainer);
+        // Add prompt container to content container
+        contentContainer.appendChild(promptContainer);
+        
+        // Add content container to overlay
+        this.overlayElement.appendChild(contentContainer);
+        
+        console.log('MobileEntryManager: Rotation prompt displayed');
     }
     
     /**
      * Shows the swipe-up prompt in landscape mode
      */
     private showSwipePrompt(): void {
-        // Clear existing content except logo
-        const logo = this.overlayElement.querySelector('h1')?.parentElement;
+        // Clear existing content
         this.overlayElement.innerHTML = '';
-        if (logo) this.overlayElement.appendChild(logo);
         
+        // Create a container for all content
+        const contentContainer = document.createElement('div');
+        contentContainer.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            gap: 20px;
+        `;
+        
+        // Re-create logo
+        const logoContainer = document.createElement('div');
+        logoContainer.innerHTML = `
+            <h1 style="
+                color: #FFD700;
+                font-size: 48px;
+                font-weight: bold;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                margin-bottom: 40px;
+                text-align: center;
+            ">OCEAN KING 3</h1>
+        `;
+        contentContainer.appendChild(logoContainer);
+        
+        // Create prompt container
         const promptContainer = document.createElement('div');
+        promptContainer.id = 'swipePrompt';
         promptContainer.style.cssText = `
             display: flex;
             flex-direction: column;
@@ -134,18 +190,24 @@ export class MobileEntryManager {
             padding-bottom: 40px;
         `;
         
+        // Add CSS animation to document head if not already present
+        if (!document.getElementById('swipe-animations')) {
+            const style = document.createElement('style');
+            style.id = 'swipe-animations';
+            style.textContent = `
+                @keyframes bounceUp {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-20px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
         // Animated up arrow
         const arrowIcon = document.createElement('div');
+        arrowIcon.className = 'arrow-icon';
         arrowIcon.innerHTML = `
-            <svg width="80" height="80" viewBox="0 0 80 80" style="
-                animation: bounceUp 1.5s ease-in-out infinite;
-            ">
-                <style>
-                    @keyframes bounceUp {
-                        0%, 100% { transform: translateY(0); }
-                        50% { transform: translateY(-20px); }
-                    }
-                </style>
+            <svg width="80" height="80" viewBox="0 0 80 80" style="animation: bounceUp 1.5s ease-in-out infinite;">
                 <path d="M 40 60 L 40 20 M 25 35 L 40 20 L 55 35" 
                       stroke="#00FF00" 
                       stroke-width="4" 
@@ -158,18 +220,21 @@ export class MobileEntryManager {
         
         // Swipe text
         const swipeText = document.createElement('p');
+        swipeText.className = 'swipe-text';
         swipeText.style.cssText = `
             color: white;
             font-size: 28px;
             text-align: center;
             font-weight: 300;
             letter-spacing: 1px;
+            margin: 0;
         `;
         swipeText.textContent = 'Swipe Up to Begin';
         promptContainer.appendChild(swipeText);
         
         // Subtle instruction text
         const instructionText = document.createElement('p');
+        instructionText.className = 'instruction-text';
         instructionText.style.cssText = `
             color: rgba(255, 255, 255, 0.6);
             font-size: 14px;
@@ -179,7 +244,13 @@ export class MobileEntryManager {
         instructionText.textContent = 'This will enter fullscreen mode';
         promptContainer.appendChild(instructionText);
         
-        this.overlayElement.appendChild(promptContainer);
+        // Add prompt container to content container
+        contentContainer.appendChild(promptContainer);
+        
+        // Add content container to overlay
+        this.overlayElement.appendChild(contentContainer);
+        
+        console.log('MobileEntryManager: Swipe prompt displayed');
         
         // Enable scroll detection
         this.enableScrollDetection();
@@ -189,16 +260,54 @@ export class MobileEntryManager {
      * Checks device orientation and shows appropriate prompt
      */
     private checkOrientation(): void {
-        const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+        const isPortrait = window.innerHeight > window.innerWidth;
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
                         (window.innerWidth <= 768);
         
-        if (!isMobile) {
-            // Desktop - skip directly to game
-            this.startGame();
+        // Check for test mode via query parameter, hash, localStorage, or window property
+        const urlParams = new URLSearchParams(window.location.search);
+        const testMobile = urlParams.get('testMobile') === 'true' || 
+                          window.location.hash.includes('testMobile') ||
+                          window.localStorage.getItem('testMobile') === 'true' ||
+                          (window as any).testMobile === true;
+        
+        // Allow setting test mode via console for easier testing
+        (window as any).setTestMobile = (value: boolean) => {
+            window.localStorage.setItem('testMobile', value ? 'true' : 'false');
+            window.location.reload();
+        };
+        
+        console.log('MobileEntryManager: URL params', {
+            href: window.location.href,
+            search: window.location.search,
+            hash: window.location.hash,
+            testMobileParam: urlParams.get('testMobile'),
+            localStorageTestMobile: window.localStorage.getItem('testMobile'),
+            testMobile
+        });
+        
+        console.log('MobileEntryManager: checkOrientation', {
+            isPortrait,
+            isMobile,
+            testMobile,
+            innerWidth: window.innerWidth,
+            innerHeight: window.innerHeight
+        });
+        
+        if (!isMobile && !testMobile) {
+            // Desktop - skip directly to game after a brief delay
+            // This ensures the DOM is ready
+            console.log('MobileEntryManager: Desktop mode, auto-starting game');
+            setTimeout(() => {
+                this.startGame();
+            }, 100);
         } else if (isPortrait) {
+            // Mobile in portrait - show rotation prompt
+            console.log('MobileEntryManager: Portrait mode, showing rotation prompt');
             this.showRotationPrompt();
         } else {
+            // Mobile in landscape or test mode - show swipe prompt
+            console.log('MobileEntryManager: Mobile/Test mode, showing swipe prompt');
             this.showSwipePrompt();
         }
     }

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mobile Mode</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #001f3f;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            background: #00aa00;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #00dd00;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ocean King 3 - Mobile Test Mode</h1>
+    <div class="status">
+        <p>Current testMobile status: <span id="status"></span></p>
+    </div>
+    <button onclick="setTestMode(true)">Enable Mobile Test Mode</button>
+    <button onclick="setTestMode(false)">Disable Mobile Test Mode</button>
+    <button onclick="goToGame()">Go to Game</button>
+    
+    <script>
+        function updateStatus() {
+            const status = localStorage.getItem('testMobile') === 'true';
+            document.getElementById('status').textContent = status ? 'ENABLED' : 'DISABLED';
+            document.getElementById('status').style.color = status ? '#00ff00' : '#ff0000';
+        }
+        
+        function setTestMode(value) {
+            localStorage.setItem('testMobile', value ? 'true' : 'false');
+            updateStatus();
+            alert(`Mobile test mode ${value ? 'enabled' : 'disabled'}!`);
+        }
+        
+        function goToGame() {
+            window.location.href = '/';
+        }
+        
+        // Initial status update
+        updateStatus();
+    </script>
+</body>
+</html>

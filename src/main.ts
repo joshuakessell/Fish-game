@@ -29,6 +29,11 @@ const config: Phaser.Types.Core.GameConfig = {
 // Initialize the mobile entry manager
 const gameContainer = document.getElementById('game-container');
 if (gameContainer) {
+  // For testing: Enable test mode if URL contains testMobile in hash
+  if (window.location.hash.includes('testMobile')) {
+    (window as any).testMobile = true;
+  }
+  
   const mobileEntryManager = new MobileEntryManager(gameContainer);
   
   // Start Phaser game when entry flow is complete
