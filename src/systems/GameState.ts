@@ -136,14 +136,33 @@ export class GameState {
     }
 
     try {
+      // Connect directly to backend on port 8080 to bypass Vite proxy
+      // The Vite proxy kills the WebSocket when StateDeltas are sent
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl("/gamehub", {
+        .withUrl("http://localhost:8080/gamehub", {
           accessTokenFactory: () => this.playerAuth!.token,
+          skipNegotiation: true,
+          transport: signalR.HttpTransportType.WebSockets,
         })
         .withHubProtocol(new MessagePackHubProtocol())
         .withAutomaticReconnect()
         .configureLogging(signalR.LogLevel.Information)
         .build();
+
+      // Add connection lifecycle event handlers
+      this.connection.onclose((error) => {
+        console.error("❌ SignalR connection closed:", error || "No error provided");
+        this.isConnected = false;
+      });
+
+      this.connection.onreconnecting((error) => {
+        console.warn("🔄 SignalR attempting to reconnect:", error || "No error provided");
+      });
+
+      this.connection.onreconnected((connectionId) => {
+        console.log("✅ SignalR reconnected with connectionId:", connectionId);
+        this.isConnected = true;
+      });
 
       this.setupSignalRHandlers();
 
@@ -173,23 +192,19 @@ export class GameState {
     }
 
     try {
-      await this.connection.invoke("JoinRoom", roomId, seat);
+      const result = await this.connection.invoke("JoinRoom", roomId, seat) as any;
+      
+      if (!result || !result.success) {
+        console.error("JoinRoom failed:", result?.message || "Unknown error");
+        return false;
+      }
+      
       this.currentRoomId = roomId;
       this.myPlayerSlot = seat;
-      console.log(`Joined room ${roomId} at seat ${seat}`);
+      console.log(`✅ Joined room ${roomId} at seat ${seat} - waiting for first StateDelta before initializing gameplay`);
       
-      // Fire room joined callback
-      if (this.onRoomJoined) {
-        console.log("GameState: Triggering onRoomJoined callback");
-        this.onRoomJoined();
-      }
-      
-      // Resolve waiting promise
-      if (this.roomJoinResolve) {
-        this.roomJoinResolve();
-        this.roomJoinResolve = null;
-        this.roomJoinPromise = null;
-      }
+      // DO NOT call onRoomJoined here - wait for first StateDelta to arrive
+      // This ensures the SignalR connection is stable and receiving server updates
       
       return true;
     } catch (error) {
@@ -253,6 +268,21 @@ export class GameState {
             this.onTickSnapped();
           }
           debugLog('stateDelta', `✅ FIRST SYNC: Tick snapped to server tick ${this.currentTick}, accumulator will be reset`);
+          
+          // Trigger room joined callback on first StateDelta (connection is stable)
+          if (this.myPlayerSlot !== null) {
+            if (this.onRoomJoined) {
+              console.log("🎮 GameState: First StateDelta received - triggering onRoomJoined callback");
+              this.onRoomJoined();
+            }
+            
+            // Resolve waiting promise for join completion
+            if (this.roomJoinResolve) {
+              this.roomJoinResolve();
+              this.roomJoinResolve = null;
+              this.roomJoinPromise = null;
+            }
+          }
         } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
           this.currentTick = tick;
           this.tickDrift = 0;
