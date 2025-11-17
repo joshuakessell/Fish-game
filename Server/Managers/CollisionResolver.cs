@@ -82,7 +82,8 @@ public class CollisionResolver
                                 _bossShotTracker.ResetBoss(f.TypeId);
                                 
                                 killSequenceHandler.StartBossKillSequence(
-                                    f.TypeId, 
+                                    f.TypeId,
+                                    f.FishIdHash,
                                     projectile.OwnerPlayerId, 
                                     basePayout,
                                     currentTick);

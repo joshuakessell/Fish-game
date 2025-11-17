@@ -6,6 +6,7 @@ public class BossKillSequence
 {
     public string SequenceId { get; set; } = Guid.NewGuid().ToString();
     public int BossTypeId { get; set; }
+    public int BossFishHash { get; set; } // Numeric ID of the boss fish for PayoutEvent fallback
     public string KillerPlayerId { get; set; } = string.Empty;
     public decimal BasePayout { get; set; }
     public BossDeathEffect EffectType { get; set; }
@@ -22,6 +23,8 @@ public class BossKillResult
     public string KillerPlayerId { get; set; } = string.Empty;
     public decimal TotalPayout { get; set; }
     public List<string> DestroyedFishIds { get; set; } = new();
+    public List<int> DestroyedFishHashes { get; set; } = new(); // Numeric IDs for client PayoutEvents
+    public int BossFishHash { get; set; } // Fallback hash when no destroyed fish in final step
     public BossDeathEffect EffectType { get; set; }
     public int EffectStep { get; set; }
 }
@@ -36,7 +39,7 @@ public class KillSequenceHandler
         _fishManager = fishManager;
     }
 
-    public void StartBossKillSequence(int bossTypeId, string killerPlayerId, decimal basePayout, long currentTick)
+    public void StartBossKillSequence(int bossTypeId, int bossFishHash, string killerPlayerId, decimal basePayout, long currentTick)
     {
         var bossDef = BossCatalog.GetBoss(bossTypeId);
         if (bossDef == null) return;
@@ -44,6 +47,7 @@ public class KillSequenceHandler
         var sequence = new BossKillSequence
         {
             BossTypeId = bossTypeId,
+            BossFishHash = bossFishHash,
             KillerPlayerId = killerPlayerId,
             BasePayout = basePayout,
             EffectType = bossDef.DeathEffect,
@@ -125,6 +129,7 @@ public class KillSequenceHandler
         var result = new BossKillResult
         {
             KillerPlayerId = sequence.KillerPlayerId,
+            BossFishHash = sequence.BossFishHash,
             EffectType = sequence.EffectType,
             EffectStep = stepNumber
         };
@@ -170,17 +175,21 @@ public class KillSequenceHandler
         foreach (var fish in destroyedFish)
         {
             result.DestroyedFishIds.Add(fish.FishId);
+            result.DestroyedFishHashes.Add(fish.FishIdHash); // Capture numeric ID before removal
             sequence.AffectedFishIds.Add(fish.FishId);
             _fishManager.RemoveFish(fish.FishId);
         }
 
-        if (stepNumber == GetMaxStepsForEffect(sequence.EffectType))
+        bool isFinalStep = stepNumber == GetMaxStepsForEffect(sequence.EffectType);
+        
+        if (isFinalStep)
         {
             var totalFishValue = destroyedFish.Sum(f => f.BaseValue);
             result.TotalPayout = (sequence.BasePayout + totalFishValue) * sequence.PerformanceModifier;
         }
 
-        return result.DestroyedFishIds.Count > 0 || result.TotalPayout > 0 ? result : null;
+        // Always return result on final step (for payout), or if fish were destroyed
+        return isFinalStep || result.DestroyedFishIds.Count > 0 ? result : null;
     }
 
     private List<Fish> ExecuteScreenWipe(List<Fish> activeFish, int step)

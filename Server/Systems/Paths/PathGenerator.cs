@@ -68,9 +68,9 @@ public class PathGenerator
                 sharedParams = new SharedGroupParameters
                 {
                     PathType = groupRng.NextFloat() > 0.4f ? PathType.Sine : PathType.Linear,
-                    Amplitude = groupRng.NextFloat(15f, 80f),
+                    Amplitude = groupRng.NextFloat(5f, 25f),
                     Frequency = groupRng.NextFloat(1.5f, 7f),
-                    BonusAmplitude = groupRng.NextFloat(30f, 120f),
+                    BonusAmplitude = groupRng.NextFloat(10f, 40f),
                     BonusFrequency = groupRng.NextFloat(2f, 8f),
                     BezierP1OffsetX = groupRng.NextFloat(-400f, 400f),
                     BezierP1OffsetY = groupRng.NextFloat(-300f, 300f),
@@ -384,11 +384,11 @@ public class PathGenerator
         float perpY = dirX;
         
         // Calculate formation offsets in LOCAL movement space
-        // Spacing based on largest formation fish hitbox (Clownfish: 18f radius)
-        // Minimum safe spacing = 2 * 18f + buffer = 50f
-        float offsetMultiplier = 50f; // Spacing between fish in formation (lateral)
-        float lateralOffset = groupIndex * offsetMultiplier;  // Perpendicular to movement
-        float longitudinalOffset = groupIndex * 20f;  // Along movement direction (positive=forward, negative=trailing)
+        // LINE-FOLLOWING BEHAVIOR: Fish follow behind each other in a line
+        // Small lateral variation for natural swimming, large longitudinal spacing for line formation
+        float lateralVariation = rng.NextFloat(-5f, 5f); // Small random drift for natural movement
+        float lateralOffset = lateralVariation;  // Minimal perpendicular offset
+        float longitudinalOffset = groupIndex * 50f;  // Large spacing along movement direction (line formation)
         
         // Apply offsets to start position in LOCAL space
         float[] start = new float[2];

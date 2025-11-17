@@ -37,6 +37,28 @@ public class FishManager
         {
             fish.UpdatePosition(deltaTime, currentTick);
 
+            // Remove fish that have completed their paths (non-looping)
+            if (fish.CachedPathData != null && !fish.CachedPathData.Loop)
+            {
+                float ticksSinceSpawn = currentTick - fish.SpawnTick;
+                float pathDuration = fish.CachedPathData.Duration * 30f; // Convert seconds to ticks
+                float t = pathDuration > 0 ? ticksSinceSpawn / pathDuration : 0f;
+                
+                if (t >= 1.0f)
+                {
+                    fishToRemove.Add(fish.FishId);
+                    continue; // Skip boundary check
+                }
+            }
+            
+            // Remove fish that have exceeded their despawn time (fallback for fish without CachedPathData)
+            if (fish.DespawnTick > 0 && currentTick >= fish.DespawnTick)
+            {
+                fishToRemove.Add(fish.FishId);
+                continue;
+            }
+
+            // Remove fish that go out of bounds
             if (fish.X < 0 || fish.X > ARENA_WIDTH ||
                 fish.Y < 0 || fish.Y > ARENA_HEIGHT)
             {

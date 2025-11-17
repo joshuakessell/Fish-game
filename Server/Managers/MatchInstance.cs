@@ -326,34 +326,38 @@ public class MatchInstance
 
     private void ProcessBossKillResult(BossKillResult result)
     {
+        // Only process final step with actual payout (intermediate steps have TotalPayout = 0)
+        if (result.TotalPayout == 0)
+        {
+            return;
+        }
+        
         var player = _playerManager.GetPlayer(result.KillerPlayerId);
         if (player == null) return;
 
-        if (result.TotalPayout > 0)
-        {
-            float hotSeatMultiplier = _hotSeatManager.GetMultiplier(player.PlayerSlot);
+        float hotSeatMultiplier = _hotSeatManager.GetMultiplier(player.PlayerSlot);
             var basePayout = result.TotalPayout;
             var finalPayout = basePayout * (decimal)hotSeatMultiplier;
             
             player.Credits += finalPayout;
             player.TotalEarned += finalPayout;
             
-            // Create PayoutEvents for each destroyed fish in the boss kill sequence
-            if (result.DestroyedFishIds.Count > 0)
+            // Create PayoutEvent for boss kill sequence (always create if payout > 0)
+            if (finalPayout > 0)
             {
-                // Use the first destroyed fish for the main payout animation
-                var firstFish = _fishManager.GetFish(result.DestroyedFishIds[0]);
-                if (firstFish != null)
-                {
-                    _payoutEvents.Add(new KillPayoutEvent
-                    {
-                        FishId = firstFish.FishIdHash,
-                        Payout = (int)finalPayout,
-                        PlayerSlot = player.PlayerSlot
-                    });
+                // Use destroyed fish hash if available, otherwise fallback to boss fish hash
+                var fishHash = result.DestroyedFishHashes.Count > 0 
+                    ? result.DestroyedFishHashes[0] 
+                    : result.BossFishHash;
                     
-                    Console.WriteLine($"💰 [PayoutEvent] Boss kill FishId={firstFish.FishIdHash}, Payout={finalPayout}, PlayerSlot={player.PlayerSlot}");
-                }
+                _payoutEvents.Add(new KillPayoutEvent
+                {
+                    FishId = fishHash,
+                    Payout = (int)finalPayout,
+                    PlayerSlot = player.PlayerSlot
+                });
+                
+                Console.WriteLine($"💰 [PayoutEvent] Boss kill FishId={fishHash} (from {(result.DestroyedFishHashes.Count > 0 ? "destroyed fish" : "boss fallback")}), Payout={finalPayout}, PlayerSlot={player.PlayerSlot}");
             }
             
             if (hotSeatMultiplier > 1.0f)
@@ -365,7 +369,6 @@ public class MatchInstance
             {
                 Console.WriteLine($"Boss kill sequence payout: {player.DisplayName} earned {finalPayout} credits from boss effect");
             }
-        }
     }
 
     public void HandleInteractionSubmission(string playerId, string interactionId, Dictionary<string, object> submissionData)
