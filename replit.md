@@ -33,6 +33,7 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
 - **Client-Side:**
     - **Framework:** Phaser 3 with TypeScript and Vite. Scene architecture includes Boot, Login, Lobby, Game, and UI scenes.
     - **Authentication:** Guest login via REST endpoint, JWT storage, and SignalR connection.
+    - **Login Screen:** HTML overlay text input for player name entry (2-20 characters), gold-bordered styling, Enter key submission, responsive positioning.
     - **Lobby UI:** Three-screen flow: Login → Lobby → Game, displaying room lists and solo mode options.
     - **Parametric Path System:** Fish movement computed client-side using deterministic path functions (Linear, Sine, Bezier, Circular).
     - **GameState Manager:** Singleton managing game state, SignalR connection, FishPathManager, and Phaser scene coordination.
