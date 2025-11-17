@@ -31,6 +31,9 @@ public class MatchInstance
     // Hot seat system
     private readonly HotSeatManager _hotSeatManager;
     
+    // Hot/Cold cycle system for high-volatility economics
+    private readonly HotColdCycleManager _hotColdManager;
+    
     // Random number generator for deterministic testing
     private readonly Random _random;
     
@@ -66,7 +69,8 @@ public class MatchInstance
         _fishManager = new FishManager(_random);
         _projectileManager = new ProjectileManager();
         _bossShotTracker = new BossShotTracker();
-        _collisionResolver = new CollisionResolver(_playerManager, _bossShotTracker);
+        _hotColdManager = new HotColdCycleManager(_random.Next());
+        _collisionResolver = new CollisionResolver(_playerManager, _bossShotTracker, _hotColdManager);
         
         _roundManager = new RoundManager();
         _killSequenceHandler = new KillSequenceHandler(_fishManager);
@@ -154,6 +158,10 @@ public class MatchInstance
         // Step 2: Update fish positions and remove despawned fish
         _fishManager.UpdateFish(deltaTime, _currentTick);
 
+        // Step 2.5: Snapshot active projectiles BEFORE update (to track misses later)
+        var projectilesBeforeUpdate = _projectileManager.GetActiveProjectiles()
+            .ToDictionary(p => p.ProjectileId, p => p);
+
         // Step 3: Update projectiles (pass fish list for homing calculations)
         _projectileManager.UpdateProjectiles(deltaTime, _fishManager.GetActiveFish());
 
@@ -170,6 +178,27 @@ public class MatchInstance
         foreach (var kill in kills)
         {
             ProcessKill(kill);
+        }
+
+        // Step 5.5: Track projectiles that despawned (misses) and record them
+        var projectilesAfterCollision = new HashSet<string>(
+            _projectileManager.GetActiveProjectiles().Select(p => p.ProjectileId)
+        );
+        var killedProjectileIds = new HashSet<string>(kills.Select(k => k.ProjectileId));
+        
+        foreach (var (projectileId, projectile) in projectilesBeforeUpdate)
+        {
+            // Check if projectile was removed
+            if (!projectilesAfterCollision.Contains(projectileId))
+            {
+                // If not in kills list, it despawned without hitting (miss)
+                if (!killedProjectileIds.Contains(projectileId))
+                {
+                    _hotColdManager.RecordShot(projectile.BetValue, 0);
+                    Console.WriteLine($"[MISS] Projectile despawned, bet={projectile.BetValue}, recorded as miss");
+                }
+                // If in kills list, RecordShot already called in ProcessKill
+            }
         }
 
         // Step 6: Process boss kill sequences
@@ -195,11 +224,14 @@ public class MatchInstance
         
         // Step 10: Update hot seat system
         _hotSeatManager.Update((int)_currentTick);
+        
+        // Step 11: Update hot/cold cycle system
+        _hotColdManager.Update();
 
-        // Step 11: Check for empty room timeout
+        // Step 12: Check for empty room timeout
         CheckEmptyRoomTimeout();
 
-        // Step 12: Broadcast state delta
+        // Step 13: Broadcast state delta
         BroadcastState();
     }
 
@@ -310,7 +342,9 @@ public class MatchInstance
             }
         }
 
-        var basePayout = fish.BaseValue * multiplier * projectile.BetValue;
+        // Apply hot/cold cycle payout boost
+        float hotColdBoost = _hotColdManager.GetPayoutMultiplierBoost();
+        var basePayout = fish.BaseValue * multiplier * projectile.BetValue * (decimal)hotColdBoost;
         
         float hotSeatMultiplier = _hotSeatManager.GetMultiplier(player.PlayerSlot);
         var payout = basePayout * (decimal)hotSeatMultiplier;
@@ -320,6 +354,9 @@ public class MatchInstance
         player.TotalKills++;
 
         _fishManager.RemoveFish(kill.FishId);
+        
+        // Record shot for hot/cold cycle tracking
+        _hotColdManager.RecordShot(projectile.BetValue, payout);
         
         // Add payout event for client animation (use numeric hash ID for client compatibility)
         _payoutEvents.Add(new KillPayoutEvent
@@ -331,10 +368,10 @@ public class MatchInstance
         
         Console.WriteLine($"💰 [PayoutEvent] FishId={fish.FishIdHash}, Payout={payout}, PlayerSlot={player.PlayerSlot}");
 
-        if (hotSeatMultiplier > 1.0f)
+        if (hotSeatMultiplier > 1.0f || hotColdBoost > 1.0f)
         {
-            Console.WriteLine($"🔥 [HotSeat] Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits " +
-                            $"(base: {basePayout}, hot seat: x{hotSeatMultiplier:F2}, bet: {projectile.BetValue}, multiplier: x{multiplier})");
+            Console.WriteLine($"🔥 [Boost] Player {player.DisplayName} killed fish {fish.TypeId} for {payout} credits " +
+                            $"(base: {basePayout}, hot seat: x{hotSeatMultiplier:F2}, hot/cold: x{hotColdBoost:F2}, bet: {projectile.BetValue}, multiplier: x{multiplier})");
         }
         else
         {
@@ -354,11 +391,15 @@ public class MatchInstance
         if (player == null) return;
 
         float hotSeatMultiplier = _hotSeatManager.GetMultiplier(player.PlayerSlot);
+            float hotColdBoost = _hotColdManager.GetPayoutMultiplierBoost();
             var basePayout = result.TotalPayout;
-            var finalPayout = basePayout * (decimal)hotSeatMultiplier;
+            var finalPayout = basePayout * (decimal)hotSeatMultiplier * (decimal)hotColdBoost;
             
             player.Credits += finalPayout;
             player.TotalEarned += finalPayout;
+            
+            // Record shot for hot/cold cycle tracking (use actual bet value from kill sequence)
+            _hotColdManager.RecordShot(result.BetValue, finalPayout);
             
             // Create PayoutEvent for boss kill sequence (always create if payout > 0)
             if (finalPayout > 0)

@@ -7,11 +7,13 @@ public class CollisionResolver
 {
     private readonly PlayerManager _playerManager;
     private readonly BossShotTracker _bossShotTracker;
+    private readonly HotColdCycleManager _hotColdManager;
     
-    public CollisionResolver(PlayerManager playerManager, BossShotTracker bossShotTracker)
+    public CollisionResolver(PlayerManager playerManager, BossShotTracker bossShotTracker, HotColdCycleManager hotColdManager)
     {
         _playerManager = playerManager;
         _bossShotTracker = bossShotTracker;
+        _hotColdManager = hotColdManager;
     }
     
     public List<KillEvent> ResolveCollisions(
@@ -57,13 +59,15 @@ public class CollisionResolver
                     {
                         _bossShotTracker.RecordShot(f.TypeId, projectile.BetValue);
                         
-                        float killProbability = _bossShotTracker.GetKillProbability(f.TypeId, projectile.BetValue);
+                        float baseKillProbability = _bossShotTracker.GetKillProbability(f.TypeId, projectile.BetValue);
+                        float hotColdMultiplier = _hotColdManager.GetBossOddsMultiplier();
+                        float killProbability = baseKillProbability * hotColdMultiplier;
                         float roll = Random.Shared.NextSingle();
                         
                         var record = _bossShotTracker.GetRecord(f.TypeId);
                         Console.WriteLine($"[Boss] Type {f.TypeId} hit by {player?.DisplayName ?? "unknown"} - " +
                                         $"Cumulative: {record?.TotalShots ?? 0} shots, ${record?.TotalDamage ?? 0} damage - " +
-                                        $"Kill probability: {killProbability * 100:F2}% - Roll: {roll * 100:F2}%");
+                                        $"Base probability: {baseKillProbability * 100:F2}%, Hot/Cold: x{hotColdMultiplier:F1}, Final: {killProbability * 100:F2}% - Roll: {roll * 100:F2}%");
                         
                         if (roll < killProbability)
                         {
@@ -99,6 +103,7 @@ public class CollisionResolver
                                     f.FishIdHash,
                                     projectile.OwnerPlayerId, 
                                     basePayout,
+                                    projectile.BetValue,
                                     currentTick);
 
                                 if (bossDef.RequiresInteraction)

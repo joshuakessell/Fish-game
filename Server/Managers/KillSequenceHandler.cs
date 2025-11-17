@@ -9,6 +9,7 @@ public class BossKillSequence
     public int BossFishHash { get; set; } // Numeric ID of the boss fish for PayoutEvent fallback
     public string KillerPlayerId { get; set; } = string.Empty;
     public decimal BasePayout { get; set; }
+    public decimal BetValue { get; set; } // Actual bet value for RTP tracking
     public BossDeathEffect EffectType { get; set; }
     public long StartTick { get; set; }
     public int CurrentStep { get; set; }
@@ -22,6 +23,7 @@ public class BossKillResult
 {
     public string KillerPlayerId { get; set; } = string.Empty;
     public decimal TotalPayout { get; set; }
+    public decimal BetValue { get; set; } // Actual bet value for RTP tracking
     public List<string> DestroyedFishIds { get; set; } = new();
     public List<int> DestroyedFishHashes { get; set; } = new(); // Numeric IDs for client PayoutEvents
     public int BossFishHash { get; set; } // Fallback hash when no destroyed fish in final step
@@ -39,7 +41,7 @@ public class KillSequenceHandler
         _fishManager = fishManager;
     }
 
-    public void StartBossKillSequence(int bossTypeId, int bossFishHash, string killerPlayerId, decimal basePayout, long currentTick)
+    public void StartBossKillSequence(int bossTypeId, int bossFishHash, string killerPlayerId, decimal basePayout, decimal betValue, long currentTick)
     {
         var bossDef = BossCatalog.GetBoss(bossTypeId);
         if (bossDef == null) return;
@@ -50,6 +52,7 @@ public class KillSequenceHandler
             BossFishHash = bossFishHash,
             KillerPlayerId = killerPlayerId,
             BasePayout = basePayout,
+            BetValue = betValue,
             EffectType = bossDef.DeathEffect,
             StartTick = currentTick,
             CurrentStep = 0,
@@ -59,7 +62,7 @@ public class KillSequenceHandler
 
         _activeSequences.Add(sequence);
         
-        Console.WriteLine($"Boss kill sequence started: {bossDef.Name} by {killerPlayerId}, payout: {basePayout}");
+        Console.WriteLine($"Boss kill sequence started: {bossDef.Name} by {killerPlayerId}, payout: {basePayout}, bet: {betValue}");
     }
 
     public void ApplyInteractionResult(string sequenceId, decimal performanceModifier)
@@ -130,6 +133,7 @@ public class KillSequenceHandler
         {
             KillerPlayerId = sequence.KillerPlayerId,
             BossFishHash = sequence.BossFishHash,
+            BetValue = sequence.BetValue,
             EffectType = sequence.EffectType,
             EffectStep = stepNumber
         };

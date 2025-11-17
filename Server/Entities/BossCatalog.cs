@@ -29,22 +29,22 @@ public class BossDefinition
 
 public static class BossCatalog
 {
-    // RTP set to 3.4 based on architect analysis:
-    // Fish provide ~80% RTP, need ~17pp from bosses
-    // Formula: RTP = 0.17 / q, where q≈5% boss engagement fraction
-    // DestructionOdds = RTP / (BaseValue * AVG_MULTIPLIER)
-    private const float RTP = 3.4f;
+    // BALANCED RTP: Increased RTP_FACTOR to 6.0 with REVERTED BaseValue multipliers
+    // This gives target DestructionOdds: 3-5% for mid-bosses, 0.5-1.5% for ultra-rares
+    // Formula: DestructionOdds = 6.0 / (BaseValue × 1.74)
+    // Combined with HotColdCycleManager multipliers for dynamic difficulty
+    private const float RTP_FACTOR = 6.0f;
     private const float AVG_MULTIPLIER = 1.74f;
 
     private static float CalculateDestructionOdds(decimal baseValue)
     {
-        return RTP / ((float)baseValue * AVG_MULTIPLIER);
+        return RTP_FACTOR / ((float)baseValue * AVG_MULTIPLIER);
     }
 
     public static readonly Dictionary<int, BossDefinition> AllBosses = new()
     {
         // ===== RARE MID-BOSSES (for rotation) =====
-        // These appear more frequently but are still valuable targets
+        // REVERTED to original BaseValue for balanced DestructionOdds with RTP_FACTOR=6.0
         
         [2] = new BossDefinition // Large Fish (existing)
         {
@@ -117,7 +117,7 @@ public static class BossCatalog
         },
 
         // ===== ULTRA-RARE JACKPOT BOSSES (types 9-19) =====
-        // These are the legendary bosses with massive payouts and spectacular effects
+        // REVERTED to original BaseValue for balanced DestructionOdds with RTP_FACTOR=6.0
         
         [9] = new BossDefinition // Kaiju Megalodon - INTERACTIVE
         {
