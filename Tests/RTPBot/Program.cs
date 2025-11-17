@@ -18,8 +18,7 @@ Console.WriteLine($"   Server URL:      {config.ServerUrl}");
 Console.WriteLine($"   Room ID:         {config.RoomId}");
 Console.WriteLine($"   Seat Number:     {config.SeatNumber}");
 Console.WriteLine($"   Bet Amount:      {config.BetAmount} credits");
-Console.WriteLine($"   Shots/Minute:    {config.ShotsPerMinute}");
-Console.WriteLine($"   Duration:        {config.DurationMinutes} minutes");
+Console.WriteLine($"   Total Shots:     {config.TotalShots:N0}");
 Console.WriteLine($"   Bot Name:        {config.BotName}");
 Console.WriteLine();
 
@@ -57,19 +56,10 @@ Console.WriteLine("║              Bot Session Started                  ║");
 Console.WriteLine("╚═══════════════════════════════════════════════════╝");
 Console.WriteLine();
 
-var totalShots = config.ShotsPerMinute * config.DurationMinutes;
-var delayBetweenShots = (60 * 1000) / config.ShotsPerMinute;
-var startTime = DateTime.UtcNow;
-var endTime = startTime.AddMinutes(config.DurationMinutes);
-
-Console.WriteLine($"🎯 Target: {totalShots} shots over {config.DurationMinutes} minutes");
-Console.WriteLine($"⏱️  Shot interval: {delayBetweenShots}ms ({config.ShotsPerMinute} shots/min)");
-Console.WriteLine($"🏁 End time: {endTime:HH:mm:ss} UTC");
+var totalShots = config.TotalShots;
+Console.WriteLine($"🎯 Target: {totalShots:N0} shots");
+Console.WriteLine($"📊 Displaying stats every 100 shots");
 Console.WriteLine();
-
-var statsUpdateInterval = TimeSpan.FromSeconds(5);
-var lastStatsUpdate = DateTime.UtcNow;
-var shotsFired = 0;
 
 var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (sender, e) =>
@@ -79,20 +69,26 @@ Console.CancelKeyPress += (sender, e) =>
     cts.Cancel();
 };
 
+var shotsFired = 0;
+
 try
 {
-    while (DateTime.UtcNow < endTime && !cts.Token.IsCancellationRequested)
+    for (int i = 1; i <= totalShots; i++)
     {
-        await bot.FireShotAsync();
-        shotsFired++;
-
-        if (DateTime.UtcNow - lastStatsUpdate >= statsUpdateInterval)
+        if (cts.Token.IsCancellationRequested)
         {
-            DisplayStats(bot, shotsFired, totalShots, startTime, endTime);
-            lastStatsUpdate = DateTime.UtcNow;
+            break;
         }
 
-        await Task.Delay(delayBetweenShots, cts.Token);
+        await bot.FireShotAndWaitForPayoutAsync();
+        shotsFired++;
+
+        if (shotsFired % 100 == 0)
+        {
+            var session = bot.Session;
+            var rtpPercent = session.CurrentRTP * 100;
+            Console.WriteLine($"Shot {shotsFired,6}/{totalShots:N0} | RTP: {rtpPercent,5:F1}% | Hits: {session.HitCount,5} | Credits: {session.CurrentCredits,10:N0}");
+        }
     }
 }
 catch (OperationCanceledException)
@@ -102,69 +98,36 @@ catch (OperationCanceledException)
 catch (Exception ex)
 {
     Console.WriteLine($"❌ Error during bot execution: {ex.Message}");
+    Console.WriteLine($"Stack trace: {ex.StackTrace}");
 }
 
 Console.WriteLine();
 Console.WriteLine("╔═══════════════════════════════════════════════════╗");
-Console.WriteLine("║              Bot Session Completed                ║");
+Console.WriteLine("║           RTP Validation Complete                 ║");
 Console.WriteLine("╚═══════════════════════════════════════════════════╝");
 Console.WriteLine();
 
-DisplayFinalStats(bot, shotsFired);
+var finalSession = bot.Session;
+var targetRtp = 0.97;
+var rtpDiff = Math.Abs((finalSession.CurrentRTP - targetRtp) * 100);
+var withinTarget = rtpDiff <= 0.5;
 
+Console.WriteLine($"Total Shots:        {shotsFired:N0}");
+Console.WriteLine($"Total Wagered:      {finalSession.TotalWagered:N0} credits");
+Console.WriteLine($"Total Payout:       {finalSession.TotalPaidOut:N0} credits");
+Console.WriteLine($"Final RTP:          {finalSession.CurrentRTP:P2}");
+Console.WriteLine($"Hit Rate:           {finalSession.HitRate:P2}");
+Console.WriteLine($"Target RTP:         {targetRtp:P1} {(withinTarget ? "✓" : "✗")} (within ±0.5%)");
 Console.WriteLine();
+Console.WriteLine($"Starting Credits:   {finalSession.StartingCredits:N0}");
+Console.WriteLine($"Ending Credits:     {finalSession.CurrentCredits:N0}");
+Console.WriteLine($"Net Change:         {finalSession.CurrentCredits - finalSession.StartingCredits:+#,0;-#,0;0}");
+Console.WriteLine();
+
 Console.WriteLine("💾 Saving session data...");
 await bot.SaveSessionAsync();
 
 Console.WriteLine();
 Console.WriteLine("✅ Bot execution completed successfully!");
-Console.WriteLine("Press any key to exit...");
-Console.ReadKey();
 
 return 0;
-
-void DisplayStats(RTPBotClient bot, int shotsFired, int totalShots, DateTime startTime, DateTime endTime)
-{
-    var snapshot = bot.GetSessionSnapshot();
-    var elapsed = DateTime.UtcNow - startTime;
-    var remaining = endTime - DateTime.UtcNow;
-    var progress = totalShots > 0 ? (double)shotsFired / totalShots * 100 : 0;
-
-    Console.WriteLine($"📊 [{DateTime.UtcNow:HH:mm:ss}] Progress: {shotsFired}/{totalShots} shots ({progress:F1}%) | " +
-                      $"Elapsed: {elapsed.TotalMinutes:F1}m | Remaining: {remaining.TotalMinutes:F1}m");
-    Console.WriteLine($"   💵 Credits: {snapshot.CurrentCredits} (started with {snapshot.StartingCredits}) | " +
-                      $"RTP: {snapshot.CurrentRTP:P2} | Hit Rate: {snapshot.HitRate:P1}");
-    Console.WriteLine($"   📈 Total Wagered: {snapshot.TotalWagered} | Total Won: {snapshot.TotalPaidOut} | " +
-                      $"Net: {snapshot.CurrentCredits - snapshot.StartingCredits:+#;-#;0}");
-}
-
-void DisplayFinalStats(RTPBotClient bot, int shotsFired)
-{
-    var snapshot = bot.GetSessionSnapshot();
-    
-    Console.WriteLine("📊 Final Statistics:");
-    Console.WriteLine($"   Total Shots Fired:  {shotsFired}");
-    Console.WriteLine($"   Hits:               {snapshot.HitCount} ({snapshot.HitRate:P1})");
-    Console.WriteLine($"   Misses:             {shotsFired - snapshot.HitCount}");
-    Console.WriteLine();
-    Console.WriteLine($"   Starting Credits:   {snapshot.StartingCredits}");
-    Console.WriteLine($"   Ending Credits:     {snapshot.CurrentCredits}");
-    Console.WriteLine($"   Net Change:         {snapshot.CurrentCredits - snapshot.StartingCredits:+#;-#;0}");
-    Console.WriteLine();
-    Console.WriteLine($"   Total Wagered:      {snapshot.TotalWagered}");
-    Console.WriteLine($"   Total Paid Out:     {snapshot.TotalPaidOut}");
-    Console.WriteLine($"   RTP (Return to Player): {snapshot.CurrentRTP:P2}");
-    Console.WriteLine();
-    
-    if (snapshot.EndTime.HasValue && snapshot.StartTime != default)
-    {
-        var duration = snapshot.EndTime.Value - snapshot.StartTime;
-        Console.WriteLine($"   Session Duration:   {duration.TotalMinutes:F2} minutes");
-        
-        if (duration.TotalMinutes > 0)
-        {
-            var shotsPerMinute = shotsFired / duration.TotalMinutes;
-            Console.WriteLine($"   Actual Fire Rate:   {shotsPerMinute:F1} shots/minute");
-        }
-    }
-}

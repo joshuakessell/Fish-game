@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using RTPBot.Models;
 using System.Text;
 using System.Text.Json;
@@ -15,10 +14,10 @@ public class RTPBotClient : IAsyncDisposable
     private string? _jwtToken;
     private int _playerSlot;
     private readonly Random _random = new();
-    private readonly object _telemetryLock = new();
     
     private List<FishPosition> _currentFish = new();
-    private readonly object _fishLock = new();
+    private ShotRecord? _pendingShot = null;
+    private readonly SemaphoreSlim _payoutSignal = new(0, 1);
     
     private class FishPosition
     {
@@ -94,7 +93,6 @@ public class RTPBotClient : IAsyncDisposable
                 {
                     options.AccessTokenProvider = () => Task.FromResult(_jwtToken);
                 })
-                .WithAutomaticReconnect()
                 .Build();
 
             SetupSignalRHandlers();
@@ -166,54 +164,62 @@ public class RTPBotClient : IAsyncDisposable
         }
     }
 
-    public async Task FireShotAsync()
+    public async Task<ShotRecord> FireShotAndWaitForPayoutAsync()
     {
         if (_hubConnection == null || !IsConnected)
         {
-            return;
+            throw new InvalidOperationException("Not connected");
         }
 
         var (x, y, targetFishId) = SelectTarget();
         var nonce = Guid.NewGuid().ToString();
+
+        var shot = new ShotRecord
+        {
+            Timestamp = DateTime.UtcNow,
+            BetAmount = _config.BetAmount,
+            TargetX = x,
+            TargetY = y,
+            Nonce = nonce,
+            TargetFishId = targetFishId
+        };
+
+        _pendingShot = shot;
 
         try
         {
             var dirX = 0f;
             var dirY = -1f;
 
-            await _hubConnection.InvokeAsync("Fire", x, y, dirX, dirY, "", targetFishId);
+            await _hubConnection.InvokeAsync("Fire", x, y, dirX, dirY, nonce, targetFishId);
 
-            lock (_telemetryLock)
+            var payoutReceived = await _payoutSignal.WaitAsync(TimeSpan.FromSeconds(2));
+            
+            if (!payoutReceived)
             {
-                var shot = new ShotRecord
-                {
-                    Timestamp = DateTime.UtcNow,
-                    BetAmount = _config.BetAmount,
-                    TargetX = x,
-                    TargetY = y,
-                    FishTypeKilled = null,
-                    PayoutReceived = null,
-                    Nonce = nonce,
-                    TargetFishId = targetFishId
-                };
-                _session.Shots.Add(shot);
+                shot.PayoutReceived = null;
+                shot.FishTypeKilled = null;
             }
+
+            _session.Shots.Add(shot);
+            _pendingShot = null;
+            
+            return shot;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Fire error: {ex.Message}");
+            _pendingShot = null;
+            throw;
         }
     }
 
     private (float x, float y, int? fishId) SelectTarget()
     {
-        lock (_fishLock)
+        if (_currentFish.Count > 0)
         {
-            if (_currentFish.Count > 0)
-            {
-                var fish = _currentFish[_random.Next(_currentFish.Count)];
-                return (fish.X, fish.Y, fish.FishId);
-            }
+            var fish = _currentFish[_random.Next(_currentFish.Count)];
+            return (fish.X, fish.Y, fish.FishId);
         }
 
         var randomX = _random.Next(100, 1700);
@@ -257,10 +263,7 @@ public class RTPBotClient : IAsyncDisposable
                         }
                     }
 
-                    lock (_fishLock)
-                    {
-                        _currentFish = newFishList;
-                    }
+                    _currentFish = newFishList;
                 }
 
                 if (stateDelta[9] is object[] payoutEvents && payoutEvents.Length > 0)
@@ -273,9 +276,15 @@ public class RTPBotClient : IAsyncDisposable
                             var payout = Convert.ToInt32(eventData[1]);
                             var playerSlot = Convert.ToInt32(eventData[2]);
 
-                            if (playerSlot == _playerSlot)
+                            if (playerSlot == _playerSlot && _pendingShot != null)
                             {
-                                RecordPayout(fishId, payout);
+                                _pendingShot.PayoutReceived = payout;
+                                _pendingShot.FishTypeKilled = fishId;
+                                
+                                if (_payoutSignal.CurrentCount == 0)
+                                {
+                                    _payoutSignal.Release();
+                                }
                             }
                         }
                     }
@@ -292,11 +301,7 @@ public class RTPBotClient : IAsyncDisposable
                             {
                                 if (playerDict.Contains("Credits"))
                                 {
-                                    var newCredits = Convert.ToInt32(playerDict["Credits"]!);
-                                    lock (_telemetryLock)
-                                    {
-                                        _session.CurrentCredits = newCredits;
-                                    }
+                                    _session.CurrentCredits = Convert.ToInt32(playerDict["Credits"]!);
                                 }
                             }
                         }
@@ -312,169 +317,32 @@ public class RTPBotClient : IAsyncDisposable
         _hubConnection.Closed += async (error) =>
         {
             Console.WriteLine($"❌ Connection closed: {error?.Message ?? "No error"}");
-        };
-
-        _hubConnection.Reconnecting += async (error) =>
-        {
-            Console.WriteLine($"🔄 Reconnecting: {error?.Message ?? "No error"}");
-        };
-
-        _hubConnection.Reconnected += async (connectionId) =>
-        {
-            Console.WriteLine($"✅ Reconnected with connection ID: {connectionId}");
-            try
-            {
-                Console.WriteLine($"🔄 Re-joining room {_config.RoomId} at seat {_config.SeatNumber}...");
-                var result = await _hubConnection.InvokeAsync<JsonElement>(
-                    "JoinRoom",
-                    _config.RoomId,
-                    _config.SeatNumber
-                );
-
-                if (result.TryGetProperty("success", out var successProp) && successProp.GetBoolean())
-                {
-                    _playerSlot = result.GetProperty("playerSlot").GetInt32();
-                    Console.WriteLine($"✅ Re-joined room '{_config.RoomId}' at seat {_playerSlot}");
-                    
-                    await Task.Delay(500);
-                    
-                    await _hubConnection.InvokeAsync("SetBetValue", _config.BetAmount);
-                    Console.WriteLine($"💰 Re-set bet value to {_config.BetAmount}");
-                    Console.WriteLine($"✅ Reconnect workflow completed successfully");
-                }
-                else
-                {
-                    var message = result.TryGetProperty("message", out var msgProp) 
-                        ? msgProp.GetString() 
-                        : "Unknown error";
-                    Console.WriteLine($"❌ Failed to re-join room after reconnect: {message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Failed to re-join after reconnect: {ex.Message}");
-            }
+            Console.WriteLine("Bot will exit. Please restart if you want to continue.");
         };
     }
 
-    private void RecordPayout(int fishId, int payout)
-    {
-        lock (_telemetryLock)
-        {
-            var unmatchedShots = _session.Shots
-                .Where(s => !s.PayoutReceived.HasValue)
-                .OrderByDescending(s => s.Timestamp)
-                .Take(20)
-                .ToList();
-
-            ShotRecord? matchedShot = null;
-
-            matchedShot = unmatchedShots
-                .Where(s => s.TargetFishId.HasValue && s.TargetFishId.Value == fishId)
-                .OrderByDescending(s => s.Timestamp)
-                .FirstOrDefault();
-
-            if (matchedShot == null)
-            {
-                var now = DateTime.UtcNow;
-                matchedShot = unmatchedShots
-                    .Where(s => (now - s.Timestamp).TotalSeconds < 5)
-                    .OrderByDescending(s => s.Timestamp)
-                    .FirstOrDefault();
-                
-                if (matchedShot != null && unmatchedShots.Count > 1)
-                {
-                    Console.WriteLine($"⚠️ Ambiguous payout match for fishId {fishId} - using timestamp proximity");
-                }
-            }
-
-            if (matchedShot != null)
-            {
-                matchedShot.PayoutReceived = payout;
-                matchedShot.FishTypeKilled = fishId;
-                Console.WriteLine($"💰 Payout received: {payout} credits (fishId: {fishId})");
-            }
-            else
-            {
-                Console.WriteLine($"⚠️ Could not match payout {payout} for fishId {fishId} - no recent unmatched shots");
-            }
-        }
-    }
-
-    public SessionSnapshot GetSessionSnapshot()
-    {
-        lock (_telemetryLock)
-        {
-            var shotsCopy = _session.Shots.ToList();
-            var currentCredits = _session.CurrentCredits;
-            var startingCredits = _session.StartingCredits;
-            
-            var totalWagered = shotsCopy.Sum(s => s.BetAmount);
-            var totalPaidOut = shotsCopy.Sum(s => s.PayoutReceived ?? 0);
-            var totalShots = shotsCopy.Count;
-            var hitCount = shotsCopy.Count(s => s.PayoutReceived.HasValue && s.PayoutReceived > 0);
-            var currentRTP = totalWagered > 0 ? (double)totalPaidOut / totalWagered : 0;
-            var hitRate = totalShots > 0 ? (double)hitCount / totalShots : 0;
-
-            return new SessionSnapshot
-            {
-                CurrentCredits = currentCredits,
-                StartingCredits = startingCredits,
-                TotalWagered = totalWagered,
-                TotalPaidOut = totalPaidOut,
-                TotalShots = totalShots,
-                HitCount = hitCount,
-                CurrentRTP = currentRTP,
-                HitRate = hitRate,
-                StartTime = _session.StartTime,
-                EndTime = _session.EndTime
-            };
-        }
-    }
-
-    public async Task DisconnectAsync()
-    {
-        if (_hubConnection != null)
-        {
-            await _hubConnection.StopAsync();
-            await _hubConnection.DisposeAsync();
-            _hubConnection = null;
-            Console.WriteLine("🔌 Disconnected from SignalR");
-        }
-    }
-
-    public async Task SaveSessionAsync(string? filePath = null)
+    public async Task SaveSessionAsync()
     {
         _session.EndTime = DateTime.UtcNow;
         
-        filePath ??= $"session-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json";
-        
-        var json = JsonSerializer.Serialize(_session, new JsonSerializerOptions
-        {
-            WriteIndented = true
+        var fileName = $"session-{_session.StartTime:yyyyMMdd-HHmmss}.json";
+        var json = JsonSerializer.Serialize(_session, new JsonSerializerOptions 
+        { 
+            WriteIndented = true 
         });
-
-        await File.WriteAllTextAsync(filePath, json);
-        Console.WriteLine($"💾 Session saved to: {filePath}");
+        
+        await File.WriteAllTextAsync(fileName, json);
+        Console.WriteLine($"✅ Session saved to: {fileName}");
     }
 
     public async ValueTask DisposeAsync()
     {
-        await DisconnectAsync();
+        if (_hubConnection != null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+        
         _httpClient.Dispose();
+        _payoutSignal.Dispose();
     }
-}
-
-public class SessionSnapshot
-{
-    public int CurrentCredits { get; set; }
-    public int StartingCredits { get; set; }
-    public int TotalWagered { get; set; }
-    public int TotalPaidOut { get; set; }
-    public int TotalShots { get; set; }
-    public int HitCount { get; set; }
-    public double CurrentRTP { get; set; }
-    public double HitRate { get; set; }
-    public DateTime StartTime { get; set; }
-    public DateTime? EndTime { get; set; }
 }
