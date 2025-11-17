@@ -58,9 +58,10 @@ public class FishManager
                 continue;
             }
 
-            // Remove fish that go out of bounds
-            if (fish.X < 0 || fish.X > ARENA_WIDTH ||
-                fish.Y < 0 || fish.Y > ARENA_HEIGHT)
+            // Remove fish that go WAY out of bounds (give margin for off-screen spawning)
+            const float BOUNDARY_MARGIN = 100f; // Allow fish to be slightly off-screen
+            if (fish.X < -BOUNDARY_MARGIN || fish.X > ARENA_WIDTH + BOUNDARY_MARGIN ||
+                fish.Y < -BOUNDARY_MARGIN || fish.Y > ARENA_HEIGHT + BOUNDARY_MARGIN)
             {
                 fishToRemove.Add(fish.FishId);
             }
