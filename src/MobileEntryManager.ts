@@ -19,7 +19,22 @@ export class MobileEntryManager {
         document.body.appendChild(this.overlayElement);
         
         this.initializeEventListeners();
+        
+        // Check orientation immediately
         this.checkOrientation();
+        
+        // Also check after a small delay to catch hash timing issues
+        // This handles cases where the hash might not be immediately available
+        setTimeout(() => {
+            // Only recheck if we haven't started the game yet
+            if (this.overlayElement && this.overlayElement.parentNode) {
+                const hashValue = window.location.hash;
+                if (hashValue && hashValue.includes('testMobile')) {
+                    console.log('MobileEntryManager: Late hash detection - testMobile found, switching to swipe prompt');
+                    this.showSwipePrompt();
+                }
+            }
+        }, 100);
     }
     
     /**
@@ -266,8 +281,14 @@ export class MobileEntryManager {
         
         // Check for test mode via query parameter, hash, localStorage, or window property
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // Parse hash properly - window.location.hash includes the # symbol
+        const hashValue = window.location.hash;
+        const hashContainsTestMobile = hashValue === '#testMobile' || 
+                                      hashValue.includes('testMobile');
+        
         const testMobile = urlParams.get('testMobile') === 'true' || 
-                          window.location.hash.includes('testMobile') ||
+                          hashContainsTestMobile ||
                           window.localStorage.getItem('testMobile') === 'true' ||
                           (window as any).testMobile === true;
         
@@ -281,6 +302,8 @@ export class MobileEntryManager {
             href: window.location.href,
             search: window.location.search,
             hash: window.location.hash,
+            hashValue: hashValue,
+            hashContainsTestMobile: hashContainsTestMobile,
             testMobileParam: urlParams.get('testMobile'),
             localStorageTestMobile: window.localStorage.getItem('testMobile'),
             testMobile
@@ -301,13 +324,17 @@ export class MobileEntryManager {
             setTimeout(() => {
                 this.startGame();
             }, 100);
+        } else if (testMobile) {
+            // Test mode - always show swipe prompt regardless of orientation
+            console.log('MobileEntryManager: Test mode enabled, showing swipe prompt');
+            this.showSwipePrompt();
         } else if (isPortrait) {
-            // Mobile in portrait - show rotation prompt
+            // Mobile in portrait (not test mode) - show rotation prompt
             console.log('MobileEntryManager: Portrait mode, showing rotation prompt');
             this.showRotationPrompt();
         } else {
-            // Mobile in landscape or test mode - show swipe prompt
-            console.log('MobileEntryManager: Mobile/Test mode, showing swipe prompt');
+            // Mobile in landscape - show swipe prompt
+            console.log('MobileEntryManager: Mobile landscape mode, showing swipe prompt');
             this.showSwipePrompt();
         }
     }
