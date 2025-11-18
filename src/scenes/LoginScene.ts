@@ -12,42 +12,42 @@ export default class LoginScene extends Phaser.Scene {
   create() {
     console.log('LoginScene: Creating login UI');
 
-    // Modern deep ocean gradient background
+    // Background matching logo image - solid dark navy blue
     const graphics = this.add.graphics();
-    graphics.fillGradientStyle(0x0a1929, 0x0a1929, 0x1e3a5f, 0x1e3a5f, 1);
+    graphics.fillStyle(0x0d1b2a, 1);
     graphics.fillRect(0, 0, 1800, 900);
 
     // Add subtle animated bubbles effect
     this.createBubbleParticles();
 
     // Ocean Attack Logo - centered and prominent
-    const logo = this.add.image(900, 280, 'ocean-attack-logo');
-    logo.setScale(0.6);
+    const logo = this.add.image(900, 260, 'ocean-attack-logo');
+    logo.setScale(0.55);
     logo.setOrigin(0.5);
 
     // Add subtle glow effect to logo
     this.tweens.add({
       targets: logo,
-      alpha: 0.9,
+      alpha: 0.95,
       yoyo: true,
       duration: 2000,
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
 
-    // Subtitle with modern styling
-    const subtitle = this.add.text(900, 500, 'Multiplayer Fishing Arena', {
-      fontSize: '28px',
+    // Subtitle with modern styling - positioned below logo
+    const subtitle = this.add.text(900, 530, 'Multiplayer Fishing Arena', {
+      fontSize: '26px',
       color: '#87CEEB',
       fontStyle: 'bold',
-      stroke: '#0a1929',
-      strokeThickness: 4,
+      stroke: '#0d1b2a',
+      strokeThickness: 3,
     });
     subtitle.setOrigin(0.5);
 
-    // Name input label with glow
-    const nameLabel = this.add.text(900, 570, 'Enter Your Name:', {
-      fontSize: '24px',
+    // Name input label - positioned below subtitle
+    const nameLabel = this.add.text(900, 600, 'Enter Your Name', {
+      fontSize: '22px',
       color: '#FFD700',
       fontStyle: 'bold',
     });
@@ -57,8 +57,8 @@ export default class LoginScene extends Phaser.Scene {
     this.createNameInput();
 
     // Error message text (hidden initially)
-    this.errorText = this.add.text(900, 720, '', {
-      fontSize: '20px',
+    this.errorText = this.add.text(900, 700, '', {
+      fontSize: '18px',
       color: '#FF6B6B',
       fontStyle: 'bold',
       stroke: '#000',
@@ -66,18 +66,18 @@ export default class LoginScene extends Phaser.Scene {
     });
     this.errorText.setOrigin(0.5);
 
-    // Modern gradient button with glow
+    // Modern gradient button with glow - positioned below text input
     const buttonBg = this.add.graphics();
     buttonBg.fillGradientStyle(0xff6b35, 0xff6b35, 0xff8e53, 0xff8e53, 1);
-    buttonBg.fillRoundedRect(750, 760, 300, 70, 35);
+    buttonBg.fillRoundedRect(750, 730, 300, 70, 35);
     buttonBg.lineStyle(3, 0xffd700, 1);
-    buttonBg.strokeRoundedRect(750, 760, 300, 70, 35);
+    buttonBg.strokeRoundedRect(750, 730, 300, 70, 35);
 
-    const loginButton = this.add.zone(750, 760, 300, 70);
+    const loginButton = this.add.zone(750, 730, 300, 70);
     loginButton.setOrigin(0, 0);
     loginButton.setInteractive({ useHandCursor: true });
 
-    const loginText = this.add.text(900, 795, 'DIVE IN', {
+    const loginText = this.add.text(900, 765, 'DIVE IN', {
       fontSize: '32px',
       color: '#FFF',
       fontStyle: 'bold',
@@ -90,9 +90,9 @@ export default class LoginScene extends Phaser.Scene {
     loginButton.on('pointerover', () => {
       buttonBg.clear();
       buttonBg.fillGradientStyle(0xff8e53, 0xff8e53, 0xffb380, 0xffb380, 1);
-      buttonBg.fillRoundedRect(750, 760, 300, 70, 35);
+      buttonBg.fillRoundedRect(750, 730, 300, 70, 35);
       buttonBg.lineStyle(4, 0xffd700, 1);
-      buttonBg.strokeRoundedRect(750, 760, 300, 70, 35);
+      buttonBg.strokeRoundedRect(750, 730, 300, 70, 35);
       
       this.tweens.add({
         targets: loginText,
@@ -105,9 +105,9 @@ export default class LoginScene extends Phaser.Scene {
     loginButton.on('pointerout', () => {
       buttonBg.clear();
       buttonBg.fillGradientStyle(0xff6b35, 0xff6b35, 0xff8e53, 0xff8e53, 1);
-      buttonBg.fillRoundedRect(750, 760, 300, 70, 35);
+      buttonBg.fillRoundedRect(750, 730, 300, 70, 35);
       buttonBg.lineStyle(3, 0xffd700, 1);
-      buttonBg.strokeRoundedRect(750, 760, 300, 70, 35);
+      buttonBg.strokeRoundedRect(750, 730, 300, 70, 35);
       
       this.tweens.add({
         targets: loginText,
