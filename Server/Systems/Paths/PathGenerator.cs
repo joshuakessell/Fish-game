@@ -118,6 +118,9 @@ public class PathGenerator
     /// </summary>
     private static (float[] baseStart, float[] baseEnd, int startEdge, int endEdge) ComputeBaseAnchorPoints(SeededRandom groupRng, int spawnEdge)
     {
+        // Spawn slightly outside boundaries to prevent fish from getting stuck at edges
+        const float SPAWN_OFFSET = -10f;
+        
         // If no spawn edge specified, use random edge
         if (spawnEdge < 0 || spawnEdge > 7)
         {
@@ -136,67 +139,67 @@ public class PathGenerator
         {
             case 0: // From left edge
                 computedStartEdge = 0;
-                baseStart = new[] { 0f, groupRng.NextFloat(200f, CANVAS_HEIGHT - 200f) };
+                baseStart = new[] { SPAWN_OFFSET, groupRng.NextFloat(200f, CANVAS_HEIGHT - 200f) };
                 break;
             case 1: // From right edge
                 computedStartEdge = 1;
-                baseStart = new[] { CANVAS_WIDTH, groupRng.NextFloat(200f, CANVAS_HEIGHT - 200f) };
+                baseStart = new[] { CANVAS_WIDTH - SPAWN_OFFSET, groupRng.NextFloat(200f, CANVAS_HEIGHT - 200f) };
                 break;
             case 2: // From top edge
                 computedStartEdge = 2;
-                baseStart = new[] { groupRng.NextFloat(200f, CANVAS_WIDTH - 200f), 0f };
+                baseStart = new[] { groupRng.NextFloat(200f, CANVAS_WIDTH - 200f), SPAWN_OFFSET };
                 break;
             case 3: // From bottom edge
                 computedStartEdge = 3;
-                baseStart = new[] { groupRng.NextFloat(200f, CANVAS_WIDTH - 200f), CANVAS_HEIGHT };
+                baseStart = new[] { groupRng.NextFloat(200f, CANVAS_WIDTH - 200f), CANVAS_HEIGHT - SPAWN_OFFSET };
                 break;
             case 4: // From left-top corner
                 computedStartEdge = groupRng.NextFloat() > 0.5f ? 0 : 2;
                 if (computedStartEdge == 0)
                 {
-                    baseStart = new[] { 0f, groupRng.NextFloat(50f, 200f) };
+                    baseStart = new[] { SPAWN_OFFSET, groupRng.NextFloat(50f, 200f) };
                 }
                 else
                 {
-                    baseStart = new[] { groupRng.NextFloat(50f, 200f), 0f };
+                    baseStart = new[] { groupRng.NextFloat(50f, 200f), SPAWN_OFFSET };
                 }
                 break;
             case 5: // From right-top corner
                 computedStartEdge = groupRng.NextFloat() > 0.5f ? 1 : 2;
                 if (computedStartEdge == 1)
                 {
-                    baseStart = new[] { CANVAS_WIDTH, groupRng.NextFloat(50f, 200f) };
+                    baseStart = new[] { CANVAS_WIDTH - SPAWN_OFFSET, groupRng.NextFloat(50f, 200f) };
                 }
                 else
                 {
-                    baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH - 50f), 0f };
+                    baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH - 50f), SPAWN_OFFSET };
                 }
                 break;
             case 6: // From left-bottom corner
                 computedStartEdge = groupRng.NextFloat() > 0.5f ? 0 : 3;
                 if (computedStartEdge == 0)
                 {
-                    baseStart = new[] { 0f, groupRng.NextFloat(CANVAS_HEIGHT - 200f, CANVAS_HEIGHT - 50f) };
+                    baseStart = new[] { SPAWN_OFFSET, groupRng.NextFloat(CANVAS_HEIGHT - 200f, CANVAS_HEIGHT - 50f) };
                 }
                 else
                 {
-                    baseStart = new[] { groupRng.NextFloat(50f, 200f), CANVAS_HEIGHT };
+                    baseStart = new[] { groupRng.NextFloat(50f, 200f), CANVAS_HEIGHT - SPAWN_OFFSET };
                 }
                 break;
             case 7: // From right-bottom corner
                 computedStartEdge = groupRng.NextFloat() > 0.5f ? 1 : 3;
                 if (computedStartEdge == 1)
                 {
-                    baseStart = new[] { CANVAS_WIDTH, groupRng.NextFloat(CANVAS_HEIGHT - 200f, CANVAS_HEIGHT - 50f) };
+                    baseStart = new[] { CANVAS_WIDTH - SPAWN_OFFSET, groupRng.NextFloat(CANVAS_HEIGHT - 200f, CANVAS_HEIGHT - 50f) };
                 }
                 else
                 {
-                    baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH - 50f), CANVAS_HEIGHT };
+                    baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH - 50f), CANVAS_HEIGHT - SPAWN_OFFSET };
                 }
                 break;
             default:
                 computedStartEdge = 0;
-                baseStart = new[] { 0f, CANVAS_HEIGHT / 2f };
+                baseStart = new[] { SPAWN_OFFSET, CANVAS_HEIGHT / 2f };
                 break;
         }
         
