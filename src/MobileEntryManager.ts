@@ -286,7 +286,20 @@ export class MobileEntryManager {
      * Checks device orientation and shows appropriate prompt
      */
     private checkOrientation(): void {
-        const isPortrait = window.innerHeight > window.innerWidth;
+        // Use Screen Orientation API (most reliable) with fallbacks for iPad compatibility
+        let isPortrait: boolean;
+        
+        if (window.screen?.orientation?.type) {
+            // Modern browsers: Use Screen Orientation API
+            isPortrait = window.screen.orientation.type.includes('portrait');
+        } else if (window.matchMedia) {
+            // Fallback 1: Use matchMedia (works better in iframes)
+            isPortrait = window.matchMedia('(orientation: portrait)').matches;
+        } else {
+            // Fallback 2: Use window dimensions (least reliable in iframes)
+            isPortrait = window.innerHeight > window.innerWidth;
+        }
+        
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
                         (window.innerWidth <= 768);
         
@@ -325,7 +338,9 @@ export class MobileEntryManager {
             isMobile,
             testMobile,
             innerWidth: window.innerWidth,
-            innerHeight: window.innerHeight
+            innerHeight: window.innerHeight,
+            screenOrientationType: window.screen?.orientation?.type,
+            matchMediaOrientation: window.matchMedia ? window.matchMedia('(orientation: landscape)').matches : 'N/A'
         });
         
         if (!isMobile && !testMobile) {
