@@ -22,6 +22,7 @@ export class TransactionLedger {
   private transactions: Transaction[] = [];
   private transactionId: number = 0;
   private gameState: GameState;
+  private initialBalance: number = 0;
 
   private constructor() {
     this.gameState = GameState.getInstance();
@@ -35,8 +36,9 @@ export class TransactionLedger {
   }
 
   public recordShot(cost: number): void {
-    const currentBalance = this.getCurrentBalance();
-    const newBalance = currentBalance - cost;
+    // Get previous balance from last transaction, or use initial balance
+    const previousBalance = this.getPreviousBalance();
+    const newBalance = previousBalance - cost;
 
     this.transactions.push({
       id: this.transactionId++,
@@ -51,8 +53,9 @@ export class TransactionLedger {
   }
 
   public recordKill(fishId: number, fishType: number, payout: number, bonus: number = 1.0): void {
-    const currentBalance = this.getCurrentBalance();
-    const newBalance = currentBalance + payout;
+    // Get previous balance from last transaction, or use initial balance
+    const previousBalance = this.getPreviousBalance();
+    const newBalance = previousBalance + payout;
 
     this.transactions.push({
       id: this.transactionId++,
@@ -99,21 +102,27 @@ export class TransactionLedger {
       .reduce((sum, t) => sum + t.amount, 0);
   }
 
-  public getCurrentBalance(): number {
-    // Get current balance from GameState's player data
-    const mySlot = this.gameState.myPlayerSlot;
-    if (mySlot !== null) {
-      const playerData = this.gameState.players.get(mySlot);
-      if (playerData) {
-        return playerData.credits;
-      }
+  private getPreviousBalance(): number {
+    // If we have transactions, use the balance from the last one
+    if (this.transactions.length > 0) {
+      return this.transactions[this.transactions.length - 1].balance;
     }
+    
+    // Otherwise, use the initial balance (set when player joins game)
+    return this.initialBalance;
+  }
 
-    // Fallback: calculate from transactions if player data not available
-    if (this.transactions.length === 0) {
-      return this.gameState.playerAuth?.credits || 0;
+  public setInitialBalance(balance: number): void {
+    this.initialBalance = balance;
+    console.log(`📝 Ledger: Initial balance set to $${balance}`);
+  }
+
+  public getCurrentBalance(): number {
+    // Return the balance from the last transaction, or initial balance
+    if (this.transactions.length > 0) {
+      return this.transactions[this.transactions.length - 1].balance;
     }
-    return this.transactions[this.transactions.length - 1].balance;
+    return this.initialBalance;
   }
 
   public getNetProfit(): number {
@@ -129,6 +138,7 @@ export class TransactionLedger {
   public clear(): void {
     this.transactions = [];
     this.transactionId = 0;
-    console.log('📝 Ledger: Cleared all transactions');
+    this.initialBalance = 0;
+    console.log('📝 Ledger: Cleared all transactions and reset initial balance');
   }
 }

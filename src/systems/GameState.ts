@@ -214,6 +214,13 @@ export class GameState {
         `✅ Joined room ${roomId} at seat ${seat} - waiting for first StateDelta before initializing gameplay`,
       );
 
+      // Initialize transaction ledger with starting balance
+      if (this.playerAuth) {
+        const ledger = TransactionLedger.getInstance();
+        ledger.clear(); // Clear any previous session data
+        ledger.setInitialBalance(this.playerAuth.credits);
+      }
+
       // DO NOT call onRoomJoined here - wait for first StateDelta to arrive
       // This ensures the SignalR connection is stable and receiving server updates
 

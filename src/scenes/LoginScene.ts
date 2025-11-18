@@ -101,7 +101,7 @@ export default class LoginScene extends Phaser.Scene {
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      padding-top: 50%;
+      padding-top: 48%;
       z-index: 1000;
       pointer-events: none;
     `;
