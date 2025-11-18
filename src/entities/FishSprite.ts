@@ -106,11 +106,26 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
       const tiltAngle = Math.atan2(velocity.y, Math.abs(velocity.x));
       const clampedTilt = Phaser.Math.Clamp(tiltAngle, -Math.PI / 4, Math.PI / 4);
 
-      this.rotation = Phaser.Math.Linear(this.rotation || 0, clampedTilt, 0.15);
+      this.rotation = this.lerpAngle(this.rotation || 0, clampedTilt, 0.15);
     } else {
-      // Normal rotation for other fish
-      this.rotation = Phaser.Math.Linear(this.rotation || 0, targetAngle, 0.15);
+      // Normal rotation for other fish - always take shortest angular path
+      this.rotation = this.lerpAngle(this.rotation || 0, targetAngle, 0.15);
     }
+  }
+
+  /**
+   * Interpolate between two angles, always taking the shortest path around the circle
+   */
+  private lerpAngle(currentAngle: number, targetAngle: number, t: number): number {
+    // Calculate the difference between angles
+    let diff = targetAngle - currentAngle;
+
+    // Normalize to [-π, π] range to find shortest rotation
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+
+    // Apply interpolation to the normalized difference
+    return currentAngle + diff * t;
   }
 
   private static getTextureForType(typeId: number, scene: Phaser.Scene): string {
