@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 
 export default class LoginScene extends Phaser.Scene {
   private nameInput!: HTMLInputElement;
+  private loginOverlay!: HTMLDivElement;
   private errorText?: Phaser.GameObjects.Text;
 
   constructor() {
@@ -87,17 +88,33 @@ export default class LoginScene extends Phaser.Scene {
   }
 
   private createNameInput() {
-    console.log('LoginScene: Creating HTML input element');
+    console.log('LoginScene: Creating HTML input element with fixed overlay');
+    
+    // Create a fixed overlay container (independent from canvas positioning)
+    this.loginOverlay = document.createElement('div');
+    this.loginOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      pointer-events: none;
+    `;
+
     // Create HTML input element
     this.nameInput = document.createElement('input');
     this.nameInput.type = 'text';
     this.nameInput.placeholder = 'Your Name';
     this.nameInput.maxLength = 20;
     this.nameInput.style.cssText = `
-      position: absolute;
       font-size: 28px;
       padding: 12px 20px;
       width: 400px;
+      max-width: 90vw;
       text-align: center;
       border: 3px solid #FFD700;
       border-radius: 8px;
@@ -105,43 +122,43 @@ export default class LoginScene extends Phaser.Scene {
       color: #FFF;
       outline: none;
       font-family: Arial, sans-serif;
-      z-index: 1000;
+      pointer-events: auto;
     `;
 
-    // Position the input field
-    this.positionNameInput();
+    // Add input to overlay
+    this.loginOverlay.appendChild(this.nameInput);
 
-    // Add to DOM
-    document.body.appendChild(this.nameInput);
-    console.log('LoginScene: HTML input appended to DOM', {
-      inputExists: !!this.nameInput,
-      parentNode: this.nameInput.parentNode?.nodeName,
-      position: {
-        left: this.nameInput.style.left,
-        top: this.nameInput.style.top,
-        transform: this.nameInput.style.transform,
-      },
-    });
+    // Add overlay to DOM
+    document.body.appendChild(this.loginOverlay);
+    console.log('LoginScene: Login overlay created with centered flexbox layout');
 
-    // Reposition on window resize
-    this.scale.on('resize', this.positionNameInput, this);
+    // Handle mobile keyboard with visualViewport API
+    if (window.visualViewport) {
+      const handleViewportChange = () => {
+        if (document.activeElement === this.nameInput && window.visualViewport) {
+          // When keyboard is open, offset the overlay to keep input visible
+          const offsetTop = window.visualViewport.offsetTop;
+          this.loginOverlay.style.top = `${offsetTop}px`;
+          this.loginOverlay.style.height = `${window.visualViewport.height}px`;
+        }
+      };
+
+      const handleBlur = () => {
+        // Restore default positioning when keyboard closes
+        this.loginOverlay.style.top = '0';
+        this.loginOverlay.style.height = '100%';
+      };
+
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      window.visualViewport.addEventListener('scroll', handleViewportChange);
+      this.nameInput.addEventListener('blur', handleBlur);
+      
+      // Store for cleanup
+      (this.nameInput as any)._viewportHandler = handleViewportChange;
+      (this.nameInput as any)._blurHandler = handleBlur;
+    }
   }
 
-  private positionNameInput() {
-    const canvas = this.game.canvas;
-    const canvasRect = canvas.getBoundingClientRect();
-
-    // Calculate position relative to canvas (centered at y=450 in game coords)
-    const scaleX = canvasRect.width / 1800;
-    const scaleY = canvasRect.height / 900;
-
-    const centerX = canvasRect.left + (900 * scaleX);
-    const centerY = canvasRect.top + (450 * scaleY);
-
-    this.nameInput.style.left = `${centerX}px`;
-    this.nameInput.style.top = `${centerY}px`;
-    this.nameInput.style.transform = `translate(-50%, -50%) scale(${Math.min(scaleX, scaleY)})`;
-  }
 
   private async handleLogin() {
     try {
@@ -211,13 +228,27 @@ export default class LoginScene extends Phaser.Scene {
   }
 
   private cleanupInput() {
-    if (this.nameInput && this.nameInput.parentNode) {
-      this.nameInput.parentNode.removeChild(this.nameInput);
+    // Remove visualViewport listeners
+    if (window.visualViewport && this.nameInput) {
+      const viewportHandler = (this.nameInput as any)._viewportHandler;
+      const blurHandler = (this.nameInput as any)._blurHandler;
+      
+      if (viewportHandler) {
+        window.visualViewport.removeEventListener('resize', viewportHandler);
+        window.visualViewport.removeEventListener('scroll', viewportHandler);
+      }
+      if (blurHandler) {
+        this.nameInput.removeEventListener('blur', blurHandler);
+      }
+    }
+
+    // Remove overlay from DOM
+    if (this.loginOverlay && this.loginOverlay.parentNode) {
+      this.loginOverlay.parentNode.removeChild(this.loginOverlay);
     }
   }
 
   shutdown() {
     this.cleanupInput();
-    this.scale.off('resize', this.positionNameInput, this);
   }
 }
