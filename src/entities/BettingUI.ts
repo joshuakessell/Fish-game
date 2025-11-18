@@ -52,8 +52,12 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
     this.minusHitArea = this.scene.add.zone(-70, 0, 50, 50);
     this.minusHitArea.setInteractive({ useHandCursor: true });
+    this.minusHitArea.setData('isUI', true); // Mark as UI element to prevent firing
 
-    this.minusHitArea.on('pointerdown', () => {
+    this.minusHitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // Stop propagation to prevent firing bullets
+      pointer.event.stopPropagation();
+      
       if (this.gameState.decreaseBet()) {
         this.updateBetDisplay();
         this.playButtonFeedback(this.minusButton, -100, 0);
@@ -122,8 +126,12 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
     this.plusHitArea = this.scene.add.zone(70, 0, 50, 50);
     this.plusHitArea.setInteractive({ useHandCursor: true });
+    this.plusHitArea.setData('isUI', true); // Mark as UI element to prevent firing
 
-    this.plusHitArea.on('pointerdown', () => {
+    this.plusHitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // Stop propagation to prevent firing bullets
+      pointer.event.stopPropagation();
+      
       if (this.gameState.increaseBet()) {
         this.updateBetDisplay();
         this.playButtonFeedback(this.plusButton, 100, 0);
@@ -172,8 +180,12 @@ export class BettingUI extends Phaser.GameObjects.Container {
     // Make bank display clickable to open ledger
     const bankHitArea = this.scene.add.zone(-185, 0, 150, 40);
     bankHitArea.setInteractive({ useHandCursor: true });
+    bankHitArea.setData('isUI', true); // Mark as UI element to prevent firing
 
-    bankHitArea.on('pointerdown', () => {
+    bankHitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // Stop propagation to prevent firing bullets
+      pointer.event.stopPropagation();
+      
       console.log('📊 Bank display clicked - opening ledger');
       const ledger = LedgerUI.getInstance();
       ledger.toggle();

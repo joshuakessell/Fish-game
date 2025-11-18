@@ -135,6 +135,33 @@ export default class GameScene extends Phaser.Scene {
     this.createAutoTargetIndicator();
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // Don't fire if clicking on UI elements (bet buttons, bank display, etc.)
+      const hitObjects = this.input.hitTestPointer(pointer);
+      for (const obj of hitObjects) {
+        if (obj.getData('isUI')) {
+          console.log('Clicked on UI element, not firing');
+          return; // Don't fire bullets when clicking UI
+        }
+      }
+      
+      // Check if pointer hit a fish
+      const hitFish = this.fishSpriteManager.getFishSprites().values();
+      let clickedOnFish = false;
+      
+      for (const fishSprite of hitFish) {
+        if (fishSprite.getBounds().contains(pointer.x, pointer.y)) {
+          clickedOnFish = true;
+          break;
+        }
+      }
+      
+      // If not clicking on a fish and auto-target is active, cancel it
+      if (!clickedOnFish && this.autoTargetMode) {
+        console.log('Tap on empty space - canceling auto-target');
+        this.stopAutoTargeting();
+        return; // Don't fire a bullet
+      }
+      
       this.startHoldFire(pointer.x, pointer.y);
     });
 

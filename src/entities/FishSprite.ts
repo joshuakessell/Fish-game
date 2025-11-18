@@ -95,22 +95,20 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
       return;
     }
 
-    const targetAngle = Math.atan2(velocity.y, velocity.x);
-
-    // Special handling for Type 14 (manta ray)
+    // Use horizontal mirroring for all fish instead of upside-down rotation
+    // Most fish sprites naturally face right, so flip when moving left
+    // Exception: Type 14 (Manta Ray) sprite naturally faces left, so flip when moving right
     if (this.typeId === 14) {
-      // Use flipX for left vs right
-      this.setFlipX(velocity.x < 0);
-
-      // Apply small tilt based on vertical movement only
-      const tiltAngle = Math.atan2(velocity.y, Math.abs(velocity.x));
-      const clampedTilt = Phaser.Math.Clamp(tiltAngle, -Math.PI / 4, Math.PI / 4);
-
-      this.rotation = this.lerpAngle(this.rotation || 0, clampedTilt, 0.15);
+      this.setFlipX(velocity.x > 0); // Manta ray: flip when moving RIGHT
     } else {
-      // Normal rotation for other fish - always take shortest angular path
-      this.rotation = this.lerpAngle(this.rotation || 0, targetAngle, 0.15);
+      this.setFlipX(velocity.x < 0); // Other fish: flip when moving LEFT
     }
+
+    // Apply vertical tilt based on vertical movement (clamped to prevent extreme angles)
+    const tiltAngle = Math.atan2(velocity.y, Math.abs(velocity.x));
+    const clampedTilt = Phaser.Math.Clamp(tiltAngle, -Math.PI / 6, Math.PI / 6); // Max 30° tilt
+
+    this.rotation = this.lerpAngle(this.rotation || 0, clampedTilt, 0.15);
   }
 
   /**
