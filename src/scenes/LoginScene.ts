@@ -164,30 +164,30 @@ export default class LoginScene extends Phaser.Scene {
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      padding-top: 68%;
+      padding-top: 72%;
       z-index: 1000;
       pointer-events: none;
     `;
 
-    // Create HTML input element with modern styling
+    // Create HTML input element with modern styling - smaller text box
     this.nameInput = document.createElement('input');
     this.nameInput.type = 'text';
-    this.nameInput.placeholder = 'Enter your name...';
+    this.nameInput.placeholder = 'Your name';
     this.nameInput.maxLength = 20;
     this.nameInput.style.cssText = `
-      font-size: 26px;
-      padding: 14px 24px;
-      width: 420px;
-      max-width: 90vw;
+      font-size: 22px;
+      padding: 10px 20px;
+      width: 320px;
+      max-width: 85vw;
       text-align: center;
       border: 3px solid #FFD700;
-      border-radius: 12px;
-      background: rgba(10, 25, 41, 0.85);
+      border-radius: 10px;
+      background: rgba(13, 27, 42, 0.9);
       color: #FFF;
       outline: none;
       font-family: Arial, sans-serif;
       pointer-events: auto;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.25);
       transition: all 0.3s ease;
     `;
 
