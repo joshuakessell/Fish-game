@@ -47,11 +47,15 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
     - **Fish Schooling System:** Cohesive group formations with type-specific behaviors (rows, diamonds) using a unique groupId system and local movement space for offsets.
     - 6 Turret System with specific positioning.
     - Advanced Shooting with targeting, auto-fire, and server-side homing bullets.
+    - **Double-Tap Lock-On:** Double-tap any fish to activate auto-fire targeting; tap anywhere else to cancel.
     - **Auto-Targeting:** Type-specific auto-targeting with visual crosshair indicator, intelligent retargeting, and exclusive mode behavior.
-    - **Enhanced Fish Visuals:** Larger sprite sizes for better visibility.
+    - **Enhanced Fish Visuals:** Larger sprite sizes for better visibility, horizontal mirroring for natural orientation (no upside-down fish).
+    - **Fish Orientation:** All fish use horizontal mirroring (flipX) with ±30° vertical tilt instead of full rotation, preventing upside-down appearance. Manta Ray (Type 14) uses inverted flipX logic due to sprite facing left.
     - **Reward Animations:** Comprehensive visual feedback for fish kills including death animations, floating payout text, and arcing spinning coin animations orchestrated via a RewardAnimationManager.
-    - Bet Value System replacing weapon selection, allowing bet adjustment per shot.
+    - **Transaction Ledger:** Clickable bank display opens scrollable ledger with grouped shot entries (e.g., "3 shots fired -$30" between kills).
+    - Bet Value System replacing weapon selection, allowing bet adjustment per shot via Plus/Minus buttons (protected from firing bullets).
     - Direct Coordinate System (0-1800 × 0-900) for consistent interaction.
+    - **UI Interaction Protection:** All interactive UI elements (bet buttons, bank display) marked with isUI data flag and gated by hitTestPointer to prevent accidental bullet firing.
 
 **System Design Choices:**
 - Single-threaded game loop per match.
