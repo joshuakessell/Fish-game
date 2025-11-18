@@ -122,7 +122,7 @@ public class FishManager
         
         // Create Wave Rider fish using the standard CreateFish method
         // Wave Rider (typeId=21) is a bonus fish, so PathGenerator will handle it specially
-        var fish = Fish.CreateFish(21, currentTick, spawnEdge, 0, groupId);
+        var fish = Fish.CreateFish(21, currentTick, spawnEdge, 0, 0, groupId);
         
         _activeFish[fish.FishId] = fish;
         
@@ -136,14 +136,14 @@ public class FishManager
         var fishDef = Entities.FishCatalog.GetFish(typeId);
         if (fishDef == null) return;
 
-        // Select random spawn edge/direction (0-7)
-        int spawnEdge = _random.Next(8);
+        // Select random spawn edge/direction (0-11: edges, corners, and center regions)
+        int spawnEdge = _random.Next(12);
         
         // Single fish gets its own unique group ID (no formation)
         long groupId = Interlocked.Increment(ref _groupIdCounter);
         
         // Create fish with spawn edge information for path generation
-        var fish = Fish.CreateFish(typeId, currentTick, spawnEdge, 0, groupId);
+        var fish = Fish.CreateFish(typeId, currentTick, spawnEdge, 0, 0, groupId);
         _activeFish[fish.FishId] = fish;
     }
 
@@ -220,22 +220,29 @@ public class FishManager
         // Generate unique group ID for this formation
         long groupId = Interlocked.Increment(ref _groupIdCounter);
         
-        // Select a spawn edge for the entire group (0-7)
-        int spawnEdge = _random.Next(8);
+        // Select a spawn edge for the entire group (0-11: edges, corners, and center regions)
+        int spawnEdge = _random.Next(12);
         
-        // Spawn fish in formation
+        // Spawn fish in formation with time-based staggering for follow-the-leader effect
         for (int i = 0; i < groupSize; i++)
         {
             if (_activeFish.Count >= MAX_FISH_COUNT)
                 break;
             
-            // Calculate formation offset based on type
-            int formationIndex = formation == FormationType.Diamond 
-                ? GetDiamondFormationIndex(i, groupSize)
-                : i;  // Row formation uses sequential indices
+            // Separate lateral positioning from trailing rank for proper formations
+            // lateralIndex: Used for perpendicular spacing (diamond shape, side-to-side)
+            // trailingRank: Used for longitudinal spacing (follow-the-leader, sequential trailing)
+            int lateralIndex = formation == FormationType.Diamond 
+                ? GetDiamondFormationIndex(i, groupSize)  // Signed indices for diamond width
+                : 0;  // Row formations have no lateral offset
+            int trailingRank = i;  // Sequential rank ensures all fish trail behind leader
             
-            // Create fish with spawn edge, formation index, and group ID for path generation
-            var fish = Fish.CreateFish(typeId, currentTick, spawnEdge, formationIndex, groupId);
+            // Stagger spawn times: each fish spawns 15 ticks (~0.5 seconds) after the previous one
+            // This creates true follow-the-leader movement where fish appear one after another
+            long spawnTick = currentTick + (i * 15);
+            
+            // Create fish with future spawn tick, lateral index, and trailing rank
+            var fish = Fish.CreateFish(typeId, spawnTick, spawnEdge, lateralIndex, trailingRank, groupId);
             
             _activeFish[fish.FishId] = fish;
         }

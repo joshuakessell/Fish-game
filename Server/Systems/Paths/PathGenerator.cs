@@ -42,10 +42,10 @@ public class PathGenerator
     /// <summary>
     /// Generate a path for a fish based on its type
     /// </summary>
-    public static IPath GeneratePathForFish(int fishId, FishDefinition fishType, int currentTick, int spawnEdge = -1, int groupIndex = 0, long groupId = 0)
+    public static IPath GeneratePathForFish(int fishId, FishDefinition fishType, int currentTick, int spawnEdge = -1, int lateralIndex = 0, int trailingRank = 0, long groupId = 0)
     {
-        // Generate unique seed for this fish, incorporating spawn edge and group index for variation
-        int seed = GenerateSeed(fishId, currentTick, spawnEdge, groupIndex);
+        // Generate unique seed for this fish, incorporating spawn edge and trailing rank for variation
+        int seed = GenerateSeed(fishId, currentTick, spawnEdge, trailingRank);
         var rng = new SeededRandom(seed);
         
         // Generate group-level anchor seed using ONLY shared components (tick + edge)
@@ -91,11 +91,11 @@ public class PathGenerator
         // Determine path type based on fish category
         return fishType.Category switch
         {
-            FishCategory.SmallFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex, groupAnchorSeed, sharedParams),
-            FishCategory.MediumFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex, groupAnchorSeed, sharedParams),
-            FishCategory.LargeFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex, groupAnchorSeed, sharedParams),
-            FishCategory.BonusFish => GenerateSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex, groupAnchorSeed, sharedParams),
-            _ => GenerateLinearPath(fishId, seed, currentTick, fishType, rng, spawnEdge, groupIndex, groupAnchorSeed, sharedParams)
+            FishCategory.SmallFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams),
+            FishCategory.MediumFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams),
+            FishCategory.LargeFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams),
+            FishCategory.BonusFish => GenerateSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams),
+            _ => GenerateLinearPath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams)
         };
     }
     
@@ -122,7 +122,7 @@ public class PathGenerator
         const float SPAWN_OFFSET = -10f;
         
         // If no spawn edge specified, use random edge
-        if (spawnEdge < 0 || spawnEdge > 7)
+        if (spawnEdge < 0 || spawnEdge > 11)
         {
             int startEdge = groupRng.NextInt(0, 4);
             int endEdge = (startEdge + 2) % 4;
@@ -197,6 +197,22 @@ public class PathGenerator
                     baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH - 50f), CANVAS_HEIGHT - SPAWN_OFFSET };
                 }
                 break;
+            case 8: // From top-center (middle 40% of top edge)
+                computedStartEdge = 2;
+                baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH * 0.3f, CANVAS_WIDTH * 0.7f), SPAWN_OFFSET };
+                break;
+            case 9: // From bottom-center (middle 40% of bottom edge)
+                computedStartEdge = 3;
+                baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH * 0.3f, CANVAS_WIDTH * 0.7f), CANVAS_HEIGHT - SPAWN_OFFSET };
+                break;
+            case 10: // From left-center (middle 40% of left edge)
+                computedStartEdge = 0;
+                baseStart = new[] { SPAWN_OFFSET, groupRng.NextFloat(CANVAS_HEIGHT * 0.3f, CANVAS_HEIGHT * 0.7f) };
+                break;
+            case 11: // From right-center (middle 40% of right edge)
+                computedStartEdge = 1;
+                baseStart = new[] { CANVAS_WIDTH - SPAWN_OFFSET, groupRng.NextFloat(CANVAS_HEIGHT * 0.3f, CANVAS_HEIGHT * 0.7f) };
+                break;
             default:
                 computedStartEdge = 0;
                 baseStart = new[] { SPAWN_OFFSET, CANVAS_HEIGHT / 2f };
@@ -226,10 +242,10 @@ public class PathGenerator
         return (int)(combined % int.MaxValue);
     }
     
-    private static IPath GenerateLinearOrSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex, int groupAnchorSeed, SharedGroupParameters sharedParams)
+    private static IPath GenerateLinearOrSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, int groupAnchorSeed, SharedGroupParameters sharedParams)
     {
         // Generate entry and exit points based on spawn edge using pre-computed base anchors
-        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex, sharedParams);
+        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, lateralIndex, trailingRank, sharedParams);
         
         // Use pre-computed shared parameters for the group
         if (sharedParams.PathType == PathType.Sine)
@@ -242,15 +258,15 @@ public class PathGenerator
         }
     }
     
-    private static IPath GenerateLinearPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex, int groupAnchorSeed, SharedGroupParameters sharedParams)
+    private static IPath GenerateLinearPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, int groupAnchorSeed, SharedGroupParameters sharedParams)
     {
-        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex, sharedParams);
+        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, lateralIndex, trailingRank, sharedParams);
         return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, end);
     }
     
-    private static IPath GenerateSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex, int groupAnchorSeed, SharedGroupParameters sharedParams)
+    private static IPath GenerateSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, int groupAnchorSeed, SharedGroupParameters sharedParams)
     {
-        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex, sharedParams);
+        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, lateralIndex, trailingRank, sharedParams);
         
         // Use pre-computed shared parameters for bonus fish sine waves
         return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, sharedParams.BaseAnchorStart, sharedParams.BaseAnchorEnd, sharedParams.BonusAmplitude, sharedParams.BonusFrequency);
@@ -266,10 +282,10 @@ public class PathGenerator
         return new SinePath(fishId, seed, startTick, speed, start, end, start, end, amplitude, frequency);
     }
     
-    private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int groupIndex, int groupAnchorSeed, SharedGroupParameters sharedParams)
+    private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, int groupAnchorSeed, SharedGroupParameters sharedParams)
     {
         // Generate start and end points based on spawn edge using pre-computed base anchors
-        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, groupIndex, sharedParams);
+        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, lateralIndex, trailingRank, sharedParams);
         
         // Apply pre-computed shared control point offsets to this fish's start/end points
         float[] p1 = new[]
@@ -306,10 +322,10 @@ public class PathGenerator
     /// Uses pre-computed base anchors from SharedGroupParameters and applies formation offsets
     /// in LOCAL movement space (perpendicular and parallel to direction vector)
     /// </summary>
-    private static (float[] start, float[] end) GenerateEdgeToEdgePointsFromSpawnEdge(SeededRandom rng, int spawnEdge, int groupIndex, SharedGroupParameters sharedParams)
+    private static (float[] start, float[] end) GenerateEdgeToEdgePointsFromSpawnEdge(SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, SharedGroupParameters sharedParams)
     {
         // If no spawn edge specified, use random edge
-        if (spawnEdge < 0 || spawnEdge > 7)
+        if (spawnEdge < 0 || spawnEdge > 11)
         {
             return GenerateEdgeToEdgePoints(rng);
         }
@@ -338,11 +354,11 @@ public class PathGenerator
         float perpY = dirX;
         
         // Calculate formation offsets in LOCAL movement space
-        // LINE-FOLLOWING BEHAVIOR: Fish follow behind each other in a line
-        // Small lateral variation for natural swimming, large longitudinal spacing for line formation
-        float lateralVariation = rng.NextFloat(-5f, 5f); // Small random drift for natural movement
-        float lateralOffset = lateralVariation;  // Minimal perpendicular offset
-        float longitudinalOffset = groupIndex * 50f;  // Large spacing along movement direction (line formation)
+        // FORMATION BEHAVIOR: Fish can be positioned both laterally (side-by-side) and longitudinally (trailing)
+        // lateralIndex controls perpendicular offset for row formations
+        // trailingRank controls parallel offset for line formations (all fish trail behind leader)
+        float lateralOffset = lateralIndex * 80f;  // Lateral spacing for side-by-side formations
+        float longitudinalOffset = -trailingRank * 120f;  // Trailing spacing - all fish trail behind leader
         
         // Apply offsets to start position in LOCAL space
         float[] start = new float[2];

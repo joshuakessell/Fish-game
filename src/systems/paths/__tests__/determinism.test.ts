@@ -1,22 +1,22 @@
-import { LinearPath } from '../LinearPath';
-import { SinePath } from '../SinePath';
-import { BezierPath } from '../BezierPath';
-import { CircularPath } from '../CircularPath';
 import { PathComputer } from '../PathComputer';
 import { PathData, PathType } from '../PathData';
 
 /**
  * Determinism validation test
- * Verifies that same seed produces same positions across different path types
+ * Verifies that PathComputer with Phaser.Curves produces deterministic positions
  */
 
 const EPSILON = 0.01;
 
 function assertPositionEquals(
-  actual: [number, number],
+  actual: [number, number] | null,
   expected: [number, number],
   message: string,
 ) {
+  if (!actual) {
+    throw new Error(`${message}\nActual position is null`);
+  }
+
   const dx = Math.abs(actual[0] - expected[0]);
   const dy = Math.abs(actual[1] - expected[1]);
 
@@ -28,19 +28,32 @@ function assertPositionEquals(
 }
 
 function testLinearPathDeterminism() {
-  console.log('Testing LinearPath determinism...');
+  console.log('Testing Linear path determinism with PathComputer...');
 
-  const path1 = new LinearPath(1, 12345, 0, 100, [0, 0], [1000, 500]);
-  const path2 = new LinearPath(1, 12345, 0, 100, [0, 0], [1000, 500]);
+  const pathData: PathData = {
+    fishId: 1,
+    pathType: PathType.Linear,
+    seed: 12345,
+    startTick: 0,
+    speed: 100,
+    controlPoints: [[0, 0], [1000, 500]],
+    duration: 10,
+    loop: false,
+  };
 
   const testPoints = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0];
 
+  // Test consistency - same input should produce same output
   for (const t of testPoints) {
-    const pos1 = path1.getPosition(t);
-    const pos2 = path2.getPosition(t);
-    assertPositionEquals(pos1, pos2, `LinearPath position mismatch at t=${t}`);
+    const pos1 = PathComputer.evaluatePathAtTime(pathData, t);
+    const pos2 = PathComputer.evaluatePathAtTime(pathData, t);
+    
+    if (pos1 && pos2) {
+      assertPositionEquals(pos1, pos2, `Linear path position mismatch at t=${t}`);
+    }
   }
 
+  // Test known positions
   const knownPositions = [
     [0, 0],
     [100, 50],
@@ -52,111 +65,150 @@ function testLinearPathDeterminism() {
   ];
 
   for (let i = 0; i < testPoints.length; i++) {
-    const pos = path1.getPosition(testPoints[i]);
+    const pos = PathComputer.evaluatePathAtTime(pathData, testPoints[i]);
     assertPositionEquals(
       pos,
       [knownPositions[i][0], knownPositions[i][1]],
-      `LinearPath expected position mismatch at t=${testPoints[i]}`,
+      `Linear path expected position mismatch at t=${testPoints[i]}`,
     );
   }
 
-  console.log('✓ LinearPath determinism validated');
+  console.log('✓ Linear path determinism validated');
 }
 
 function testSinePathDeterminism() {
-  console.log('Testing SinePath determinism...');
+  console.log('Testing Sine path determinism with PathComputer...');
 
-  const path1 = new SinePath(2, 54321, 0, 100, [0, 0], [1000, 0], 50, 2);
-  const path2 = new SinePath(2, 54321, 0, 100, [0, 0], [1000, 0], 50, 2);
+  const pathData: PathData = {
+    fishId: 2,
+    pathType: PathType.Sine,
+    seed: 54321,
+    startTick: 0,
+    speed: 100,
+    controlPoints: [[0, 0], [1000, 0], [50, 2]], // start, end, [amplitude, frequency]
+    duration: 10,
+    loop: false,
+  };
 
   const testPoints = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0];
 
+  // Test consistency
   for (const t of testPoints) {
-    const pos1 = path1.getPosition(t);
-    const pos2 = path2.getPosition(t);
-    assertPositionEquals(pos1, pos2, `SinePath position mismatch at t=${t}`);
+    const pos1 = PathComputer.evaluatePathAtTime(pathData, t);
+    const pos2 = PathComputer.evaluatePathAtTime(pathData, t);
+    
+    if (pos1 && pos2) {
+      assertPositionEquals(pos1, pos2, `Sine path position mismatch at t=${t}`);
+    }
   }
 
-  const pos0 = path1.getPosition(0);
-  assertPositionEquals(pos0, [0, 0], 'SinePath start position');
+  // Test start and end positions
+  const pos0 = PathComputer.evaluatePathAtTime(pathData, 0);
+  assertPositionEquals(pos0, [0, 0], 'Sine path start position');
 
-  const pos1 = path1.getPosition(1);
-  assertPositionEquals(pos1, [1000, 0], 'SinePath end position');
+  const pos1 = PathComputer.evaluatePathAtTime(pathData, 1);
+  assertPositionEquals(pos1, [1000, 0], 'Sine path end position');
 
-  const posMid = path1.getPosition(0.5);
-  if (Math.abs(posMid[0] - 500) > EPSILON) {
-    throw new Error('SinePath midpoint X should be 500');
+  const posMid = PathComputer.evaluatePathAtTime(pathData, 0.5);
+  if (posMid && Math.abs(posMid[0] - 500) > EPSILON) {
+    throw new Error('Sine path midpoint X should be 500');
   }
 
-  console.log('✓ SinePath determinism validated');
+  console.log('✓ Sine path determinism validated');
 }
 
 function testBezierPathDeterminism() {
-  console.log('Testing BezierPath determinism...');
+  console.log('Testing Bezier path determinism with PathComputer...');
 
   const p0: [number, number] = [0, 0];
   const p1: [number, number] = [250, 500];
   const p2: [number, number] = [750, 500];
   const p3: [number, number] = [1000, 0];
 
-  const path1 = new BezierPath(3, 99999, 0, 100, p0, p1, p2, p3);
-  const path2 = new BezierPath(3, 99999, 0, 100, p0, p1, p2, p3);
+  const pathData: PathData = {
+    fishId: 3,
+    pathType: PathType.Bezier,
+    seed: 99999,
+    startTick: 0,
+    speed: 100,
+    controlPoints: [p0, p1, p2, p3],
+    duration: 10,
+    loop: false,
+  };
 
   const testPoints = [0, 0.25, 0.5, 0.75, 1.0];
 
+  // Test consistency
   for (const t of testPoints) {
-    const pos1 = path1.getPosition(t);
-    const pos2 = path2.getPosition(t);
-    assertPositionEquals(pos1, pos2, `BezierPath position mismatch at t=${t}`);
+    const pos1 = PathComputer.evaluatePathAtTime(pathData, t);
+    const pos2 = PathComputer.evaluatePathAtTime(pathData, t);
+    
+    if (pos1 && pos2) {
+      assertPositionEquals(pos1, pos2, `Bezier path position mismatch at t=${t}`);
+    }
   }
 
-  const posStart = path1.getPosition(0);
-  assertPositionEquals(posStart, p0, 'BezierPath start position should match P0');
+  // Test start and end positions
+  const posStart = PathComputer.evaluatePathAtTime(pathData, 0);
+  assertPositionEquals(posStart, p0, 'Bezier path start position should match P0');
 
-  const posEnd = path1.getPosition(1);
-  assertPositionEquals(posEnd, p3, 'BezierPath end position should match P3');
+  const posEnd = PathComputer.evaluatePathAtTime(pathData, 1);
+  assertPositionEquals(posEnd, p3, 'Bezier path end position should match P3');
 
-  const posMid = path1.getPosition(0.5);
-  if (posMid[1] < 100) {
-    throw new Error('BezierPath should have significant Y displacement at midpoint');
+  const posMid = PathComputer.evaluatePathAtTime(pathData, 0.5);
+  if (posMid && posMid[1] < 100) {
+    throw new Error('Bezier path should have significant Y displacement at midpoint');
   }
 
-  console.log('✓ BezierPath determinism validated');
+  console.log('✓ Bezier path determinism validated');
 }
 
 function testCircularPathDeterminism() {
-  console.log('Testing CircularPath determinism...');
+  console.log('Testing Circular path determinism with PathComputer...');
 
   const center: [number, number] = [500, 300];
   const radiusX = 200;
   const radiusY = 150;
   const startAngle = 0;
 
-  const path1 = new CircularPath(4, 11111, 0, 100, center, radiusX, radiusY, startAngle, false);
-  const path2 = new CircularPath(4, 11111, 0, 100, center, radiusX, radiusY, startAngle, false);
+  const pathData: PathData = {
+    fishId: 4,
+    pathType: PathType.Circular,
+    seed: 11111,
+    startTick: 0,
+    speed: 100,
+    controlPoints: [center, [radiusX, radiusY], [startAngle, 0]], // clockwise=false
+    duration: 10,
+    loop: true,
+  };
 
   const testPoints = [0, 0.25, 0.5, 0.75, 1.0];
 
+  // Test consistency
   for (const t of testPoints) {
-    const pos1 = path1.getPosition(t);
-    const pos2 = path2.getPosition(t);
-    assertPositionEquals(pos1, pos2, `CircularPath position mismatch at t=${t}`);
+    const pos1 = PathComputer.evaluatePathAtTime(pathData, t);
+    const pos2 = PathComputer.evaluatePathAtTime(pathData, t);
+    
+    if (pos1 && pos2) {
+      assertPositionEquals(pos1, pos2, `Circular path position mismatch at t=${t}`);
+    }
   }
 
-  const posStart = path1.getPosition(0);
-  assertPositionEquals(posStart, [center[0] + radiusX, center[1]], 'CircularPath start position');
+  // Test known positions
+  const posStart = PathComputer.evaluatePathAtTime(pathData, 0);
+  assertPositionEquals(posStart, [center[0] + radiusX, center[1]], 'Circular path start position');
 
-  const posQuarter = path1.getPosition(0.25);
+  const posQuarter = PathComputer.evaluatePathAtTime(pathData, 0.25);
   assertPositionEquals(
     posQuarter,
     [center[0], center[1] + radiusY],
-    'CircularPath quarter position',
+    'Circular path quarter position',
   );
 
-  const posHalf = path1.getPosition(0.5);
-  assertPositionEquals(posHalf, [center[0] - radiusX, center[1]], 'CircularPath half position');
+  const posHalf = PathComputer.evaluatePathAtTime(pathData, 0.5);
+  assertPositionEquals(posHalf, [center[0] - radiusX, center[1]], 'Circular path half position');
 
-  console.log('✓ CircularPath determinism validated');
+  console.log('✓ Circular path determinism validated');
 }
 
 function testPathComputerIntegration() {

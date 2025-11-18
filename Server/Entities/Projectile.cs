@@ -16,7 +16,7 @@ public class Projectile
     public decimal BetValue { get; set; } // Shot value (10-200 credits)
     public string ClientNonce { get; set; } = string.Empty;
     
-    public int TtlTicks { get; set; } = 900; // 30 seconds at 30 TPS (bullets bounce until hitting fish)
+    public int TtlTicks { get; set; } = 180; // 6 seconds at 30 TPS (long enough for homing bullets to reach targets)
     public bool IsSpent { get; set; } = false;
     
     public int? TargetFishId { get; set; } = null;

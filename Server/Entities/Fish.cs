@@ -28,7 +28,7 @@ public class Fish
     public bool IsExplosive { get; set; }
     public bool IsChainLightningEligible { get; set; } = true;
 
-    public static Fish CreateFish(int typeId, long currentTick, int spawnEdge = -1, int groupIndex = 0, long groupId = 0)
+    public static Fish CreateFish(int typeId, long currentTick, int spawnEdge = -1, int lateralIndex = 0, int trailingRank = 0, long groupId = 0)
     {
         // Lookup fish definition from catalog
         var fishDef = FishCatalog.GetFish(typeId);
@@ -41,13 +41,14 @@ public class Fish
         var fishIdGuid = Guid.NewGuid().ToString();
         var fishIdHash = Math.Abs(fishIdGuid.GetHashCode());
         
-        // Generate parametric path for this fish with spawn edge information
+        // Generate parametric path for this fish with spawn edge, lateral, and trailing information
         var path = PathGenerator.GeneratePathForFish(
             fishIdHash,
             fishDef,
             (int)currentTick,
             spawnEdge,
-            groupIndex,
+            lateralIndex,
+            trailingRank,
             groupId
         );
         
@@ -90,6 +91,17 @@ public class Fish
         {
             // Calculate time progress along the path
             float ticksSinceSpawn = currentTick - SpawnTick;
+            
+            // Handle fish that haven't spawned yet (staggered spawning)
+            if (ticksSinceSpawn < 0)
+            {
+                // Keep fish at starting position until spawn time
+                var startPos = Path.GetPosition(0f);
+                X = startPos[0];
+                Y = startPos[1];
+                return;
+            }
+            
             float pathDuration = CachedPathData.Duration * 30f; // Convert seconds to ticks
             
             // Normalize time (0.0 to 1.0)

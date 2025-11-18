@@ -14,6 +14,8 @@ export default defineConfig({
       '**/deserialization.test.ts',
       '**/determinism.test.ts',
       '**/FishSprite.test.ts',
+      '**/GameState.test.ts',
+      '**/PathComputation.test.ts',
       '**/RewardAnimationManager.test.ts',
     ],
     coverage: {

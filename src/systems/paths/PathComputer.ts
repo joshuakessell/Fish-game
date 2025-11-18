@@ -1,13 +1,10 @@
+import Phaser from 'phaser';
 import { PathData, PathType } from './PathData';
-import { LinearPath } from './LinearPath';
-import { SinePath } from './SinePath';
-import { BezierPath } from './BezierPath';
-import { CircularPath } from './CircularPath';
 import { debugLog } from '../../config/DebugConfig';
 
 /**
- * Utility to compute fish positions from PathData
- * Hydrates the correct path class and evaluates position at any time
+ * Utility to compute fish positions from PathData using Phaser.Curves API
+ * Evaluates position at any time using deterministic curve calculations
  */
 export class PathComputer {
   /**
@@ -103,20 +100,14 @@ export class PathComputer {
       return null;
     }
 
-    // Server already sends pixel coordinates [0-1800, 0-900]
-    const start: [number, number] = [pathData.controlPoints[0][0], pathData.controlPoints[0][1]];
-    const end: [number, number] = [pathData.controlPoints[1][0], pathData.controlPoints[1][1]];
+    // Create Phaser.Curves.Line from control points
+    const start = new Phaser.Math.Vector2(pathData.controlPoints[0][0], pathData.controlPoints[0][1]);
+    const end = new Phaser.Math.Vector2(pathData.controlPoints[1][0], pathData.controlPoints[1][1]);
 
-    const path = new LinearPath(
-      pathData.fishId,
-      pathData.seed,
-      pathData.startTick,
-      pathData.speed,
-      start,
-      end,
-    );
+    const curve = new Phaser.Curves.Line(start, end);
+    const point = curve.getPoint(t);
 
-    return path.getPosition(t);
+    return [point.x, point.y];
   }
 
   private static evaluateSine(pathData: PathData, t: number): [number, number] | null {
@@ -124,24 +115,31 @@ export class PathComputer {
       return null;
     }
 
-    // Server already sends pixel coordinates [0-1800, 0-900]
-    const start: [number, number] = [pathData.controlPoints[0][0], pathData.controlPoints[0][1]];
-    const end: [number, number] = [pathData.controlPoints[1][0], pathData.controlPoints[1][1]];
+    // Extract control points
+    const start = pathData.controlPoints[0];
+    const end = pathData.controlPoints[1];
     const amplitude = pathData.controlPoints[2][0];
     const frequency = pathData.controlPoints[2][1];
 
-    const path = new SinePath(
-      pathData.fishId,
-      pathData.seed,
-      pathData.startTick,
-      pathData.speed,
-      start,
-      end,
-      amplitude,
-      frequency,
+    // Calculate base position along straight line (using Phaser.Curves.Line for consistency)
+    const baseLine = new Phaser.Curves.Line(
+      new Phaser.Math.Vector2(start[0], start[1]),
+      new Phaser.Math.Vector2(end[0], end[1])
     );
+    const basePoint = baseLine.getPoint(t);
 
-    return path.getPosition(t);
+    // Calculate perpendicular direction
+    const dx = end[0] - start[0];
+    const dy = end[1] - start[1];
+    const length = Math.sqrt(dx * dx + dy * dy);
+    
+    const perpX = -dy / length;
+    const perpY = dx / length;
+
+    // Apply sine wave offset
+    const offset = Math.sin(t * frequency * Math.PI * 2) * amplitude;
+
+    return [basePoint.x + perpX * offset, basePoint.y + perpY * offset];
   }
 
   private static evaluateBezier(pathData: PathData, t: number): [number, number] | null {
@@ -149,24 +147,16 @@ export class PathComputer {
       return null;
     }
 
-    // Server already sends pixel coordinates [0-1800, 0-900]
-    const p0: [number, number] = [pathData.controlPoints[0][0], pathData.controlPoints[0][1]];
-    const p1: [number, number] = [pathData.controlPoints[1][0], pathData.controlPoints[1][1]];
-    const p2: [number, number] = [pathData.controlPoints[2][0], pathData.controlPoints[2][1]];
-    const p3: [number, number] = [pathData.controlPoints[3][0], pathData.controlPoints[3][1]];
+    // Create Phaser.Curves.CubicBezier from control points
+    const p0 = new Phaser.Math.Vector2(pathData.controlPoints[0][0], pathData.controlPoints[0][1]);
+    const p1 = new Phaser.Math.Vector2(pathData.controlPoints[1][0], pathData.controlPoints[1][1]);
+    const p2 = new Phaser.Math.Vector2(pathData.controlPoints[2][0], pathData.controlPoints[2][1]);
+    const p3 = new Phaser.Math.Vector2(pathData.controlPoints[3][0], pathData.controlPoints[3][1]);
 
-    const path = new BezierPath(
-      pathData.fishId,
-      pathData.seed,
-      pathData.startTick,
-      pathData.speed,
-      p0,
-      p1,
-      p2,
-      p3,
-    );
+    const curve = new Phaser.Curves.CubicBezier(p0, p1, p2, p3);
+    const point = curve.getPoint(t);
 
-    return path.getPosition(t);
+    return [point.x, point.y];
   }
 
   private static evaluateCircular(pathData: PathData, t: number): [number, number] | null {
@@ -174,25 +164,26 @@ export class PathComputer {
       return null;
     }
 
-    // Server already sends pixel coordinates [0-1800, 0-900]
-    const center: [number, number] = [pathData.controlPoints[0][0], pathData.controlPoints[0][1]];
+    // Extract control points
+    const centerX = pathData.controlPoints[0][0];
+    const centerY = pathData.controlPoints[0][1];
     const radiusX = pathData.controlPoints[1][0];
     const radiusY = pathData.controlPoints[1][1];
     const startAngle = pathData.controlPoints[2][0];
     const clockwise = pathData.controlPoints[2][1] === 1;
 
-    const path = new CircularPath(
-      pathData.fishId,
-      pathData.seed,
-      pathData.startTick,
-      pathData.speed,
-      center,
-      radiusX,
-      radiusY,
-      startAngle,
-      clockwise,
-    );
+    // Calculate angle (matching server logic exactly for determinism)
+    let angle = startAngle + t * Math.PI * 2;
+    if (clockwise) {
+      angle = startAngle - t * Math.PI * 2;
+    }
 
-    return path.getPosition(t);
+    // Calculate position on ellipse at the computed angle
+    // Note: We use direct math instead of Phaser.Curves.Ellipse.getPoint() to ensure
+    // exact deterministic matching with server calculations
+    const x = centerX + Math.cos(angle) * radiusX;
+    const y = centerY + Math.sin(angle) * radiusY;
+
+    return [x, y];
   }
 }

@@ -104,9 +104,12 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
       this.setFlipX(velocity.x < 0); // Other fish: flip when moving LEFT
     }
 
-    // Apply vertical tilt based on vertical movement (clamped to prevent extreme angles)
+    // Apply vertical tilt based on vertical movement
+    // Allow larger tilts (up to ±75°) to match actual movement direction
+    // Still prevent full upside-down rotation (90° or more)
     const tiltAngle = Math.atan2(velocity.y, Math.abs(velocity.x));
-    const clampedTilt = Phaser.Math.Clamp(tiltAngle, -Math.PI / 6, Math.PI / 6); // Max 30° tilt
+    const maxTilt = (Math.PI * 75) / 180; // 75 degrees in radians
+    const clampedTilt = Phaser.Math.Clamp(tiltAngle, -maxTilt, maxTilt);
 
     this.rotation = this.lerpAngle(this.rotation || 0, clampedTilt, 0.15);
   }
@@ -145,16 +148,18 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
   }
 
   private static getScaleForType(typeId: number): number {
-    // Small fish (0, 1, 2): +20% = 1.2x scale
-    // Medium fish (6, 9): +50% = 1.5x scale
+    // Small fish (0, 1): +20% = 1.2x scale
+    // Rainbow fish (2): +80% = 1.8x scale (increased for visibility)
+    // Medium fish (9): +50% = 1.5x scale
+    // Shark (6): +120% = 2.2x scale (increased for visibility)
     // Large fish (12, 14): +150% = 2.5x scale
     // Wave Rider (21): +50% = 1.5x scale (bonus fish)
 
     const scaleMap: { [key: number]: number } = {
       0: 1.2, // Clownfish (small)
       1: 1.2, // Neon Tetra (small)
-      2: 1.2, // Butterflyfish (small)
-      6: 1.5, // Lionfish (medium)
+      2: 1.8, // Butterflyfish (rainbow fish) - increased for visibility
+      6: 2.2, // Lionfish (shark) - increased for visibility
       9: 1.5, // Triggerfish (medium)
       12: 2.5, // Hammerhead Shark (large)
       14: 2.5, // Giant Manta Ray (large)

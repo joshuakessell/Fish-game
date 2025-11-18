@@ -85,7 +85,7 @@ public static class FishCatalog
             ExpectedValue = 1.80f,  // 0.60 × 3.0 = 1.80
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 20,
-            HitboxRadius = 17f,
+            HitboxRadius = 30f,  // Increased from 17f for better visibility
             BaseSpeed = 81.25f
         },
         
@@ -104,7 +104,7 @@ public static class FishCatalog
             ExpectedValue = 1.65f,  // 0.15 × 11 = 1.65
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 10,
-            HitboxRadius = 26f,
+            HitboxRadius = 40f,  // Increased from 26f for better visibility
             BaseSpeed = 62.5f
         },
         [9] = new FishDefinition
