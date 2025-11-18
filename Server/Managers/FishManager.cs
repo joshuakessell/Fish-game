@@ -180,8 +180,8 @@ public class FishManager
         
         if (selectedTypeId == 0)
         {
-            // Clownfish: spawn in rows of 3-5
-            SpawnFishGroup(selectedTypeId, currentTick, 3, 5, FormationType.Row);
+            // Clownfish: spawn in rows of 3-6 fish
+            SpawnFishGroup(selectedTypeId, currentTick, 3, 6, FormationType.Row);
         }
         else if (selectedTypeId == 2)
         {

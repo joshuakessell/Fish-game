@@ -42,7 +42,7 @@ public static class FishCatalog
             TypeId = 0,
             FileName = "clownfish.png",
             FishName = "Clownfish",
-            Description = "Common small reef fish that move in schools. Easy to catch.",
+            Description = "Common small reef fish that move in schools of 3-6. Quick and easy to catch.",
             AppearanceFrequency = "25%",
             BaseRewardValue = 1,
             Category = FishCategory.SmallFish,
@@ -51,8 +51,8 @@ public static class FishCatalog
             ExpectedValue = 1.40f,  // 0.70 × 2.0 = 1.40
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
-            HitboxRadius = 18f,
-            BaseSpeed = 75f
+            HitboxRadius = 22f,  // Increased from 18f (1.22x larger)
+            BaseSpeed = 98f      // Increased from 75f (30% speed boost)
         },
         [1] = new FishDefinition
         {

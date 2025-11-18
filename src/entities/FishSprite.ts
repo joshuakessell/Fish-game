@@ -148,7 +148,8 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
   }
 
   private static getScaleForType(typeId: number): number {
-    // Small fish (0, 1): +20% = 1.2x scale
+    // Clownfish (0): +50% = 1.5x scale (increased for better visibility in lines)
+    // Neon Tetra (1): +20% = 1.2x scale
     // Rainbow fish (2): +80% = 1.8x scale (increased for visibility)
     // Medium fish (9): +50% = 1.5x scale
     // Shark (6): +120% = 2.2x scale (increased for visibility)
@@ -156,7 +157,7 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
     // Wave Rider (21): +50% = 1.5x scale (bonus fish)
 
     const scaleMap: { [key: number]: number } = {
-      0: 1.2, // Clownfish (small)
+      0: 1.5, // Clownfish (small) - increased from 1.2 for better visibility
       1: 1.2, // Neon Tetra (small)
       2: 1.8, // Butterflyfish (rainbow fish) - increased for visibility
       6: 2.2, // Lionfish (shark) - increased for visibility
