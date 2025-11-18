@@ -439,9 +439,8 @@ export class MobileEntryManager {
      * Locks scrolling to prevent browser gestures during gameplay
      */
     private lockScrolling(): void {
-        // CSS approach
+        // CSS approach - don't use position:fixed as it breaks HTML input positioning
         document.body.style.cssText += `
-            position: fixed;
             width: 100vw;
             height: 100vh;
             overflow: hidden;

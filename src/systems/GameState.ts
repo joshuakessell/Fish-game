@@ -132,24 +132,25 @@ export class GameState {
 
   public async connectToSignalR(): Promise<boolean> {
     if (this.isConnected || !this.playerAuth) {
+      console.log(`SignalR: Already connected or no auth. isConnected=${this.isConnected}, hasAuth=${!!this.playerAuth}`);
       return this.isConnected;
     }
 
     try {
-      // Determine backend URL from environment or infer from window location
-      const backendUrl =
-        import.meta.env.VITE_BACKEND_URL ||
-        (typeof window !== 'undefined'
-          ? window.location.origin.replace(':5000', ':8080')
-          : 'http://localhost:8080');
+      // Use the /api/gamehub endpoint which goes through Vite proxy
+      // Vite will proxy WebSocket connections to port 8080
+      const hubUrl = `/api/gamehub`;
+      
+      console.log(`SignalR: Connecting to ${hubUrl}...`);
+      console.log(`SignalR: Using token: ${this.playerAuth!.token.substring(0, 50)}...`);
 
-      // Connect directly to backend on port 8080 to bypass Vite proxy
-      // The Vite proxy kills the WebSocket when StateDeltas are sent
+      // Connect through Vite proxy
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl(`${backendUrl}/gamehub`, {
-          accessTokenFactory: () => this.playerAuth!.token,
-          skipNegotiation: true,
-          transport: signalR.HttpTransportType.WebSockets,
+        .withUrl(hubUrl, {
+          accessTokenFactory: () => {
+            console.log('SignalR: Token factory called');
+            return this.playerAuth!.token;
+          },
         })
         .withHubProtocol(new MessagePackHubProtocol())
         .withAutomaticReconnect()

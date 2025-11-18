@@ -87,6 +87,7 @@ export default class LoginScene extends Phaser.Scene {
   }
 
   private createNameInput() {
+    console.log('LoginScene: Creating HTML input element');
     // Create HTML input element
     this.nameInput = document.createElement('input');
     this.nameInput.type = 'text';
@@ -112,6 +113,15 @@ export default class LoginScene extends Phaser.Scene {
 
     // Add to DOM
     document.body.appendChild(this.nameInput);
+    console.log('LoginScene: HTML input appended to DOM', {
+      inputExists: !!this.nameInput,
+      parentNode: this.nameInput.parentNode?.nodeName,
+      position: {
+        left: this.nameInput.style.left,
+        top: this.nameInput.style.top,
+        transform: this.nameInput.style.transform,
+      },
+    });
 
     // Reposition on window resize
     this.scale.on('resize', this.positionNameInput, this);
@@ -134,48 +144,61 @@ export default class LoginScene extends Phaser.Scene {
   }
 
   private async handleLogin() {
-    const playerName = this.nameInput.value.trim();
+    try {
+      console.log('LoginScene: handleLogin called');
+      const playerName = this.nameInput.value.trim();
+      console.log(`LoginScene: Name entered: "${playerName}"`);
 
-    // Validate name
-    if (playerName.length < 2) {
-      this.showError('Name must be at least 2 characters');
-      return;
+      // Validate name
+      if (playerName.length < 2) {
+        this.showError('Name must be at least 2 characters');
+        return;
+      }
+
+      if (playerName.length > 20) {
+        this.showError('Name must be 20 characters or less');
+        return;
+      }
+
+      console.log(`LoginScene: Logging in as ${playerName}`);
+
+      // Import GameState
+      const { GameState } = await import('../systems/GameState');
+      const gameState = GameState.getInstance();
+      console.log('LoginScene: GameState instance obtained');
+
+      // Perform guest login via backend API
+      console.log('LoginScene: Calling guestLogin...');
+      const loginSuccess = await gameState.guestLogin(playerName);
+      console.log(`LoginScene: guestLogin result: ${loginSuccess}`);
+
+      if (!loginSuccess) {
+        this.showError('Login failed. Please try again.');
+        return;
+      }
+
+      // Connect to SignalR
+      console.log('LoginScene: Calling connectToSignalR...');
+      const connected = await gameState.connectToSignalR();
+      console.log(`LoginScene: connectToSignalR result: ${connected}`);
+
+      if (!connected) {
+        this.showError('Connection failed. Please try again.');
+        return;
+      }
+
+      console.log('LoginScene: Login and SignalR connection successful');
+
+      // Clean up input
+      this.cleanupInput();
+
+      console.log('LoginScene: Transitioning to LobbyScene');
+      // Transition to lobby
+      this.scene.start('LobbyScene');
+    } catch (error) {
+      console.error('LoginScene: Error during login:', error);
+      this.showError('An error occurred. Please try again.');
     }
-
-    if (playerName.length > 20) {
-      this.showError('Name must be 20 characters or less');
-      return;
-    }
-
-    console.log(`LoginScene: Logging in as ${playerName}`);
-
-    // Import GameState
-    const { GameState } = await import('../systems/GameState');
-    const gameState = GameState.getInstance();
-
-    // Perform guest login via backend API
-    const loginSuccess = await gameState.guestLogin(playerName);
-
-    if (!loginSuccess) {
-      this.showError('Login failed. Please try again.');
-      return;
-    }
-
-    // Connect to SignalR
-    const connected = await gameState.connectToSignalR();
-
-    if (!connected) {
-      this.showError('Connection failed. Please try again.');
-      return;
-    }
-
-    console.log('LoginScene: Login and SignalR connection successful');
-
-    // Clean up input
-    this.cleanupInput();
-
-    // Transition to lobby
-    this.scene.start('LobbyScene');
   }
 
   private showError(message: string) {
