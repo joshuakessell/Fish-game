@@ -33,7 +33,7 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
 - **Client-Side:**
     - **Framework:** Phaser 3 with TypeScript and Vite. Scene architecture includes Boot, Login, Lobby, Game, and UI scenes.
     - **Authentication:** Guest login via REST endpoint, JWT storage, and SignalR connection.
-    - **Login Screen:** HTML overlay text input for player name entry (2-20 characters), gold-bordered styling, Enter key submission, responsive positioning.
+    - **Login Screen:** Fixed overlay HTML text input for player name entry (2-20 characters), gold-bordered styling, Enter key submission, flexbox-centered positioning that adapts to mobile keyboard using visualViewport API.
     - **Lobby UI:** Three-screen flow: Login → Lobby → Game, displaying room lists and solo mode options.
     - **Parametric Path System:** Fish movement computed client-side using deterministic path functions (Linear, Sine, Bezier, Circular).
     - **GameState Manager:** Singleton managing game state, SignalR connection, FishPathManager, and Phaser scene coordination.
@@ -105,10 +105,12 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
 ## External Dependencies
 **Backend:**
 - **ASP.NET Core 8:** Server-side framework.
-- **SignalR:** Real-time communication library.
+- **SignalR:** Real-time communication library mapped to `/gamehub` endpoint.
 
 **Frontend:**
 - **Phaser 3:** HTML5 game framework.
 - **TypeScript:** Type-safe language.
-- **Vite:** Fast development server and build tool.
-- **@microsoft/signalr:** SignalR client library.
+- **Vite:** Fast development server and build tool with dual proxy configuration:
+  - `/api/gamehub` → proxies to `/gamehub` (SignalR WebSocket with path rewrite)
+  - `/api/*` → proxies to `/api/*` (REST API endpoints)
+- **@microsoft/signalr:** SignalR client library connecting via `/api/gamehub` proxy path.
