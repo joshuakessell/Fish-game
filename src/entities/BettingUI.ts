@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GameState } from '../systems/GameState';
+import { LedgerUI } from '../systems/LedgerUI';
 
 export class BettingUI extends Phaser.GameObjects.Container {
   private gameState: GameState;
@@ -168,7 +169,33 @@ export class BettingUI extends Phaser.GameObjects.Container {
     });
     this.bankText.setOrigin(0.5, 0.5);
 
-    this.add([bankBg, this.bankText]);
+    // Make bank display clickable to open ledger
+    const bankHitArea = this.scene.add.zone(-185, 0, 150, 40);
+    bankHitArea.setInteractive({ useHandCursor: true });
+
+    bankHitArea.on('pointerdown', () => {
+      console.log('📊 Bank display clicked - opening ledger');
+      const ledger = LedgerUI.getInstance();
+      ledger.toggle();
+    });
+
+    bankHitArea.on('pointerover', () => {
+      bankBg.clear();
+      bankBg.fillStyle(0xa0522d, 0.9);
+      bankBg.fillRoundedRect(-260, -20, 150, 40, 5);
+      bankBg.lineStyle(3, 0xffd700, 1);
+      bankBg.strokeRoundedRect(-260, -20, 150, 40, 5);
+    });
+
+    bankHitArea.on('pointerout', () => {
+      bankBg.clear();
+      bankBg.fillStyle(0x8b4513, 0.8);
+      bankBg.fillRoundedRect(-260, -20, 150, 40, 5);
+      bankBg.lineStyle(2, 0xdaa520, 1);
+      bankBg.strokeRoundedRect(-260, -20, 150, 40, 5);
+    });
+
+    this.add([bankBg, this.bankText, bankHitArea]);
   }
 
   private createPlayerNameDisplay() {

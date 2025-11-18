@@ -4,6 +4,7 @@ import { FishData, PlayerData, BulletData } from '../types/GameTypes';
 import { FishPathManager } from './FishPathManager';
 import { deserializePathData } from './paths/PathData';
 import { debugLog } from '../config/DebugConfig';
+import { TransactionLedger } from './TransactionLedger';
 
 interface ServerPlayerState {
   PlayerId: string;
@@ -310,9 +311,17 @@ export class GameState {
             console.warn(`   ⚠️ onPayoutEvent callback not set!`);
           }
 
-          if (isOwnKill && this.onPayoutReceived) {
-            console.log(`   → Calling onPayoutReceived callback (own kill)`);
-            this.onPayoutReceived(fishId, payout);
+          if (isOwnKill) {
+            // Record kill in ledger
+            const fishData = this.fish.get(fishId);
+            const fishType = fishData ? fishData[1] : 0; // Type is at index 1
+            const ledger = TransactionLedger.getInstance();
+            ledger.recordKill(fishId, fishType, payout, 1.0); // TODO: Extract actual bonus multiplier
+            
+            if (this.onPayoutReceived) {
+              console.log(`   → Calling onPayoutReceived callback (own kill)`);
+              this.onPayoutReceived(fishId, payout);
+            }
           }
         }
       }
@@ -468,6 +477,11 @@ export class GameState {
   public deductShotCost(): void {
     if (this.playerAuth) {
       this.playerAuth.credits -= this.currentBet;
+      
+      // Record shot in ledger
+      const ledger = TransactionLedger.getInstance();
+      ledger.recordShot(this.currentBet);
+      
       if (this.onCreditsChanged) {
         this.onCreditsChanged();
       }
