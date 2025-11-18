@@ -26,7 +26,7 @@ type StateDelta = [
   BulletData[], // [6] Projectiles
   any[], // [7] ActiveBossSequences
   any[], // [8] PendingInteractions
-  Array<{ fishId: number; payout: number; playerSlot: number }>, // [9] PayoutEvents
+  Array<[number, number, number]>, // [9] PayoutEvents: [fishId, payout, playerSlot]
 ];
 
 export class GameState {
@@ -293,21 +293,26 @@ export class GameState {
       if (payoutEvents && payoutEvents.length > 0) {
         console.log(`📥 [GameState] Received ${payoutEvents.length} PayoutEvents from server`);
         for (const event of payoutEvents) {
-          const isOwnKill = event.playerSlot === this.myPlayerSlot;
+          // MessagePack sends PayoutEvent as array: [fishId, payout, playerSlot]
+          const fishId = event[0];
+          const payout = event[1];
+          const playerSlot = event[2];
+          const isOwnKill = playerSlot === this.myPlayerSlot;
+          
           console.log(
-            `💰 [GameState] Processing PayoutEvent: fishId=${event.fishId}, payout=${event.payout}, playerSlot=${event.playerSlot}, isOwnKill=${isOwnKill}`,
+            `💰 [GameState] Processing PayoutEvent: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`,
           );
 
           if (this.onPayoutEvent) {
             console.log(`   → Calling onPayoutEvent callback`);
-            this.onPayoutEvent(event.fishId, event.payout, event.playerSlot, isOwnKill);
+            this.onPayoutEvent(fishId, payout, playerSlot, isOwnKill);
           } else {
             console.warn(`   ⚠️ onPayoutEvent callback not set!`);
           }
 
           if (isOwnKill && this.onPayoutReceived) {
             console.log(`   → Calling onPayoutReceived callback (own kill)`);
-            this.onPayoutReceived(event.fishId, event.payout);
+            this.onPayoutReceived(fishId, payout);
           }
         }
       }
