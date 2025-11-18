@@ -11,6 +11,15 @@ export default class BootScene extends Phaser.Scene {
   preload() {
     console.log('BootScene: Preloading assets...');
 
+    // Add error handler for asset loading
+    this.load.on('loaderror', (file: any) => {
+      console.error(`BootScene: Failed to load asset: ${file.key} from ${file.url}`);
+    });
+
+    this.load.on('complete', () => {
+      console.log('BootScene: All assets loaded successfully');
+    });
+
     // Load fish spritesheets (will attempt animated versions first)
     this.load.spritesheet('fish-0', 'assets/spritesheets/fish/fish-0.png', {
       frameWidth: 72,
