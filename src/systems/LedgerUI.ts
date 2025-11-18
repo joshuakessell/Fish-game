@@ -142,10 +142,13 @@ export class LedgerUI {
       `;
       transactionsContainer.appendChild(emptyMessage);
     } else {
-      // Show transactions in reverse order (most recent first)
-      for (let i = transactions.length - 1; i >= 0; i--) {
-        const transaction = transactions[i];
-        transactionsContainer.appendChild(this.createTransactionRow(transaction));
+      // Group transactions: combine shots between kills into single entries
+      const groupedTransactions = this.groupTransactions(transactions);
+
+      // Show grouped transactions in reverse order (most recent first)
+      for (let i = groupedTransactions.length - 1; i >= 0; i--) {
+        const group = groupedTransactions[i];
+        transactionsContainer.appendChild(this.createTransactionRow(group));
       }
     }
 
@@ -360,6 +363,55 @@ export class LedgerUI {
     row.appendChild(balanceCol);
 
     return row;
+  }
+
+  /**
+   * Group consecutive SHOT transactions before each KILL into a single entry
+   */
+  private groupTransactions(transactions: Transaction[]): Transaction[] {
+    const grouped: Transaction[] = [];
+    let currentShotGroup: Transaction[] = [];
+
+    for (const transaction of transactions) {
+      if (transaction.type === TransactionType.SHOT) {
+        // Accumulate shots
+        currentShotGroup.push(transaction);
+      } else if (transaction.type === TransactionType.KILL) {
+        // If we have accumulated shots, create a grouped entry
+        if (currentShotGroup.length > 0) {
+          const totalCost = currentShotGroup.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+          const groupedShot: Transaction = {
+            id: currentShotGroup[0].id,
+            type: TransactionType.SHOT,
+            timestamp: currentShotGroup[currentShotGroup.length - 1].timestamp,
+            amount: -totalCost,
+            balance: currentShotGroup[currentShotGroup.length - 1].balance,
+            description: `${currentShotGroup.length} shot${currentShotGroup.length > 1 ? 's' : ''} fired`,
+          };
+          grouped.push(groupedShot);
+          currentShotGroup = [];
+        }
+
+        // Add the kill transaction
+        grouped.push(transaction);
+      }
+    }
+
+    // Add any remaining shots at the end
+    if (currentShotGroup.length > 0) {
+      const totalCost = currentShotGroup.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const groupedShot: Transaction = {
+        id: currentShotGroup[0].id,
+        type: TransactionType.SHOT,
+        timestamp: currentShotGroup[currentShotGroup.length - 1].timestamp,
+        amount: -totalCost,
+        balance: currentShotGroup[currentShotGroup.length - 1].balance,
+        description: `${currentShotGroup.length} shot${currentShotGroup.length > 1 ? 's' : ''} fired`,
+      };
+      grouped.push(groupedShot);
+    }
+
+    return grouped;
   }
 
   private formatTimeAgo(timestamp: number): string {

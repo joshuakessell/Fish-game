@@ -126,6 +126,7 @@ public static class FishCatalog
         },
         
         // LARGE FISH (Types 12, 14) - Rare big wins - 10% spawn rate
+        // REBALANCE: Increased capture rates and hit zones for better playability
         [12] = new FishDefinition
         {
             TypeId = 12,
@@ -136,11 +137,11 @@ public static class FishCatalog
             BaseRewardValue = 1,
             Category = FishCategory.LargeFish,
             PayoutMultiplier = 27m,
-            CaptureProbability = 0.05f,
-            ExpectedValue = 1.35f,  // 0.05 × 27 = 1.35
+            CaptureProbability = 0.12f,  // Increased from 0.05 (5% → 12%)
+            ExpectedValue = 3.24f,  // 0.12 × 27 = 3.24
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
-            HitboxRadius = 45f,
+            HitboxRadius = 75f,  // Increased from 45f for longer body
             BaseSpeed = 100f
         },
         [14] = new FishDefinition
@@ -153,11 +154,11 @@ public static class FishCatalog
             BaseRewardValue = 1,
             Category = FishCategory.LargeFish,
             PayoutMultiplier = 38m,
-            CaptureProbability = 0.03f,
-            ExpectedValue = 1.14f,  // 0.03 × 38 = 1.14
+            CaptureProbability = 0.10f,  // Increased from 0.03 (3% → 10%)
+            ExpectedValue = 3.80f,  // 0.10 × 38 = 3.80
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
-            HitboxRadius = 55f,
+            HitboxRadius = 85f,  // Increased from 55f for longer body
             BaseSpeed = 81.25f
         },
         
