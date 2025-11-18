@@ -63,6 +63,9 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('fish-12-static', 'assets/fish/hammerhead_shark.png');
     this.load.image('fish-14-static', 'assets/fish/giant_manta_ray.png');
     this.load.image('fish-21-static', 'assets/fish/wave_rider.png');
+
+    // Load Ocean Attack logo
+    this.load.image('ocean-attack-logo', 'assets/ocean-attack-logo.jpg');
   }
 
   async create() {

@@ -12,32 +12,44 @@ export default class LoginScene extends Phaser.Scene {
   create() {
     console.log('LoginScene: Creating login UI');
 
-    // Ocean gradient background
+    // Modern deep ocean gradient background
     const graphics = this.add.graphics();
-    graphics.fillGradientStyle(0x001a33, 0x001a33, 0x004d7a, 0x004d7a, 1);
+    graphics.fillGradientStyle(0x0a1929, 0x0a1929, 0x1e3a5f, 0x1e3a5f, 1);
     graphics.fillRect(0, 0, 1800, 900);
 
-    // Title
-    const title = this.add.text(900, 200, 'OCEAN KING 3', {
-      fontSize: '80px',
-      color: '#FFD700',
-      fontStyle: 'bold',
-      stroke: '#000',
-      strokeThickness: 8,
-    });
-    title.setOrigin(0.5);
+    // Add subtle animated bubbles effect
+    this.createBubbleParticles();
 
-    // Subtitle
-    const subtitle = this.add.text(900, 300, 'Multiplayer Fishing Casino', {
-      fontSize: '32px',
-      color: '#FFF',
+    // Ocean Attack Logo - centered and prominent
+    const logo = this.add.image(900, 280, 'ocean-attack-logo');
+    logo.setScale(0.6);
+    logo.setOrigin(0.5);
+
+    // Add subtle glow effect to logo
+    this.tweens.add({
+      targets: logo,
+      alpha: 0.9,
+      yoyo: true,
+      duration: 2000,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // Subtitle with modern styling
+    const subtitle = this.add.text(900, 500, 'Multiplayer Fishing Arena', {
+      fontSize: '28px',
+      color: '#87CEEB',
+      fontStyle: 'bold',
+      stroke: '#0a1929',
+      strokeThickness: 4,
     });
     subtitle.setOrigin(0.5);
 
-    // Name input label
-    const nameLabel = this.add.text(900, 380, 'Enter Your Name:', {
-      fontSize: '28px',
-      color: '#FFF',
+    // Name input label with glow
+    const nameLabel = this.add.text(900, 570, 'Enter Your Name:', {
+      fontSize: '24px',
+      color: '#FFD700',
+      fontStyle: 'bold',
     });
     nameLabel.setOrigin(0.5);
 
@@ -45,30 +57,64 @@ export default class LoginScene extends Phaser.Scene {
     this.createNameInput();
 
     // Error message text (hidden initially)
-    this.errorText = this.add.text(900, 540, '', {
+    this.errorText = this.add.text(900, 720, '', {
       fontSize: '20px',
-      color: '#FF4444',
+      color: '#FF6B6B',
+      fontStyle: 'bold',
+      stroke: '#000',
+      strokeThickness: 3,
     });
     this.errorText.setOrigin(0.5);
 
-    // Login button
-    const loginButton = this.add.rectangle(900, 600, 300, 80, 0x00aa00);
+    // Modern gradient button with glow
+    const buttonBg = this.add.graphics();
+    buttonBg.fillGradientStyle(0xff6b35, 0xff6b35, 0xff8e53, 0xff8e53, 1);
+    buttonBg.fillRoundedRect(750, 760, 300, 70, 35);
+    buttonBg.lineStyle(3, 0xffd700, 1);
+    buttonBg.strokeRoundedRect(750, 760, 300, 70, 35);
+
+    const loginButton = this.add.zone(750, 760, 300, 70);
+    loginButton.setOrigin(0, 0);
     loginButton.setInteractive({ useHandCursor: true });
 
-    const loginText = this.add.text(900, 600, 'Enter Lobby', {
+    const loginText = this.add.text(900, 795, 'DIVE IN', {
       fontSize: '32px',
       color: '#FFF',
       fontStyle: 'bold',
+      stroke: '#000',
+      strokeThickness: 4,
     });
     loginText.setOrigin(0.5);
 
-    // Button hover effects
+    // Button hover effects with animation
     loginButton.on('pointerover', () => {
-      loginButton.setFillStyle(0x00dd00);
+      buttonBg.clear();
+      buttonBg.fillGradientStyle(0xff8e53, 0xff8e53, 0xffb380, 0xffb380, 1);
+      buttonBg.fillRoundedRect(750, 760, 300, 70, 35);
+      buttonBg.lineStyle(4, 0xffd700, 1);
+      buttonBg.strokeRoundedRect(750, 760, 300, 70, 35);
+      
+      this.tweens.add({
+        targets: loginText,
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 100,
+      });
     });
 
     loginButton.on('pointerout', () => {
-      loginButton.setFillStyle(0x00aa00);
+      buttonBg.clear();
+      buttonBg.fillGradientStyle(0xff6b35, 0xff6b35, 0xff8e53, 0xff8e53, 1);
+      buttonBg.fillRoundedRect(750, 760, 300, 70, 35);
+      buttonBg.lineStyle(3, 0xffd700, 1);
+      buttonBg.strokeRoundedRect(750, 760, 300, 70, 35);
+      
+      this.tweens.add({
+        targets: loginText,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 100,
+      });
     });
 
     // Click handler
@@ -87,6 +133,23 @@ export default class LoginScene extends Phaser.Scene {
     this.nameInput.focus();
   }
 
+  private createBubbleParticles() {
+    // Create particle emitter for bubbles
+    const particles = this.add.particles(0, 900, 'fish-0-static', {
+      speed: { min: 20, max: 60 },
+      angle: { min: 260, max: 280 },
+      scale: { start: 0.03, end: 0.08 },
+      alpha: { start: 0.4, end: 0 },
+      lifespan: 6000,
+      frequency: 800,
+      quantity: 1,
+      emitting: true,
+      x: { min: 0, max: 1800 },
+      tint: 0x87ceeb,
+    });
+    particles.setDepth(-1);
+  }
+
   private createNameInput() {
     console.log('LoginScene: Creating HTML input element with fixed overlay');
     
@@ -101,29 +164,31 @@ export default class LoginScene extends Phaser.Scene {
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      padding-top: 48%;
+      padding-top: 68%;
       z-index: 1000;
       pointer-events: none;
     `;
 
-    // Create HTML input element
+    // Create HTML input element with modern styling
     this.nameInput = document.createElement('input');
     this.nameInput.type = 'text';
-    this.nameInput.placeholder = 'Your Name';
+    this.nameInput.placeholder = 'Enter your name...';
     this.nameInput.maxLength = 20;
     this.nameInput.style.cssText = `
-      font-size: 28px;
-      padding: 12px 20px;
-      width: 400px;
+      font-size: 26px;
+      padding: 14px 24px;
+      width: 420px;
       max-width: 90vw;
       text-align: center;
       border: 3px solid #FFD700;
-      border-radius: 8px;
-      background: rgba(0, 26, 51, 0.9);
+      border-radius: 12px;
+      background: rgba(10, 25, 41, 0.85);
       color: #FFF;
       outline: none;
       font-family: Arial, sans-serif;
       pointer-events: auto;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      transition: all 0.3s ease;
     `;
 
     // Add input to overlay
