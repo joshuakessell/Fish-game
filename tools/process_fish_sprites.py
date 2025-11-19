@@ -136,6 +136,30 @@ def extract_frames(image, grid=(5, 5), frame_indices=None):
     return frames
 
 
+def get_uniform_bbox(frames, padding=10):
+    """Find the maximum bounding box across all frames to prevent animation jumping."""
+    min_x = float('inf')
+    min_y = float('inf')
+    max_x = 0
+    max_y = 0
+    
+    for frame in frames:
+        bbox = frame.getbbox()
+        if bbox:
+            min_x = min(min_x, bbox[0])
+            min_y = min(min_y, bbox[1])
+            max_x = max(max_x, bbox[2])
+            max_y = max(max_y, bbox[3])
+    
+    # Add padding
+    min_x = max(0, min_x - padding)
+    min_y = max(0, min_y - padding)
+    max_x = min(frames[0].width, max_x + padding)
+    max_y = min(frames[0].height, max_y + padding)
+    
+    return (min_x, min_y, max_x, max_y)
+
+
 def process_fish_spritesheet(config):
     """Process a single fish spritesheet."""
     print(f"\n{'='*60}")
@@ -158,17 +182,21 @@ def process_fish_spritesheet(config):
         frames = extract_frames(img, grid=config['grid'])
         print(f"✓ Extracted ALL {len(frames)} frames from {config['grid'][0]}x{config['grid'][1]} grid")
         
-        # Process each frame
+        # Find uniform bounding box across all frames to prevent animation jumping
+        uniform_bbox = get_uniform_bbox(frames, padding=10)
+        print(f"✓ Calculated uniform bounding box: {uniform_bbox}")
+        
+        # Process each frame using the uniform bounding box
         processed_frames = []
         for i, frame in enumerate(frames):
-            # Crop to content
-            frame = crop_to_content(frame, padding=10)
+            # Crop using uniform bounding box (keeps fish in same position across all frames)
+            frame = frame.crop(uniform_bbox)
             
             # Resize to target dimensions
             frame = frame.resize(config['frame_size'], Image.Resampling.LANCZOS)
             processed_frames.append(frame)
         
-        print(f"✓ Processed {len(processed_frames)} frames to {config['frame_size']}")
+        print(f"✓ Processed {len(processed_frames)} frames to {config['frame_size']} with aligned positions")
         
         # Create output spritesheet (horizontal layout)
         output_width = config['frame_size'][0] * len(processed_frames)
