@@ -94,14 +94,14 @@ export default class BootScene extends Phaser.Scene {
         const texture = this.textures.get(key);
 
         // Check if it's actually a spritesheet (has frames)
-        if (texture.frameTotal > 1) {
+        if (texture.frameTotal >= 25) {
           this.anims.create({
             key: `${key}-swim`,
-            frames: this.anims.generateFrameNumbers(key, { start: 0, end: 7 }),
+            frames: this.anims.generateFrameNumbers(key, { start: 0, end: 24 }),
             frameRate: 10,
             repeat: -1,
           });
-          console.log(`Created animation: ${key}-swim with ${texture.frameTotal} frames`);
+          console.log(`Created animation: ${key}-swim with 25 frames`);
         } else {
           console.log(`Texture ${key} is static (no animation frames)`);
         }

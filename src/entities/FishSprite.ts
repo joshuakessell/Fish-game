@@ -105,13 +105,17 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
     }
 
     // Apply vertical tilt based on vertical movement
-    // Allow larger tilts (up to ±75°) to match actual movement direction
-    // Still prevent full upside-down rotation (90° or more)
+    // Use abs(velocity.x) to keep horizontal motion neutral (tilt=0 when moving horizontally)
+    // Then invert the tilt when flipped to maintain the swimming forward illusion
     const tiltAngle = Math.atan2(velocity.y, Math.abs(velocity.x));
     const maxTilt = (Math.PI * 75) / 180; // 75 degrees in radians
     const clampedTilt = Phaser.Math.Clamp(tiltAngle, -maxTilt, maxTilt);
+    
+    // Invert tilt when fish is flipped to maintain swimming illusion
+    // When moving left (flipX=true), a downward tilt should become an upward tilt
+    const finalTilt = this.flipX ? -clampedTilt : clampedTilt;
 
-    this.rotation = this.lerpAngle(this.rotation || 0, clampedTilt, 0.15);
+    this.rotation = this.lerpAngle(this.rotation || 0, finalTilt, 0.15);
   }
 
   /**
@@ -148,23 +152,24 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
   }
 
   private static getScaleForType(typeId: number): number {
-    // Clownfish (0): +50% = 1.5x scale (increased for better visibility in lines)
-    // Neon Tetra (1): +20% = 1.2x scale
-    // Rainbow fish (2): +80% = 1.8x scale (increased for visibility)
+    // Small fish increased by 50%:
+    // Clownfish (0): 1.5x → 2.25x scale
+    // Neon Tetra (1): 1.2x → 1.8x scale
+    // Butterflyfish (2): 1.8x → 2.7x scale
+    // Wave Rider (21): 1.5x → 3.0x scale (doubled)
     // Medium fish (9): +50% = 1.5x scale
-    // Shark (6): +120% = 2.2x scale (increased for visibility)
+    // Shark (6): +120% = 2.2x scale
     // Large fish (12, 14): +150% = 2.5x scale
-    // Wave Rider (21): +50% = 1.5x scale (bonus fish)
 
     const scaleMap: { [key: number]: number } = {
-      0: 1.5, // Clownfish (small) - increased from 1.2 for better visibility
-      1: 1.2, // Neon Tetra (small)
-      2: 1.8, // Butterflyfish (rainbow fish) - increased for visibility
-      6: 2.2, // Lionfish (shark) - increased for visibility
+      0: 2.25, // Clownfish (small) - increased 50% for better visibility
+      1: 1.8, // Neon Tetra (small) - increased 50%
+      2: 2.7, // Butterflyfish (small) - increased 50%
+      6: 2.2, // Lionfish (shark)
       9: 1.5, // Triggerfish (medium)
       12: 2.5, // Hammerhead Shark (large)
       14: 2.5, // Giant Manta Ray (large)
-      21: 1.5, // Wave Rider (bonus)
+      21: 3.0, // Wave Rider (bonus) - doubled
     };
 
     return scaleMap[typeId] || 1.0;

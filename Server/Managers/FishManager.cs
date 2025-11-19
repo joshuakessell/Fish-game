@@ -5,11 +5,13 @@ namespace OceanKing.Server.Managers;
 public class FishManager
 {
     private readonly Dictionary<string, Fish> _activeFish = new();
+    private readonly Dictionary<int, int> _fishCountByType = new(); // Track count per fish type
     private readonly int MIN_FISH_COUNT;
     private readonly int MAX_FISH_COUNT;
     private readonly Random _random;
     private const int ARENA_WIDTH = 1800;
     private const int ARENA_HEIGHT = 900;
+    private const int MAX_PER_TYPE_NON_SMALL_FISH = 3; // Max 3 of each non-small fish type
     
     // Unique group ID counter for fish formations
     private static long _groupIdCounter = 0;
@@ -27,7 +29,7 @@ public class FishManager
     {
         _random = random ?? Random.Shared;
         MIN_FISH_COUNT = _random.Next(20, 31);
-        MAX_FISH_COUNT = _random.Next(MIN_FISH_COUNT + 5, 41);
+        MAX_FISH_COUNT = 30;
         Console.WriteLine($"[FISH MANAGER] Session fish count range: {MIN_FISH_COUNT}-{MAX_FISH_COUNT}");
     }
 
@@ -71,7 +73,19 @@ public class FishManager
 
         foreach (var fishId in fishToRemove)
         {
-            _activeFish.Remove(fishId);
+            if (_activeFish.TryGetValue(fishId, out var fish))
+            {
+                // Update type count when removing fish
+                if (_fishCountByType.ContainsKey(fish.TypeId))
+                {
+                    _fishCountByType[fish.TypeId]--;
+                    if (_fishCountByType[fish.TypeId] <= 0)
+                    {
+                        _fishCountByType.Remove(fish.TypeId);
+                    }
+                }
+                _activeFish.Remove(fishId);
+            }
         }
     }
 
@@ -126,6 +140,9 @@ public class FishManager
         
         _activeFish[fish.FishId] = fish;
         
+        // Update type count
+        _fishCountByType[21] = _fishCountByType.GetValueOrDefault(21, 0) + 1;
+        
         _waveRiderSpawnFromLeft = !_waveRiderSpawnFromLeft;
         
         Console.WriteLine($"[WAVE RIDER] Spawned from {(!_waveRiderSpawnFromLeft ? "left" : "right")} edge with sine wave pattern");
@@ -136,6 +153,16 @@ public class FishManager
         var fishDef = Entities.FishCatalog.GetFish(typeId);
         if (fishDef == null) return;
 
+        // Check per-type limit for non-small fish (types > 2, excluding Wave Rider which spawns separately)
+        if (typeId > 2 && typeId != 21)
+        {
+            int currentCount = _fishCountByType.GetValueOrDefault(typeId, 0);
+            if (currentCount >= MAX_PER_TYPE_NON_SMALL_FISH)
+            {
+                return; // Skip spawning if limit reached
+            }
+        }
+
         // Select random spawn edge/direction (0-11: edges, corners, and center regions)
         int spawnEdge = _random.Next(12);
         
@@ -145,6 +172,9 @@ public class FishManager
         // Create fish with spawn edge information for path generation
         var fish = Fish.CreateFish(typeId, currentTick, spawnEdge, 0, 0, groupId);
         _activeFish[fish.FishId] = fish;
+        
+        // Update type count
+        _fishCountByType[typeId] = _fishCountByType.GetValueOrDefault(typeId, 0) + 1;
     }
 
     private void SpawnRandomFish(long currentTick)
@@ -178,20 +208,10 @@ public class FishManager
             }
         }
         
-        if (selectedTypeId == 0)
+        if (selectedTypeId == 0 || selectedTypeId == 1 || selectedTypeId == 2)
         {
-            // Clownfish: spawn in rows of 3-6 fish
-            SpawnFishGroup(selectedTypeId, currentTick, 3, 6, FormationType.Row);
-        }
-        else if (selectedTypeId == 2)
-        {
-            // Butterflyfish: spawn in diamond formations of 4-8
-            SpawnFishGroup(selectedTypeId, currentTick, 4, 8, FormationType.Diamond);
-        }
-        else if (selectedTypeId == 1)
-        {
-            // Neon Tetra: smaller groups of 2-4
-            SpawnFishGroup(selectedTypeId, currentTick, 2, 4, FormationType.Row);
+            // All small fish (Clownfish, Neon Tetra, Butterflyfish): spawn in lines of 2-6 fish
+            SpawnFishGroup(selectedTypeId, currentTick, 2, 6);
         }
         else
         {
@@ -199,13 +219,7 @@ public class FishManager
         }
     }
 
-    private enum FormationType
-    {
-        Row,      // Linear row formation
-        Diamond   // Diamond/geometric formation
-    }
-
-    private void SpawnFishGroup(int typeId, long currentTick, int minCount = -1, int maxCount = -1, FormationType formation = FormationType.Row)
+    private void SpawnFishGroup(int typeId, long currentTick, int minCount = -1, int maxCount = -1)
     {
         int groupSize;
         if (minCount > 0 && maxCount > 0)
@@ -223,18 +237,15 @@ public class FishManager
         // Select a spawn edge for the entire group (0-11: edges, corners, and center regions)
         int spawnEdge = _random.Next(12);
         
-        // Spawn fish in formation with time-based staggering for follow-the-leader effect
+        // Spawn fish in follow-the-leader line formation with time-based staggering
         for (int i = 0; i < groupSize; i++)
         {
             if (_activeFish.Count >= MAX_FISH_COUNT)
                 break;
             
-            // Separate lateral positioning from trailing rank for proper formations
-            // lateralIndex: Used for perpendicular spacing (diamond shape, side-to-side)
-            // trailingRank: Used for longitudinal spacing (follow-the-leader, sequential trailing)
-            int lateralIndex = formation == FormationType.Diamond 
-                ? GetDiamondFormationIndex(i, groupSize)  // Signed indices for diamond width
-                : 0;  // Row formations have no lateral offset
+            // All fish in a line have lateralIndex=0 (no side-to-side offset)
+            // trailingRank determines the sequential position in the line
+            int lateralIndex = 0;  // No lateral offset for line formations
             int trailingRank = i;  // Sequential rank ensures all fish trail behind leader
             
             // Stagger spawn times: each fish spawns 15 ticks (~0.5 seconds) after the previous one
@@ -245,40 +256,10 @@ public class FishManager
             var fish = Fish.CreateFish(typeId, spawnTick, spawnEdge, lateralIndex, trailingRank, groupId);
             
             _activeFish[fish.FishId] = fish;
+            
+            // Update type count for small fish groups
+            _fishCountByType[typeId] = _fishCountByType.GetValueOrDefault(typeId, 0) + 1;
         }
-    }
-    
-    /// <summary>
-    /// Calculate formation index for diamond patterns
-    /// Maps linear index to diamond position offsets
-    /// ALL indices must be unique to avoid overlapping fish
-    /// </summary>
-    private int GetDiamondFormationIndex(int linearIndex, int groupSize)
-    {
-        // Diamond patterns with UNIQUE offsets:
-        // 4 fish:    top(0), left(-2), right(2), bottom(-1 or 1)
-        // 6 fish:    center(0), upper-left(-3), upper-right(3), lower-left(-1), lower-right(1), far-left(-5)
-        // 8 fish:    full diamond with staggered positions
-        //
-        // Visual example (8 fish):
-        //       0
-        //   -3     3
-        // -5  -1  1  5
-        //   -2     2
-        
-        // Map to unique offsets that create diamond spacing
-        return linearIndex switch
-        {
-            0 => 0,      // Top center
-            1 => -3,     // Upper left
-            2 => 3,      // Upper right
-            3 => -1,     // Mid-lower left
-            4 => 1,      // Mid-lower right
-            5 => -5,     // Far left
-            6 => 5,      // Far right
-            7 => -2,     // Lower left
-            _ => linearIndex * 2  // Fallback with spacing
-        };
     }
 
     public Fish? GetFish(string fishId)

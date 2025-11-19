@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Fish Spritesheet Processor for Ocean King 3
-Removes backgrounds, crops water splashes, extracts 8 frames from 25, and resizes.
+Removes backgrounds, crops water splashes, extracts ALL 25 frames, and resizes.
 """
 
 from PIL import Image
@@ -114,9 +114,8 @@ def extract_frames(image, grid=(5, 5), frame_indices=None):
     frame_height = image.height // rows
     
     if frame_indices is None:
-        # Extract every 3rd frame to get 8 frames from 25
-        # Frames: 0, 3, 6, 9, 12, 15, 18, 21
-        frame_indices = [i * 3 for i in range(8)]
+        # Extract ALL 25 frames for smooth animation
+        frame_indices = list(range(cols * rows))
     
     frames = []
     for idx in frame_indices:
@@ -155,9 +154,9 @@ def process_fish_spritesheet(config):
         img = remove_black_background(img)
         print(f"✓ Removed black background")
         
-        # Extract 8 frames from 25-frame grid
+        # Extract ALL 25 frames from 25-frame grid
         frames = extract_frames(img, grid=config['grid'])
-        print(f"✓ Extracted {len(frames)} frames from {config['grid'][0]}x{config['grid'][1]} grid")
+        print(f"✓ Extracted ALL {len(frames)} frames from {config['grid'][0]}x{config['grid'][1]} grid")
         
         # Process each frame
         processed_frames = []
@@ -204,7 +203,7 @@ def main():
     print("\nThis script will:")
     print("  1. Remove black backgrounds → transparent")
     print("  2. Crop water splash effects")
-    print("  3. Extract 8 frames from 25 (every 3rd frame)")
+    print("  3. Extract ALL 25 frames for smooth animation")
     print("  4. Resize to target dimensions")
     print("  5. Export as horizontal sprite strips")
     
