@@ -52,7 +52,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
             HitboxRadius = 22f,  // Increased from 18f (1.22x larger)
-            BaseSpeed = 98f      // Increased from 75f (30% speed boost)
+            BaseSpeed = 120f     // Small fish swim faster for better gameplay flow
         },
         [1] = new FishDefinition
         {
@@ -69,7 +69,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 25,
             HitboxRadius = 16f,
-            BaseSpeed = 87.5f
+            BaseSpeed = 115f     // Small fish swim faster
         },
         [2] = new FishDefinition
         {
@@ -86,7 +86,7 @@ public static class FishCatalog
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 20,
             HitboxRadius = 30f,  // Increased from 17f for better visibility
-            BaseSpeed = 81.25f
+            BaseSpeed = 110f     // Small fish swim faster
         },
         
         // MEDIUM FISH (Types 6, 9) - Moderate wins - 20% spawn rate

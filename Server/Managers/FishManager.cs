@@ -28,7 +28,7 @@ public class FishManager
     public FishManager(Random? random = null)
     {
         _random = random ?? Random.Shared;
-        MIN_FISH_COUNT = _random.Next(20, 31);
+        MIN_FISH_COUNT = 20;  // Fixed at 20 to allow longer lines before spawning
         MAX_FISH_COUNT = 30;
         Console.WriteLine($"[FISH MANAGER] Session fish count range: {MIN_FISH_COUNT}-{MAX_FISH_COUNT}");
     }
@@ -248,9 +248,9 @@ public class FishManager
             int lateralIndex = 0;  // No lateral offset for line formations
             int trailingRank = i;  // Sequential rank ensures all fish trail behind leader
             
-            // Stagger spawn times: each fish spawns 15 ticks (~0.5 seconds) after the previous one
-            // This creates true follow-the-leader movement where fish appear one after another
-            long spawnTick = currentTick + (i * 15);
+            // Stagger spawn times: each fish spawns 35 ticks (~1.17 seconds) after the previous one
+            // This creates true follow-the-leader movement with more spacing between fish
+            long spawnTick = currentTick + (i * 35);
             
             // Create fish with future spawn tick, lateral index, and trailing rank
             var fish = Fish.CreateFish(typeId, spawnTick, spawnEdge, lateralIndex, trailingRank, groupId);
