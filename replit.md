@@ -35,8 +35,9 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
     - **Authentication:** Guest login via REST endpoint, JWT storage, and SignalR connection.
     - **Login Screen:** Fixed overlay HTML text input for player name entry (2-20 characters), gold-bordered styling, Enter key submission, flexbox-centered positioning that adapts to mobile keyboard using visualViewport API.
     - **Lobby UI:** Three-screen flow: Login → Lobby → Game, displaying room lists and solo mode options.
-    - **Phaser.Curves Path System:** Fish movement uses Phaser.Curves API (Line, CubicBezier, Spline) with server-generated control points for deterministic synchronization. PathComputer uses curve.getPoint(t) for smooth rendering.
-    - **GameState Manager:** Singleton managing game state, SignalR connection, FishPathManager, and Phaser scene coordination.
+    - **Phaser.Curves Path System:** Fish movement uses Phaser.Curves API (Line, CubicBezier, Spline) with server-generated control points for deterministic synchronization. PathComputer uses curve.getPoint(t) for smooth rendering. Curve volatility reduced by 50-60% (sine amplitude 5-25f→3-12f, bezier Y-offsets ±300f→±150f) to prevent direction flipping.
+    - **GameState Manager:** Singleton managing game state, SignalR connection, FishPathManager, and Phaser scene coordination. Debug overlay displays ACC as tick percentage (0-100%) and PROG as clamped integer (0-100) for stable visualization.
+    - **FishSpriteManager:** Tracks killed vs path-completed fish using killedFishIds Set with defensive cleanup to prevent memory leaks from recycled IDs. Only killed fish play death animations; path-completed fish fade silently.
     - **Deterministic RNG:** SeededRandom class ensures identical random sequences across client and server.
     - **Responsive Design:** Phaser canvas scales while maintaining a 2:1 aspect ratio within an 1800×900 coordinate space.
     - **Real-time Communication:** SignalR with JWT authentication and optimized StateDelta broadcasts.
@@ -50,9 +51,10 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
     - **Double-Tap Lock-On:** Double-tap any fish to activate auto-fire targeting; tap anywhere else to cancel.
     - **Auto-Targeting:** Type-specific auto-targeting with visual crosshair indicator, intelligent retargeting, and exclusive mode behavior.
     - **Enhanced Fish Visuals:** Larger sprite sizes for better visibility (Clownfish 1.5x, Butterflyfish 1.8x, Shark 2.2x), horizontal mirroring for natural orientation (no upside-down fish).
-    - **Fish Orientation:** All fish use horizontal mirroring (flipX) with ±75° vertical tilt instead of full rotation, preventing sideways swimming and upside-down appearance. Manta Ray (Type 14) uses inverted flipX logic due to sprite facing left.
-    - **Reward Animations:** Comprehensive visual feedback for fish kills including death animations, floating payout text, and arcing spinning coin animations orchestrated via a RewardAnimationManager.
-    - **Transaction Ledger:** Clickable bank display opens scrollable ledger with grouped shot entries (e.g., "3 shots fired -$30" between kills).
+    - **Fish Orientation:** All fish use horizontal mirroring (flipX) with ±75° vertical tilt instead of full rotation, preventing sideways swimming and upside-down appearance. Manta Ray (Type 14) uses inverted flipX and tilt logic due to sprite facing left. Wave Rider (Type 21) uses velocity threshold (1.0) to prevent direction flipping during sine wave oscillations.
+    - **Collision System:** Increased hitbox radii for better gameplay - medium fish (70-85%), large fish (60-85%), bonus fish (71%), boss fish (40-50%) for improved player feedback and hit detection.
+    - **Reward Animations:** Comprehensive visual feedback for fish kills including death animations (white flash, scale pop, spiral rotation), floating payout text, and arcing spinning coin animations orchestrated via a RewardAnimationManager. Path-completed fish fade out silently (300ms alpha tween) without flash effects.
+    - **Transaction Ledger:** Clickable bank display shows real-time TransactionLedger.getCurrentBalance() instead of server-synced credits, opens scrollable ledger with grouped shot entries (e.g., "3 shots fired -$30" between kills).
     - Bet Value System replacing weapon selection, allowing bet adjustment per shot via Plus/Minus buttons (protected from firing bullets).
     - Direct Coordinate System (0-1800 × 0-900) for consistent interaction.
     - **UI Interaction Protection:** All interactive UI elements (bet buttons, bank display) marked with isUI data flag and gated by hitTestPointer to prevent accidental bullet firing.
