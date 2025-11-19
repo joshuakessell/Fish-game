@@ -17,7 +17,7 @@ public class PathGenerator
     private static readonly object _cacheLock = new object();
     private static long _groupCounter = 0; // Ensures unique group IDs even for same tick/edge
     
-    private enum PathType { Linear, Sine }
+    private enum PathType { Linear, Sine, Parabola }
     
     private class SharedGroupParameters
     {
@@ -64,9 +64,19 @@ public class PathGenerator
                 // Pre-compute base anchor points that all fish in group will share
                 var (baseStart, baseEnd, startEdge, endEdge) = ComputeBaseAnchorPoints(groupRng, spawnEdge);
                 
+                // Determine path type with balanced distribution
+                PathType pathType;
+                float typeRoll = groupRng.NextFloat();
+                if (typeRoll > 0.7f)
+                    pathType = PathType.Sine;
+                else if (typeRoll > 0.4f)
+                    pathType = PathType.Linear;
+                else
+                    pathType = PathType.Parabola;
+                
                 sharedParams = new SharedGroupParameters
                 {
-                    PathType = groupRng.NextFloat() > 0.4f ? PathType.Sine : PathType.Linear,
+                    PathType = pathType,
                     Amplitude = groupRng.NextFloat(5f, 25f),
                     Frequency = groupRng.NextFloat(1.5f, 7f),
                     BonusAmplitude = groupRng.NextFloat(10f, 40f),
@@ -252,6 +262,11 @@ public class PathGenerator
         {
             return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, sharedParams.BaseAnchorStart, sharedParams.BaseAnchorEnd, sharedParams.Amplitude, sharedParams.Frequency);
         }
+        else if (sharedParams.PathType == PathType.Parabola)
+        {
+            // Parabola: start from edge, arc to opposite side, return to same edge area
+            return GenerateParabolaPath(fishId, seed, startTick, fishType, rng, start, sharedParams);
+        }
         else
         {
             return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, end);
@@ -273,12 +288,57 @@ public class PathGenerator
     }
     
     /// <summary>
+    /// Generate a parabola path that arcs across screen and returns to same edge area
+    /// </summary>
+    private static IPath GenerateParabolaPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, float[] start, SharedGroupParameters sharedParams)
+    {
+        // Parabola: fish arcs out and returns to same edge region
+        // End point is near start point but offset along the edge
+        float[] end;
+        
+        // Determine offset based on start edge
+        if (sharedParams.StartEdge == 0 || sharedParams.StartEdge == 1)
+        {
+            // Left or right edge: offset vertically along edge
+            float verticalOffset = rng.NextFloat(-300f, 300f);
+            end = new[] { start[0], Math.Clamp(start[1] + verticalOffset, 100f, CANVAS_HEIGHT - 100f) };
+        }
+        else
+        {
+            // Top or bottom edge: offset horizontally along edge
+            float horizontalOffset = rng.NextFloat(-400f, 400f);
+            end = new[] { Math.Clamp(start[0] + horizontalOffset, 100f, CANVAS_WIDTH - 100f), start[1] };
+        }
+        
+        // Create control points for parabolic arc toward center of screen
+        float centerX = CANVAS_WIDTH / 2f;
+        float centerY = CANVAS_HEIGHT / 2f;
+        
+        float[] p1 = new[]
+        {
+            start[0] + (centerX - start[0]) * 0.4f + sharedParams.BezierP1OffsetX * 0.5f,
+            start[1] + (centerY - start[1]) * 0.4f + sharedParams.BezierP1OffsetY * 0.5f
+        };
+        
+        float[] p2 = new[]
+        {
+            end[0] + (centerX - end[0]) * 0.4f + sharedParams.BezierP2OffsetX * 0.5f,
+            end[1] + (centerY - end[1]) * 0.4f + sharedParams.BezierP2OffsetY * 0.5f
+        };
+        
+        return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, end, p1, p2);
+    }
+    
+    /// <summary>
     /// Generate a sine wave path with specific start and end points (for Wave Rider bonus fish)
+    /// Smoother and less bouncy with reduced amplitude and frequency
     /// </summary>
     public static IPath GenerateSinePathWithPoints(int fishId, int seed, int startTick, float speed, float[] start, float[] end)
     {
-        float amplitude = 40f + ((seed % 41) * (80f - 40f) / 40f);
-        float frequency = 3f + ((seed % 4) * (6f - 3f) / 3f);
+        // Reduced amplitude (20-35 instead of 40-80) for smoother motion
+        float amplitude = 20f + ((seed % 16) * (35f - 20f) / 15f);
+        // Reduced frequency (2-4 instead of 3-6) for less bouncy motion
+        float frequency = 2f + ((seed % 3) * (4f - 2f) / 2f);
         return new SinePath(fishId, seed, startTick, speed, start, end, start, end, amplitude, frequency);
     }
     
