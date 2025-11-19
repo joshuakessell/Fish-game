@@ -265,7 +265,8 @@ public class PathGenerator
         else if (sharedParams.PathType == PathType.Parabola)
         {
             // Parabola: start from edge, arc to opposite side, return to same edge area
-            return GenerateParabolaPath(fishId, seed, startTick, fishType, rng, start, sharedParams);
+            // Pass the computed end point for formation offsets
+            return GenerateParabolaPath(fishId, seed, startTick, fishType, rng, start, end, sharedParams);
         }
         else
         {
@@ -289,44 +290,42 @@ public class PathGenerator
     
     /// <summary>
     /// Generate a parabola path that arcs across screen and returns to same edge area
+    /// RESTRICTION: Only starts and ends on top or bottom edges (not sides)
     /// </summary>
-    private static IPath GenerateParabolaPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, float[] start, SharedGroupParameters sharedParams)
+    private static IPath GenerateParabolaPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, float[] start, float[] precomputedEnd, SharedGroupParameters sharedParams)
     {
-        // Parabola: fish arcs out and returns to same edge region
-        // End point is near start point but offset along the edge
-        float[] end;
-        
-        // Determine offset based on start edge
+        // Parabola: fish arcs out horizontally and returns to same edge (top or bottom only)
+        // If spawned from side edges, fall back to linear path USING PROVIDED START/END POINTS
         if (sharedParams.StartEdge == 0 || sharedParams.StartEdge == 1)
         {
-            // Left or right edge: offset vertically along edge
-            float verticalOffset = rng.NextFloat(-300f, 300f);
-            end = new[] { start[0], Math.Clamp(start[1] + verticalOffset, 100f, CANVAS_HEIGHT - 100f) };
-        }
-        else
-        {
-            // Top or bottom edge: offset horizontally along edge
-            float horizontalOffset = rng.NextFloat(-400f, 400f);
-            end = new[] { Math.Clamp(start[0] + horizontalOffset, 100f, CANVAS_WIDTH - 100f), start[1] };
+            // Started from left or right edge - parabola not allowed, use linear instead
+            // IMPORTANT: Reuse the provided 'start' and 'precomputedEnd' points to maintain deterministic spawning
+            // This preserves formation offsets (lateralIndex, trailingRank) applied by GenerateEdgeToEdgePointsFromSpawnEdge
+            return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, precomputedEnd);
         }
         
-        // Create control points for parabolic arc toward center of screen
-        float centerX = CANVAS_WIDTH / 2f;
-        float centerY = CANVAS_HEIGHT / 2f;
+        // Top or bottom edge: create horizontal parabola that arcs out and returns
+        float horizontalOffset = rng.NextFloat(-500f, 500f);
+        float[] parabolaEnd = new[] { Math.Clamp(start[0] + horizontalOffset, 150f, CANVAS_WIDTH - 150f), start[1] };
+        
+        // Make the arc go deeper into the playfield
+        float arcDepth = sharedParams.StartEdge == 2 ? 
+            CANVAS_HEIGHT * 0.6f :  // Top edge: arc down 60% into screen
+            CANVAS_HEIGHT * 0.4f;    // Bottom edge: arc up 60% into screen
         
         float[] p1 = new[]
         {
-            start[0] + (centerX - start[0]) * 0.4f + sharedParams.BezierP1OffsetX * 0.5f,
-            start[1] + (centerY - start[1]) * 0.4f + sharedParams.BezierP1OffsetY * 0.5f
+            start[0] + (parabolaEnd[0] - start[0]) * 0.33f,
+            arcDepth
         };
         
         float[] p2 = new[]
         {
-            end[0] + (centerX - end[0]) * 0.4f + sharedParams.BezierP2OffsetX * 0.5f,
-            end[1] + (centerY - end[1]) * 0.4f + sharedParams.BezierP2OffsetY * 0.5f
+            start[0] + (parabolaEnd[0] - start[0]) * 0.67f,
+            arcDepth
         };
         
-        return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, end, p1, p2);
+        return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, parabolaEnd, p1, p2);
     }
     
     /// <summary>

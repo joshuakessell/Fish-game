@@ -278,9 +278,9 @@ export default class GameScene extends Phaser.Scene {
       this.rewardAnimationManager.playRewardAnimation(fishId, payout, playerSlot, isOwnKill);
     };
 
-    this.gameState.onPayoutReceived = (fishId: number, payout: number) => {
-      this.showCreditPopup(fishId, payout);
-    };
+    // Note: onPayoutReceived callback removed - reward animation is handled by onPayoutEvent
+    // which calls playRewardAnimation to create floating text and coin animation
+    // This prevents duplicate floating text for player's own kills
 
     this.gameState.onCreditsChanged = () => {
       if (this.bettingUI) {
@@ -311,7 +311,6 @@ export default class GameScene extends Phaser.Scene {
     this.gameState.onBulletSpawned = null;
     this.gameState.onBulletRemoved = null;
     this.gameState.onPayoutEvent = null;
-    this.gameState.onPayoutReceived = null;
     this.gameState.onCreditsChanged = null;
     this.gameState.onTickSnapped = null;
     this.gameState.onRoomJoined = null;
@@ -496,9 +495,10 @@ export default class GameScene extends Phaser.Scene {
 
     this.bettingUI = new BettingUI(this, this.turretPosition.x, this.turretPosition.y + offsetY);
 
+    // Bank display is at -185 offset from container position (see BettingUI.createBankDisplay)
     this.rewardAnimationManager.setBankPosition(
       seat,
-      this.turretPosition.x,
+      this.turretPosition.x - 185,
       this.turretPosition.y + offsetY,
     );
 
