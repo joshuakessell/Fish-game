@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GameState } from '../systems/GameState';
 import { LedgerUI } from '../systems/LedgerUI';
+import { TransactionLedger } from '../systems/TransactionLedger';
 
 export class BettingUI extends Phaser.GameObjects.Container {
   private gameState: GameState;
@@ -167,7 +168,9 @@ export class BettingUI extends Phaser.GameObjects.Container {
     bankBg.lineStyle(2, 0xdaa520, 1);
     bankBg.strokeRoundedRect(-260, -20, 150, 40, 5);
 
-    const credits = this.gameState.playerAuth?.credits || 0;
+    // Use ledger balance for initial display
+    const ledger = TransactionLedger.getInstance();
+    const credits = ledger.getCurrentBalance();
     const formattedCredits = this.formatNumber(credits);
 
     this.bankText = this.scene.add.text(-185, 0, `Bank: ${formattedCredits}`, {
@@ -234,10 +237,12 @@ export class BettingUI extends Phaser.GameObjects.Container {
   }
 
   public updateBankDisplay() {
-    const credits = this.gameState.playerAuth?.credits || 0;
+    // Always use ledger balance - this is the true current balance from transactions
+    const ledger = TransactionLedger.getInstance();
+    const credits = ledger.getCurrentBalance();
     const formattedCredits = this.formatNumber(credits);
     console.log(
-      `🏦 [BettingUI] updateBankDisplay called - Credits: ${credits} (formatted: ${formattedCredits})`,
+      `🏦 [BettingUI] updateBankDisplay called - Ledger Balance: ${credits} (formatted: ${formattedCredits})`,
     );
     this.bankText.setText(`Bank: ${formattedCredits}`);
   }

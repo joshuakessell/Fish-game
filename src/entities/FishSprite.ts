@@ -9,6 +9,7 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
   private previousPosition: [number, number] | null = null;
   private currentPosition: [number, number] | null = null;
   private previousRotation: number = 0;
+  private previousFlipX: boolean = false;  // Track previous flip state to prevent oscillation
 
   constructor(scene: Phaser.Scene, fishId: number, typeId: number, x: number, y: number) {
     const texture = FishSprite.getTextureForType(typeId, scene);
@@ -98,10 +99,27 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
     // Use horizontal mirroring for all fish instead of upside-down rotation
     // Most fish sprites naturally face right, so flip when moving left
     // Exception: Type 14 (Manta Ray) sprite naturally faces left, so flip when moving right
+    
+    // For Wave Rider (Type 21) and bonus fish on sine waves, use a velocity threshold
+    // to prevent flipping during minor oscillations on curves
+    const flipThreshold = (this.typeId === 21) ? 1.0 : 0.1;
+    
+    let shouldFlip: boolean;
     if (this.typeId === 14) {
-      this.setFlipX(velocity.x > 0); // Manta ray: flip when moving RIGHT
+      // Manta ray: flip when moving RIGHT
+      shouldFlip = velocity.x > flipThreshold;
     } else {
-      this.setFlipX(velocity.x < 0); // Other fish: flip when moving LEFT
+      // Other fish: flip when moving LEFT
+      shouldFlip = velocity.x < -flipThreshold;
+    }
+    
+    // Only update flipX if velocity exceeds threshold or if not already flipped in that direction
+    if (Math.abs(velocity.x) > flipThreshold) {
+      this.setFlipX(shouldFlip);
+      this.previousFlipX = shouldFlip;
+    } else {
+      // Velocity too small, maintain previous direction to prevent oscillation
+      this.setFlipX(this.previousFlipX);
     }
 
     // Apply vertical tilt based on vertical movement
@@ -112,8 +130,16 @@ export class FishSprite extends Phaser.GameObjects.Sprite {
     const clampedTilt = Phaser.Math.Clamp(tiltAngle, -maxTilt, maxTilt);
     
     // Invert tilt when fish is flipped to maintain swimming illusion
-    // When moving left (flipX=true), a downward tilt should become an upward tilt
-    const finalTilt = this.flipX ? -clampedTilt : clampedTilt;
+    // Manta Ray (Type 14) has inverted flipX logic, so its tilt inversion is also inverted
+    let finalTilt: number;
+    if (this.typeId === 14) {
+      // Manta Ray: invert tilt logic since flipX is inverted
+      finalTilt = this.flipX ? clampedTilt : -clampedTilt;
+    } else {
+      // Other fish: normal tilt inversion
+      // When moving left (flipX=true), a downward tilt should become an upward tilt
+      finalTilt = this.flipX ? -clampedTilt : clampedTilt;
+    }
 
     this.rotation = this.lerpAngle(this.rotation || 0, finalTilt, 0.15);
   }

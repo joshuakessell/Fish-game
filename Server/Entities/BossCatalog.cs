@@ -52,7 +52,7 @@ public static class BossCatalog
             Name = "Giant Tuna",
             BaseValue = 70m,
             DestructionOdds = CalculateDestructionOdds(70m),
-            HitboxRadius = 50f,
+            HitboxRadius = 75f,  // Greatly increased for easier targeting
             BaseSpeed = 80f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.ExplosionRing,
@@ -66,7 +66,7 @@ public static class BossCatalog
             Name = "Dragon Turtle",
             BaseValue = 700m,
             DestructionOdds = CalculateDestructionOdds(700m),
-            HitboxRadius = 80f,
+            HitboxRadius = 120f,  // Greatly increased for easier targeting
             BaseSpeed = 60f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.SectorBlast,
@@ -80,7 +80,7 @@ public static class BossCatalog
             Name = "Bomb Crab",
             BaseValue = 280m,
             DestructionOdds = CalculateDestructionOdds(280m),
-            HitboxRadius = 55f,
+            HitboxRadius = 85f,  // Greatly increased for easier targeting
             BaseSpeed = 50f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.ExplosionRing,
@@ -94,7 +94,7 @@ public static class BossCatalog
             Name = "Lightning Eel",
             BaseValue = 210m,
             DestructionOdds = CalculateDestructionOdds(210m),
-            HitboxRadius = 48f,
+            HitboxRadius = 75f,  // Greatly increased for easier targeting
             BaseSpeed = 90f,
             MovementPatternId = 2,
             DeathEffect = BossDeathEffect.ChainLightning,
@@ -108,7 +108,7 @@ public static class BossCatalog
             Name = "Vortex Starfish",
             BaseValue = 420m,
             DestructionOdds = CalculateDestructionOdds(420m),
-            HitboxRadius = 60f,
+            HitboxRadius = 90f,  // Greatly increased for easier targeting
             BaseSpeed = 40f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.VortexPull,
@@ -125,7 +125,7 @@ public static class BossCatalog
             Name = "Kaiju Megalodon",
             BaseValue = 7500m,
             DestructionOdds = CalculateDestructionOdds(7500m),
-            HitboxRadius = 120f,
+            HitboxRadius = 170f,  // Greatly increased for easier targeting
             BaseSpeed = 70f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.ScreenWipe,
@@ -140,7 +140,7 @@ public static class BossCatalog
             Name = "Emperor Kraken",
             BaseValue = 12000m,
             DestructionOdds = CalculateDestructionOdds(12000m),
-            HitboxRadius = 140f,
+            HitboxRadius = 195f,  // Greatly increased for easier targeting
             BaseSpeed = 50f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.VortexPull,
@@ -155,7 +155,7 @@ public static class BossCatalog
             Name = "Cosmic Leviathan",
             BaseValue = 15000m,
             DestructionOdds = CalculateDestructionOdds(15000m),
-            HitboxRadius = 150f,
+            HitboxRadius = 210f,  // Greatly increased for easier targeting
             BaseSpeed = 60f,
             MovementPatternId = 2,
             DeathEffect = BossDeathEffect.ScreenWipe,
@@ -169,7 +169,7 @@ public static class BossCatalog
             Name = "Samurai Swordfish",
             BaseValue = 9000m,
             DestructionOdds = CalculateDestructionOdds(9000m),
-            HitboxRadius = 110f,
+            HitboxRadius = 155f,  // Greatly increased for easier targeting
             BaseSpeed = 120f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.LineClear,
@@ -183,7 +183,7 @@ public static class BossCatalog
             Name = "Carnival King Crab",
             BaseValue = 10500m,
             DestructionOdds = CalculateDestructionOdds(10500m),
-            HitboxRadius = 130f,
+            HitboxRadius = 180f,  // Greatly increased for easier targeting
             BaseSpeed = 45f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.LootDrop,
@@ -197,7 +197,7 @@ public static class BossCatalog
             Name = "Wizard Octopus",
             BaseValue = 13500m,
             DestructionOdds = CalculateDestructionOdds(13500m),
-            HitboxRadius = 125f,
+            HitboxRadius = 175f,  // Greatly increased for easier targeting
             BaseSpeed = 55f,
             MovementPatternId = 2,
             DeathEffect = BossDeathEffect.TimeFreeze,
@@ -211,7 +211,7 @@ public static class BossCatalog
             Name = "Rocket Hammerhead",
             BaseValue = 8250m,
             DestructionOdds = CalculateDestructionOdds(8250m),
-            HitboxRadius = 100f,
+            HitboxRadius = 140f,  // Greatly increased for easier targeting
             BaseSpeed = 150f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.LineClear,
@@ -225,7 +225,7 @@ public static class BossCatalog
             Name = "Pirate Captain Whale",
             BaseValue = 18000m,
             DestructionOdds = CalculateDestructionOdds(18000m),
-            HitboxRadius = 160f,
+            HitboxRadius = 225f,  // Greatly increased for easier targeting
             BaseSpeed = 40f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.LootDrop,
@@ -239,7 +239,7 @@ public static class BossCatalog
             Name = "Nuclear Submarine",
             BaseValue = 22500m,
             DestructionOdds = CalculateDestructionOdds(22500m),
-            HitboxRadius = 145f,
+            HitboxRadius = 200f,  // Greatly increased for easier targeting
             BaseSpeed = 65f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.SectorBlast,
@@ -253,7 +253,7 @@ public static class BossCatalog
             Name = "Phoenix Firebird",
             BaseValue = 12750m,
             DestructionOdds = CalculateDestructionOdds(12750m),
-            HitboxRadius = 115f,
+            HitboxRadius = 160f,  // Greatly increased for easier targeting
             BaseSpeed = 140f,
             MovementPatternId = 2,
             DeathEffect = BossDeathEffect.ExplosionRing,
@@ -267,7 +267,7 @@ public static class BossCatalog
             Name = "Alien Mothership",
             BaseValue = 30000m,
             DestructionOdds = CalculateDestructionOdds(30000m),
-            HitboxRadius = 170f,
+            HitboxRadius = 240f,  // Greatly increased for easier targeting
             BaseSpeed = 35f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.ScreenWipe,

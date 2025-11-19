@@ -77,14 +77,14 @@ public class PathGenerator
                 sharedParams = new SharedGroupParameters
                 {
                     PathType = pathType,
-                    Amplitude = groupRng.NextFloat(5f, 25f),
+                    Amplitude = groupRng.NextFloat(3f, 12f),  // Reduced vertical amplitude to prevent flipping
                     Frequency = groupRng.NextFloat(1.5f, 7f),
-                    BonusAmplitude = groupRng.NextFloat(10f, 40f),
+                    BonusAmplitude = groupRng.NextFloat(8f, 20f),  // Reduced bonus amplitude
                     BonusFrequency = groupRng.NextFloat(2f, 8f),
                     BezierP1OffsetX = groupRng.NextFloat(-400f, 400f),
-                    BezierP1OffsetY = groupRng.NextFloat(-300f, 300f),
+                    BezierP1OffsetY = groupRng.NextFloat(-150f, 150f),  // Reduced vertical offset to prevent steep angles
                     BezierP2OffsetX = groupRng.NextFloat(-400f, 400f),
-                    BezierP2OffsetY = groupRng.NextFloat(-300f, 300f),
+                    BezierP2OffsetY = groupRng.NextFloat(-150f, 150f),  // Reduced vertical offset to prevent steep angles
                     CreatedTick = currentTick,
                     BaseAnchorStart = baseStart,
                     BaseAnchorEnd = baseEnd,

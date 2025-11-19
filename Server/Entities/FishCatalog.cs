@@ -104,7 +104,7 @@ public static class FishCatalog
             ExpectedValue = 2.475f,  // 0.15 × 16.5 = 2.475
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 10,
-            HitboxRadius = 40f,  // Increased from 26f for better visibility
+            HitboxRadius = 70f,  // Greatly increased for easier targeting
             BaseSpeed = 62.5f
         },
         [9] = new FishDefinition
@@ -121,7 +121,7 @@ public static class FishCatalog
             ExpectedValue = 2.40f,  // 0.10 × 24 = 2.40
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 10,
-            HitboxRadius = 27f,
+            HitboxRadius = 50f,  // Greatly increased for easier targeting
             BaseSpeed = 60f
         },
         
@@ -141,7 +141,7 @@ public static class FishCatalog
             ExpectedValue = 4.86f,  // 0.12 × 40.5 = 4.86
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
-            HitboxRadius = 75f,  // Increased from 45f for longer body
+            HitboxRadius = 120f,  // Greatly increased for easier targeting
             BaseSpeed = 100f
         },
         [14] = new FishDefinition
@@ -158,7 +158,7 @@ public static class FishCatalog
             ExpectedValue = 5.70f,  // 0.10 × 57 = 5.70
             KillAnimation = "Standard 0.25s spin and fade-out with bubbles.",
             SpawnWeight = 5,
-            HitboxRadius = 85f,  // Increased from 55f for longer body
+            HitboxRadius = 135f,  // Greatly increased for easier targeting
             BaseSpeed = 81.25f
         },
         
@@ -177,7 +177,7 @@ public static class FishCatalog
             ExpectedValue = 1.65f,  // 0.055 × 30 = 1.65
             KillAnimation = "Advanced animation with glow, pulse, and screen shake.",
             SpawnWeight = 0,
-            HitboxRadius = 35f,
+            HitboxRadius = 60f,  // Greatly increased for easier targeting
             BaseSpeed = 125f
         }
     };

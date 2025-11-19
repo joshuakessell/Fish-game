@@ -6,16 +6,27 @@ export class FishSpriteManager {
   private fishSprites: Map<number, FishSprite> = new Map();
   private scene: Phaser.Scene;
   private gameState: GameState;
+  private killedFishIds: Set<number> = new Set(); // Track fish killed by bullets vs path completion
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.gameState = GameState.getInstance();
+  }
+  
+  public markFishAsKilled(fishId: number): void {
+    this.killedFishIds.add(fishId);
   }
 
   public spawnFish(fishId: number, typeId: number): void {
     if (this.fishSprites.has(fishId)) {
       console.warn(`Fish ${fishId} already exists, skipping spawn`);
       return;
+    }
+    
+    // Defensive cleanup: Remove any stale kill state from recycled fish IDs
+    if (this.killedFishIds.has(fishId)) {
+      console.warn(`⚠️ Clearing stale kill state for recycled fish ID ${fishId}`);
+      this.killedFishIds.delete(fishId);
     }
 
     // Try to get path-based position first
@@ -62,14 +73,44 @@ export class FishSpriteManager {
   public async removeFish(fishId: number): Promise<void> {
     const sprite = this.fishSprites.get(fishId);
     if (sprite) {
-      console.log(`🎬 Playing death sequence for fish ${fishId}`);
-      await sprite.playDeathSequence();
-      console.log(`🗑️ Destroying fish ${fishId} after death animation`);
+      const wasKilled = this.killedFishIds.has(fishId);
+      
+      if (wasKilled) {
+        // Fish was killed by bullet - play death animation with flash
+        console.log(`🎬 Playing death sequence for killed fish ${fishId}`);
+        await sprite.playDeathSequence();
+        this.killedFishIds.delete(fishId); // Clean up tracking
+      } else {
+        // Fish completed path naturally - fade out smoothly without flash
+        console.log(`🌊 Fish ${fishId} completed path, fading out silently`);
+        await new Promise<void>((resolve) => {
+          this.scene.tweens.add({
+            targets: sprite,
+            alpha: 0,
+            duration: 300,
+            ease: 'Cubic.easeOut',
+            onComplete: () => {
+              sprite.setVisible(false);
+              resolve();
+            },
+          });
+        });
+      }
+      
+      console.log(`🗑️ Destroying fish ${fishId}`);
       sprite.destroy();
       this.fishSprites.delete(fishId);
+      
+      // Defensive cleanup: Ensure killed state is removed even if not found above
+      if (this.killedFishIds.has(fishId)) {
+        this.killedFishIds.delete(fishId);
+      }
+      
       console.log(`✅ Removed fish ${fishId} from sprite manager`);
     } else {
       console.warn(`⚠️ Attempted to remove non-existent fish ${fishId}`);
+      // Still clean up kill state for non-existent fish to prevent leaks
+      this.killedFishIds.delete(fishId);
     }
   }
 
@@ -78,6 +119,8 @@ export class FishSpriteManager {
       sprite.destroy();
     }
     this.fishSprites.clear();
+    // Clear kill tracking when clearing all sprites
+    this.killedFishIds.clear();
   }
 
   public getActiveFishCount(): number {

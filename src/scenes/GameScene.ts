@@ -275,6 +275,8 @@ export default class GameScene extends Phaser.Scene {
       console.log(
         `💰 Payout event: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`,
       );
+      // Mark fish as killed so it plays death animation (vs silent path completion)
+      this.fishSpriteManager.markFishAsKilled(fishId);
       this.rewardAnimationManager.playRewardAnimation(fishId, payout, playerSlot, isOwnKill);
     };
 
@@ -396,9 +398,12 @@ export default class GameScene extends Phaser.Scene {
     const fps = Math.round(this.game.loop.actualFps);
     const activeFish = this.fishSpriteManager.getActiveFishCount();
     const pathMode = this.gameState.fishPathManager.getTrackedFishCount() > 0 ? 'ON' : 'OFF';
-    const accumulatorDrift = this.accumulator.toFixed(2);
+    // Show accumulator as percentage of tick time (0-100%) instead of raw ms
+    const accumulatorPercent = Math.min(100, (this.accumulator / this.MS_PER_TICK) * 100).toFixed(1);
     const tickDrift = this.gameState.tickDrift;
     const seat = this.gameState.myPlayerSlot !== null ? this.gameState.myPlayerSlot : 'N/A';
+    // Ensure progress stays 0-100 and formats cleanly
+    const progress = Math.max(0, Math.min(100, tickProgress * 100)).toFixed(0);
 
     this.debugText.setText([
       `Tick: ${this.gameState.currentTick}`,
@@ -409,8 +414,8 @@ export default class GameScene extends Phaser.Scene {
       `Paths: ${pathMode}`,
       `Auto: ${this.autoTargetMode ? 'ON' : 'OFF'}`,
       `Hold: ${this.isHoldingFire ? 'Y' : 'N'}`,
-      `Acc: ${accumulatorDrift}ms`,
-      `Prog: ${(tickProgress * 100).toFixed(1)}%`,
+      `ACC: ${accumulatorPercent}%`,
+      `PROG: ${progress}%`,
       `Drift: ${tickDrift}`,
       `Sync: ${this.gameState.isSynced ? 'Y' : 'N'}`,
       `SD: ${this.stateDeltaCount}`,
