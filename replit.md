@@ -31,7 +31,7 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
     - **Homing Bullets:** Server-side projectiles with a 3.0 rad/s turn rate and 320 px/s speed that curve toward targets.
     - **Protocol:** MessagePack configured for SignalR.
 - **Client-Side:**
-    - **Framework:** Phaser 3 with TypeScript and Vite. Scene architecture includes Boot, Login, Lobby, Game, and UI scenes.
+    - **Framework:** Phaser 3 with TypeScript and Vite. Scene architecture includes Boot, Lobby, Game, and UI scenes.
     - **Authentication:** Guest login via REST endpoint, JWT storage, and SignalR connection.
     - **Loading Screen:** Beautiful loading screen with Ocean Attack logo centered on black background, animated progress bar tracking asset loading, and smooth fade transitions. When loading completes, progress bar fades out and "Tap to Continue" fades in. On tap, everything fades out and transitions to Lobby. Auto-assigns guest names (Player####) to skip manual login.
     - **Lobby UI:** Two-screen flow: Boot (loading + tap) → Lobby → Game, displaying room lists and solo mode options.
