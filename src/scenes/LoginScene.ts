@@ -20,9 +20,12 @@ export default class LoginScene extends Phaser.Scene {
     // Add subtle animated bubbles effect
     this.createBubbleParticles();
 
-    // Ocean Attack Logo - centered and prominent
-    const logo = this.add.image(900, 260, 'ocean-attack-logo');
-    logo.setScale(0.55);
+    // LEFT SIDE: Logo and subtitle (40% of screen)
+    const logoX = 450; // Center of left half (0.25 * 1800)
+    
+    // Ocean Attack Logo - positioned on left side
+    const logo = this.add.image(logoX, 350, 'ocean-attack-logo');
+    logo.setScale(0.65);
     logo.setOrigin(0.5);
 
     // Add subtle glow effect to logo
@@ -35,9 +38,9 @@ export default class LoginScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     });
 
-    // Subtitle with modern styling - positioned below logo
-    const subtitle = this.add.text(900, 530, 'Multiplayer Fishing Arena', {
-      fontSize: '26px',
+    // Subtitle with modern styling - positioned below logo on left
+    const subtitle = this.add.text(logoX, 650, 'Multiplayer Fishing Arena', {
+      fontSize: '28px',
       color: '#87CEEB',
       fontStyle: 'bold',
       stroke: '#0d1b2a',
@@ -45,19 +48,32 @@ export default class LoginScene extends Phaser.Scene {
     });
     subtitle.setOrigin(0.5);
 
-    // Name input label - positioned below subtitle
-    const nameLabel = this.add.text(900, 600, 'Enter Your Name', {
-      fontSize: '22px',
+    // RIGHT SIDE: Login form (60% of screen)
+    const formX = 1200; // Center of right section (0.67 * 1800)
+
+    // Title on right side
+    const welcomeText = this.add.text(formX, 280, 'WELCOME', {
+      fontSize: '48px',
       color: '#FFD700',
       fontStyle: 'bold',
+      stroke: '#0d1b2a',
+      strokeThickness: 4,
     });
-    nameLabel.setOrigin(0.5);
+    welcomeText.setOrigin(0.5);
+
+    // Instructions
+    const instructionText = this.add.text(formX, 360, 'Enter your name to begin', {
+      fontSize: '24px',
+      color: '#87CEEB',
+      fontStyle: 'normal',
+    });
+    instructionText.setOrigin(0.5);
 
     // Create HTML input field for name
     this.createNameInput();
 
-    // Error message text (hidden initially)
-    this.errorText = this.add.text(900, 700, '', {
+    // Error message text (hidden initially) - positioned on right side
+    this.errorText = this.add.text(formX, 620, '', {
       fontSize: '18px',
       color: '#FF6B6B',
       fontStyle: 'bold',
@@ -66,18 +82,19 @@ export default class LoginScene extends Phaser.Scene {
     });
     this.errorText.setOrigin(0.5);
 
-    // Modern gradient button with glow - positioned below text input
+    // Modern gradient button with glow - positioned on right side
+    const buttonY = 680;
     const buttonBg = this.add.graphics();
     buttonBg.fillGradientStyle(0xff6b35, 0xff6b35, 0xff8e53, 0xff8e53, 1);
-    buttonBg.fillRoundedRect(750, 730, 300, 70, 35);
+    buttonBg.fillRoundedRect(formX - 150, buttonY, 300, 70, 35);
     buttonBg.lineStyle(3, 0xffd700, 1);
-    buttonBg.strokeRoundedRect(750, 730, 300, 70, 35);
+    buttonBg.strokeRoundedRect(formX - 150, buttonY, 300, 70, 35);
 
-    const loginButton = this.add.zone(750, 730, 300, 70);
+    const loginButton = this.add.zone(formX - 150, buttonY, 300, 70);
     loginButton.setOrigin(0, 0);
     loginButton.setInteractive({ useHandCursor: true });
 
-    const loginText = this.add.text(900, 765, 'DIVE IN', {
+    const loginText = this.add.text(formX, buttonY + 35, 'DIVE IN', {
       fontSize: '32px',
       color: '#FFF',
       fontStyle: 'bold',
@@ -90,9 +107,9 @@ export default class LoginScene extends Phaser.Scene {
     loginButton.on('pointerover', () => {
       buttonBg.clear();
       buttonBg.fillGradientStyle(0xff8e53, 0xff8e53, 0xffb380, 0xffb380, 1);
-      buttonBg.fillRoundedRect(750, 730, 300, 70, 35);
+      buttonBg.fillRoundedRect(formX - 150, buttonY, 300, 70, 35);
       buttonBg.lineStyle(4, 0xffd700, 1);
-      buttonBg.strokeRoundedRect(750, 730, 300, 70, 35);
+      buttonBg.strokeRoundedRect(formX - 150, buttonY, 300, 70, 35);
       
       this.tweens.add({
         targets: loginText,
@@ -105,9 +122,9 @@ export default class LoginScene extends Phaser.Scene {
     loginButton.on('pointerout', () => {
       buttonBg.clear();
       buttonBg.fillGradientStyle(0xff6b35, 0xff6b35, 0xff8e53, 0xff8e53, 1);
-      buttonBg.fillRoundedRect(750, 730, 300, 70, 35);
+      buttonBg.fillRoundedRect(formX - 150, buttonY, 300, 70, 35);
       buttonBg.lineStyle(3, 0xffd700, 1);
-      buttonBg.strokeRoundedRect(750, 730, 300, 70, 35);
+      buttonBg.strokeRoundedRect(formX - 150, buttonY, 300, 70, 35);
       
       this.tweens.add({
         targets: loginText,
@@ -151,9 +168,9 @@ export default class LoginScene extends Phaser.Scene {
   }
 
   private createNameInput() {
-    console.log('LoginScene: Creating HTML input element with fixed overlay');
+    console.log('LoginScene: Creating HTML input element with split-screen layout');
     
-    // Create a fixed overlay container (independent from canvas positioning)
+    // Create a fixed overlay container with split layout for iOS landscape compatibility
     this.loginOverlay = document.createElement('div');
     this.loginOverlay.style.cssText = `
       position: fixed;
@@ -162,57 +179,87 @@ export default class LoginScene extends Phaser.Scene {
       width: 100%;
       height: 100%;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: center;
-      padding-top: 72%;
       z-index: 1000;
       pointer-events: none;
     `;
 
-    // Create HTML input element with modern styling - smaller text box
+    // Container for the input positioned on the right side of screen
+    const inputContainer = document.createElement('div');
+    inputContainer.style.cssText = `
+      position: absolute;
+      left: 67%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      max-width: 40vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    `;
+
+    // Create HTML input element with modern styling
     this.nameInput = document.createElement('input');
     this.nameInput.type = 'text';
     this.nameInput.placeholder = 'Your name';
     this.nameInput.maxLength = 20;
     this.nameInput.style.cssText = `
-      font-size: 22px;
-      padding: 10px 20px;
-      width: 320px;
-      max-width: 85vw;
+      font-size: 24px;
+      padding: 14px 24px;
+      width: 100%;
       text-align: center;
       border: 3px solid #FFD700;
-      border-radius: 10px;
-      background: rgba(13, 27, 42, 0.9);
+      border-radius: 12px;
+      background: rgba(13, 27, 42, 0.95);
       color: #FFF;
       outline: none;
       font-family: Arial, sans-serif;
       pointer-events: auto;
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.25);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
       transition: all 0.3s ease;
     `;
 
-    // Add input to overlay
-    this.loginOverlay.appendChild(this.nameInput);
+    // Focus styling
+    this.nameInput.addEventListener('focus', () => {
+      this.nameInput.style.borderColor = '#87CEEB';
+      this.nameInput.style.boxShadow = '0 0 25px rgba(135, 206, 235, 0.5)';
+    });
+
+    this.nameInput.addEventListener('blur', () => {
+      this.nameInput.style.borderColor = '#FFD700';
+      this.nameInput.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.3)';
+    });
+
+    // Add input to container
+    inputContainer.appendChild(this.nameInput);
+
+    // Add container to overlay
+    this.loginOverlay.appendChild(inputContainer);
 
     // Add overlay to DOM
     document.body.appendChild(this.loginOverlay);
-    console.log('LoginScene: Login overlay created with centered flexbox layout');
+    console.log('LoginScene: Login overlay created with split-screen layout for iOS landscape');
 
     // Handle mobile keyboard with visualViewport API
     if (window.visualViewport) {
       const handleViewportChange = () => {
         if (document.activeElement === this.nameInput && window.visualViewport) {
-          // When keyboard is open, offset the overlay to keep input visible
+          // When keyboard is open on mobile, adjust positioning
+          const viewportHeight = window.visualViewport.height;
           const offsetTop = window.visualViewport.offsetTop;
-          this.loginOverlay.style.top = `${offsetTop}px`;
-          this.loginOverlay.style.height = `${window.visualViewport.height}px`;
+          
+          // Adjust container position to stay visible with keyboard
+          inputContainer.style.top = `${(viewportHeight / 2) + offsetTop}px`;
+          inputContainer.style.transform = 'translate(-50%, -50%)';
         }
       };
 
       const handleBlur = () => {
         // Restore default positioning when keyboard closes
-        this.loginOverlay.style.top = '0';
-        this.loginOverlay.style.height = '100%';
+        inputContainer.style.top = '50%';
+        inputContainer.style.transform = 'translate(-50%, -50%)';
       };
 
       window.visualViewport.addEventListener('resize', handleViewportChange);

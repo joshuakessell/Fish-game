@@ -33,7 +33,7 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
 - **Client-Side:**
     - **Framework:** Phaser 3 with TypeScript and Vite. Scene architecture includes Boot, Login, Lobby, Game, and UI scenes.
     - **Authentication:** Guest login via REST endpoint, JWT storage, and SignalR connection.
-    - **Login Screen:** Fixed overlay HTML text input for player name entry (2-20 characters), gold-bordered styling, Enter key submission, flexbox-centered positioning that adapts to mobile keyboard using visualViewport API.
+    - **Login Screen:** Split-screen layout with logo on left (40%), login form on right (60%). Fixed overlay HTML input for player name (2-20 characters), gold-bordered styling, Enter key submission. iOS landscape compatible with absolute positioning (`left: 67%`) instead of percentage-based padding. Adapts to mobile keyboard using visualViewport API.
     - **Lobby UI:** Three-screen flow: Login → Lobby → Game, displaying room lists and solo mode options.
     - **Phaser.Curves Path System:** Fish movement uses Phaser.Curves API (Line, CubicBezier, Spline) with server-generated control points for deterministic synchronization. PathComputer uses curve.getPoint(t) for smooth rendering. Curve volatility reduced by 50-60% (sine amplitude 5-25f→3-12f, bezier Y-offsets ±300f→±150f) to prevent direction flipping.
     - **GameState Manager:** Singleton managing game state, SignalR connection, FishPathManager, and Phaser scene coordination. Debug overlay displays ACC as tick percentage (0-100%) and PROG as clamped integer (0-100) for stable visualization.
