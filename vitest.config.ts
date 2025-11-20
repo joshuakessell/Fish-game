@@ -11,12 +11,6 @@ export default defineConfig({
       '**/bin/**',
       '**/obj/**',
       '**/.{idea,git,cache,output,temp}/**',
-      '**/deserialization.test.ts',
-      '**/determinism.test.ts',
-      '**/FishSprite.test.ts',
-      '**/GameState.test.ts',
-      '**/PathComputation.test.ts',
-      '**/RewardAnimationManager.test.ts',
     ],
     coverage: {
       provider: 'v8',
