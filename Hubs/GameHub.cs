@@ -284,6 +284,104 @@ public class GameHub : Hub
         }
     }
 
+    // Debug commands for testing fish spawning and lifecycle
+    public async Task<object> ToggleDebugMode()
+    {
+        if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
+            return new { success = false, message = "Not in a match" };
+        
+        var (userId, name, credits) = GetUserFromContext();
+        
+        // Toggle the debug flag
+        var debugEnabled = Server.Managers.FishManager.DEBUG_FISH_LIFECYCLE = !Server.Managers.FishManager.DEBUG_FISH_LIFECYCLE;
+        
+        Console.WriteLine($"[DEBUG] Fish lifecycle debugging {(debugEnabled ? "ENABLED" : "DISABLED")} by {name}");
+        
+        // Broadcast debug status to all clients in match
+        await Clients.Group(matchId).SendAsync("DebugModeChanged", new
+        {
+            enabled = debugEnabled,
+            message = $"Fish lifecycle debugging {(debugEnabled ? "enabled" : "disabled")} by {name}"
+        });
+        
+        return new { success = true, enabled = debugEnabled };
+    }
+    
+    public async Task<object> SpawnTestFish(int typeId, int count = 1)
+    {
+        if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
+            return new { success = false, message = "Not in a match" };
+
+        if (!_connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerId))
+            return new { success = false, message = "Player not found" };
+        
+        var matchManager = _gameServer.GetMatchManager();
+        var match = matchManager.GetMatch(matchId);
+        
+        if (match == null)
+            return new { success = false, message = "Match not found" };
+        
+        // Validate fish type
+        if (typeId < 0 || typeId > 21)
+            return new { success = false, message = "Invalid fish type ID (0-21)" };
+        
+        // Limit count to prevent spam
+        count = Math.Min(count, 10);
+        
+        var (userId, name, credits) = GetUserFromContext();
+        Console.WriteLine($"[DEBUG] Spawning {count} test fish of type {typeId} requested by {name}");
+        
+        // Enqueue command to spawn test fish
+        match.EnqueueCommand(new GameCommand
+        {
+            Type = CommandType.SpawnTestFish,
+            PlayerId = playerId,
+            TestFishTypeId = typeId,
+            TestFishCount = count
+        });
+        
+        // Notify all players in match
+        await Clients.Group(matchId).SendAsync("TestFishSpawned", new
+        {
+            typeId = typeId,
+            count = count,
+            requestedBy = name
+        });
+        
+        return new { success = true, typeId = typeId, count = count };
+    }
+    
+    public async Task<object> GetDebugInfo()
+    {
+        if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
+            return new { success = false, message = "Not in a match" };
+        
+        var matchManager = _gameServer.GetMatchManager();
+        var match = matchManager.GetMatch(matchId);
+        
+        if (match == null)
+            return new { success = false, message = "Match not found" };
+        
+        // Get current fish count and debug status
+        var fishManager = match.GetFishManager();
+        var activeFish = fishManager?.GetActiveFish() ?? new List<Server.Entities.Fish>();
+        
+        var debugInfo = new
+        {
+            success = true,
+            debugEnabled = Server.Managers.FishManager.DEBUG_FISH_LIFECYCLE,
+            activeFishCount = activeFish.Count,
+            fishByType = activeFish.GroupBy(f => f.TypeId)
+                .Select(g => new { typeId = g.Key, count = g.Count() })
+                .OrderBy(x => x.typeId),
+            fishGroups = activeFish.GroupBy(f => f.GroupId)
+                .Where(g => g.Count() > 1)
+                .Select(g => new { groupId = g.Key, count = g.Count(), typeId = g.First().TypeId })
+        };
+        
+        return debugInfo;
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         Console.WriteLine($"[OnDisconnectedAsync] Connection {Context.ConnectionId} disconnected. Exception: {(exception != null ? exception.Message : "none")}");

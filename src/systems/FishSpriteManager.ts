@@ -7,6 +7,8 @@ export class FishSpriteManager {
   private scene: Phaser.Scene;
   private gameState: GameState;
   private killedFishIds: Set<number> = new Set(); // Track fish killed by bullets vs path completion
+  private pendingRemovals: Map<number, number> = new Map(); // Fish ID -> tick when marked for removal
+  private readonly REMOVAL_GRACE_PERIOD = 15; // 500ms at 30 TPS
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -62,6 +64,21 @@ export class FishSpriteManager {
     for (const sprite of this.fishSprites.values()) {
       sprite.updatePosition(tick);
     }
+    
+    // Process pending removals with grace period
+    const removalsToProcess: number[] = [];
+    for (const [fishId, removalTick] of this.pendingRemovals) {
+      if (tick >= removalTick + this.REMOVAL_GRACE_PERIOD) {
+        removalsToProcess.push(fishId);
+      }
+    }
+    
+    // Execute removals after grace period
+    for (const fishId of removalsToProcess) {
+      this.pendingRemovals.delete(fishId);
+      console.log(`Grace period expired for fish ${fishId}, removing now`);
+      this.removeFish(fishId);
+    }
   }
 
   public renderAllFish(alpha: number): void {
@@ -74,6 +91,9 @@ export class FishSpriteManager {
     const sprite = this.fishSprites.get(fishId);
     if (sprite) {
       const wasKilled = this.killedFishIds.has(fishId);
+      
+      // Log removal reason for debugging
+      console.log(`Fish ${fishId} removed: killed=${wasKilled}`);
       
       if (wasKilled) {
         // Fish was killed by bullet - play death animation with flash
@@ -113,6 +133,21 @@ export class FishSpriteManager {
       this.killedFishIds.delete(fishId);
     }
   }
+  
+  public scheduleFishRemoval(fishId: number, tick: number): void {
+    // Add to pending removals with current tick for grace period
+    if (!this.killedFishIds.has(fishId)) {
+      this.pendingRemovals.set(fishId, tick);
+      console.log(`Scheduled fish ${fishId} for removal with grace period`);
+    }
+  }
+  
+  public cancelPendingRemoval(fishId: number): void {
+    if (this.pendingRemovals.has(fishId)) {
+      this.pendingRemovals.delete(fishId);
+      console.log(`Cancelled pending removal for fish ${fishId}`);
+    }
+  }
 
   public clear(): void {
     for (const sprite of this.fishSprites.values()) {
@@ -121,6 +156,8 @@ export class FishSpriteManager {
     this.fishSprites.clear();
     // Clear kill tracking when clearing all sprites
     this.killedFishIds.clear();
+    // Clear pending removals
+    this.pendingRemovals.clear();
   }
 
   public getActiveFishCount(): number {

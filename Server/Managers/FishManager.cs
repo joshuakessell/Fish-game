@@ -13,6 +13,9 @@ public class FishManager
     private const int ARENA_HEIGHT = 900;
     private const int MAX_PER_TYPE_NON_SMALL_FISH = 3; // Max 3 of each non-small fish type
     
+    // Debug flag for lifecycle logging
+    public static bool DEBUG_FISH_LIFECYCLE = false;
+    
     // Unique group ID counter for fish formations
     private static long _groupIdCounter = 0;
     
@@ -45,12 +48,16 @@ public class FishManager
             if (fish.CachedPathData != null && !fish.CachedPathData.Loop)
             {
                 float ticksSinceSpawn = currentTick - fish.SpawnTick;
-                float pathDuration = fish.CachedPathData.Duration * 30f; // Convert seconds to ticks
+                float pathDuration = fish.CachedPathData.Duration * fish.PathDurationVariance * 30f; // Apply variance
                 float t = pathDuration > 0 ? ticksSinceSpawn / pathDuration : 0f;
                 
                 if (t >= 1.0f)
                 {
                     fishToRemove.Add(fish.FishId);
+                    if (DEBUG_FISH_LIFECYCLE)
+                    {
+                        Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} removed: path_complete (group {fish.GroupId})");
+                    }
                     continue; // Skip boundary check
                 }
             }
@@ -59,6 +66,10 @@ public class FishManager
             if (fish.DespawnTick > 0 && currentTick >= fish.DespawnTick)
             {
                 fishToRemove.Add(fish.FishId);
+                if (DEBUG_FISH_LIFECYCLE)
+                {
+                    Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} removed: despawn_timer (group {fish.GroupId})");
+                }
                 continue;
             }
 
@@ -68,6 +79,10 @@ public class FishManager
                 fish.Y < -BOUNDARY_MARGIN || fish.Y > ARENA_HEIGHT + BOUNDARY_MARGIN)
             {
                 fishToRemove.Add(fish.FishId);
+                if (DEBUG_FISH_LIFECYCLE)
+                {
+                    Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} removed: out_of_bounds at ({fish.X:F0},{fish.Y:F0}) (group {fish.GroupId})");
+                }
             }
         }
 
@@ -146,6 +161,12 @@ public class FishManager
         _waveRiderSpawnFromLeft = !_waveRiderSpawnFromLeft;
         
         Console.WriteLine($"[WAVE RIDER] Spawned from {(!_waveRiderSpawnFromLeft ? "left" : "right")} edge with sine wave pattern");
+        
+        if (DEBUG_FISH_LIFECYCLE)
+        {
+            float duration = fish.CachedPathData?.Duration ?? 0;
+            Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type 21 (Wave Rider) spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {duration:F1}s, group {groupId}");
+        }
     }
 
     private void SpawnSingleFish(int typeId, long currentTick)
@@ -175,6 +196,12 @@ public class FishManager
         
         // Update type count
         _fishCountByType[typeId] = _fishCountByType.GetValueOrDefault(typeId, 0) + 1;
+        
+        if (DEBUG_FISH_LIFECYCLE)
+        {
+            float duration = fish.CachedPathData?.Duration ?? 0;
+            Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type {typeId} spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {duration * fish.PathDurationVariance:F1}s, group {groupId}");
+        }
     }
 
     private void SpawnRandomFish(long currentTick)
@@ -237,6 +264,12 @@ public class FishManager
         // Select a spawn edge for the entire group (0-11: edges, corners, and center regions)
         int spawnEdge = _random.Next(12);
         
+        // Log group spawn
+        if (DEBUG_FISH_LIFECYCLE)
+        {
+            Console.WriteLine($"[FISH_GROUP] Group {groupId} spawned with {groupSize} fish of type {typeId}");
+        }
+        
         // Spawn fish in follow-the-leader line formation with time-based staggering
         for (int i = 0; i < groupSize; i++)
         {
@@ -259,6 +292,13 @@ public class FishManager
             
             // Update type count for small fish groups
             _fishCountByType[typeId] = _fishCountByType.GetValueOrDefault(typeId, 0) + 1;
+            
+            if (DEBUG_FISH_LIFECYCLE)
+            {
+                float duration = fish.CachedPathData?.Duration ?? 0;
+                float adjustedDuration = duration * fish.PathDurationVariance;
+                Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type {typeId} spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {adjustedDuration:F1}s, group {groupId}, rank {trailingRank}");
+            }
         }
     }
 

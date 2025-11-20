@@ -245,6 +245,9 @@ public class MatchInstance
             case CommandType.SetBetValue:
                 HandleSetBetValue(command);
                 break;
+            case CommandType.SpawnTestFish:
+                HandleSpawnTestFish(command);
+                break;
         }
     }
 
@@ -312,6 +315,34 @@ public class MatchInstance
 
         // Clamp bet value between 10 and 200
         player.BetValue = Math.Clamp(command.BetValue, 10, 200);
+    }
+    
+    private void HandleSpawnTestFish(GameCommand command)
+    {
+        Console.WriteLine($"[DEBUG] Spawning {command.TestFishCount} test fish of type {command.TestFishTypeId}");
+        
+        for (int i = 0; i < command.TestFishCount; i++)
+        {
+            // Use a random spawn edge for variety
+            int spawnEdge = _random.Next(12);
+            long groupId = 0; // No group for test fish
+            
+            var fish = Fish.CreateFish(command.TestFishTypeId, _currentTick, spawnEdge, 0, 0, groupId);
+            
+            // Add fish to the manager's active fish collection
+            // Note: This requires making the _activeFish dictionary accessible or adding a method
+            var activeFishField = _fishManager.GetType().GetField("_activeFish", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (activeFishField != null)
+            {
+                var activeFish = activeFishField.GetValue(_fishManager) as Dictionary<string, Fish>;
+                if (activeFish != null)
+                {
+                    activeFish[fish.FishId] = fish;
+                    Console.WriteLine($"[DEBUG] Test fish {fish.FishId} type {command.TestFishTypeId} spawned at ({fish.X:F0},{fish.Y:F0})");
+                }
+            }
+        }
     }
 
     private void ProcessKill(KillEvent kill)
@@ -586,6 +617,11 @@ public class MatchInstance
     {
         return _playerManager.AssignPlayerSlot(playerId, slotIndex);
     }
+    
+    public FishManager? GetFishManager()
+    {
+        return _fishManager;
+    }
 }
 
 // Command and state classes
@@ -600,12 +636,15 @@ public class GameCommand
     public int BetValue { get; set; }
     public string ClientNonce { get; set; } = string.Empty;
     public int? TargetFishId { get; set; }
+    public int TestFishTypeId { get; set; }
+    public int TestFishCount { get; set; }
 }
 
 public enum CommandType
 {
     Fire,
-    SetBetValue
+    SetBetValue,
+    SpawnTestFish
 }
 
 [MessagePackObject]

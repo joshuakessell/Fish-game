@@ -23,10 +23,15 @@ public class Fish
     // Timing
     public long SpawnTick { get; set; }
     public long DespawnTick { get; set; }
+    public float PathDurationVariance { get; set; } = 1.0f; // Multiplier for path duration variance (default 1.0 = no variance)
     
     // Special properties
     public bool IsExplosive { get; set; }
     public bool IsChainLightningEligible { get; set; } = true;
+    
+    // Group information for debugging
+    public long GroupId { get; set; }
+    public int TrailingRank { get; set; }
 
     public static Fish CreateFish(int typeId, long currentTick, int spawnEdge = -1, int lateralIndex = 0, int trailingRank = 0, long groupId = 0)
     {
@@ -68,7 +73,9 @@ public class Fish
             SpawnTick = currentTick,
             HitboxRadius = fishDef.HitboxRadius,
             Path = path, // Store the path for client synchronization
-            CachedPathData = pathData // Cache for performance
+            CachedPathData = pathData, // Cache for performance
+            GroupId = groupId, // Store group ID for debugging
+            TrailingRank = trailingRank // Store trailing rank for variance calculation
         };
         
         // Set BaseValue (payout multiplier from catalog)
@@ -77,9 +84,30 @@ public class Fish
         // Set DestructionOdds (capture probability from catalog)
         fish.DestructionOdds = fishDef.CaptureProbability;
         
-        // Set despawn time based on actual path duration (not category)
+        // Calculate path duration variance for group fish
+        // Apply variance: baseDuration * (0.9 + rank * 0.05) to stagger despawn times
+        // This ensures trailing fish have slightly longer paths than leaders
+        if (groupId > 0 && trailingRank > 0)
+        {
+            // Apply 10-15% variance based on trailing rank
+            // Leading fish (rank 0): 1.0x duration
+            // Second fish (rank 1): ~1.05x duration
+            // Third fish (rank 2): ~1.10x duration, etc.
+            fish.PathDurationVariance = 0.9f + (trailingRank * 0.05f);
+            
+            // Also add some random variance to prevent exact synchronization
+            var random = new Random(fishIdHash);
+            fish.PathDurationVariance += (float)(random.NextDouble() * 0.1f - 0.05f); // ±5% additional random variance
+        }
+        else
+        {
+            fish.PathDurationVariance = 1.0f; // No variance for single fish or group leaders
+        }
+        
+        // Set despawn time based on actual path duration with variance applied
         // This ensures fish are removed exactly when their path completes
-        fish.DespawnTick = currentTick + (long)(pathData.Duration * 30f); // Duration in seconds * 30 TPS
+        float adjustedDuration = pathData.Duration * fish.PathDurationVariance;
+        fish.DespawnTick = currentTick + (long)(adjustedDuration * 30f); // Duration in seconds * 30 TPS
         
         return fish;
     }
@@ -102,7 +130,8 @@ public class Fish
                 return;
             }
             
-            float pathDuration = CachedPathData.Duration * 30f; // Convert seconds to ticks
+            // Apply path duration variance for staggered despawn times
+            float pathDuration = CachedPathData.Duration * PathDurationVariance * 30f; // Convert seconds to ticks with variance
             
             // Normalize time (0.0 to 1.0)
             float t = pathDuration > 0 ? ticksSinceSpawn / pathDuration : 0f;
