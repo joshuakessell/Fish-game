@@ -70,6 +70,9 @@ export class GameState {
   // Dev mode auto-join
   public devModeSeat: number | null = null;
 
+  // Debug overlay state
+  public debugOverlayEnabled: boolean = false;
+
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
 

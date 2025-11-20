@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import BootScene from './scenes/BootScene';
-import LoginScene from './scenes/LoginScene';
 import LobbyScene from './scenes/LobbyScene';
 import GameScene from './scenes/GameScene';
 import UIScene from './scenes/UIScene';
@@ -23,7 +22,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, LoginScene, LobbyScene, GameScene, UIScene],
+  scene: [BootScene, LobbyScene, GameScene, UIScene],
 };
 
 // Initialize the mobile entry manager

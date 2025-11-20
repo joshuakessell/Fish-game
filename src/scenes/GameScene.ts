@@ -6,6 +6,7 @@ import { BettingUI } from '../entities/BettingUI';
 import { BulletData } from '../types/GameTypes';
 import { Bullet } from '../entities/Bullet';
 import { debugLog } from '../config/DebugConfig';
+import { FishDebugOverlay } from '../debug/FishDebugOverlay';
 
 export default class GameScene extends Phaser.Scene {
   private gameState: GameState;
@@ -40,6 +41,7 @@ export default class GameScene extends Phaser.Scene {
 
   private debugText!: Phaser.GameObjects.Text;
   private fpsText!: Phaser.GameObjects.Text;
+  private fishDebugOverlay!: FishDebugOverlay;
 
   private myTurret!: Phaser.GameObjects.Container;
   private turretBarrel!: Phaser.GameObjects.Graphics;
@@ -80,6 +82,17 @@ export default class GameScene extends Phaser.Scene {
       this.gameState,
       this.fishSpriteManager,
     );
+
+    // Initialize fish debug overlay
+    this.fishDebugOverlay = new FishDebugOverlay(this);
+    this.fishDebugOverlay.setEnabled(this.gameState.debugOverlayEnabled);
+
+    // Add F3 keyboard handler for debug overlay toggle
+    this.input.keyboard?.on('keydown-F3', () => {
+      this.gameState.debugOverlayEnabled = !this.gameState.debugOverlayEnabled;
+      this.fishDebugOverlay.toggle();
+      console.log(`Debug overlay ${this.gameState.debugOverlayEnabled ? 'enabled' : 'disabled'}`);
+    });
 
     this.createDebugOverlay();
 
@@ -326,6 +339,11 @@ export default class GameScene extends Phaser.Scene {
     if (this.debugText) {
       this.debugText.destroy();
     }
+
+    // Clean up fish debug overlay
+    if (this.fishDebugOverlay) {
+      this.fishDebugOverlay.destroy();
+    }
   }
 
   private setupSignalRHandlers() {
@@ -386,6 +404,11 @@ export default class GameScene extends Phaser.Scene {
     this.fishSpriteManager.renderAllFish(tickProgress);
     this.updateBullets(delta);
     this.updateAutoTargetIndicator();
+
+    // Update fish debug overlay if enabled
+    if (this.fishDebugOverlay && this.fishDebugOverlay.isEnabled()) {
+      this.fishDebugOverlay.update(this.fishSpriteManager.getFishSprites());
+    }
 
     this.updateDebugOverlay(tickProgress);
   }
