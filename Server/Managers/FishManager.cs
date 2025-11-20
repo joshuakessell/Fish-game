@@ -13,8 +13,8 @@ public class FishManager
     private const int ARENA_HEIGHT = 900;
     private const int MAX_PER_TYPE_NON_SMALL_FISH = 3; // Max 3 of each non-small fish type
     
-    // Debug flag for lifecycle logging
-    public static bool DEBUG_FISH_LIFECYCLE = false;
+    // Debug flag for lifecycle logging (now enabled by default to track despawning issues)
+    public static bool DEBUG_FISH_LIFECYCLE = true;
     
     // Unique group ID counter for fish formations
     private static long _groupIdCounter = 0;
@@ -56,7 +56,7 @@ public class FishManager
                     fishToRemove.Add(fish.FishId);
                     if (DEBUG_FISH_LIFECYCLE)
                     {
-                        Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} removed: path_complete (group {fish.GroupId})");
+                        Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} (type {fish.TypeId}) at position ({fish.X:F1}, {fish.Y:F1}) | Reason: PATH_COMPLETE | t={t:F3} | Duration: {pathDuration/30f:F1}s | Group: {fish.GroupId} | Variance: {fish.PathDurationVariance:F3}");
                     }
                     continue; // Skip boundary check
                 }
@@ -68,7 +68,7 @@ public class FishManager
                 fishToRemove.Add(fish.FishId);
                 if (DEBUG_FISH_LIFECYCLE)
                 {
-                    Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} removed: despawn_timer (group {fish.GroupId})");
+                    Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} (type {fish.TypeId}) at position ({fish.X:F1}, {fish.Y:F1}) | Reason: DESPAWN_TIMER | Tick: {currentTick} >= {fish.DespawnTick} | Group: {fish.GroupId}");
                 }
                 continue;
             }
@@ -81,7 +81,7 @@ public class FishManager
                 fishToRemove.Add(fish.FishId);
                 if (DEBUG_FISH_LIFECYCLE)
                 {
-                    Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} removed: out_of_bounds at ({fish.X:F0},{fish.Y:F0}) (group {fish.GroupId})");
+                    Console.WriteLine($"[FISH_REMOVE] Fish {fish.FishId} (type {fish.TypeId}) at position ({fish.X:F1}, {fish.Y:F1}) | Reason: OUT_OF_BOUNDS | Bounds: X[{-BOUNDARY_MARGIN},{ARENA_WIDTH + BOUNDARY_MARGIN}] Y[{-BOUNDARY_MARGIN},{ARENA_HEIGHT + BOUNDARY_MARGIN}] | Group: {fish.GroupId}");
                 }
             }
         }
