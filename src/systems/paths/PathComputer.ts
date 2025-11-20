@@ -31,16 +31,21 @@ export class PathComputer {
     const ticksPerSecond = 30;
     const elapsedSeconds = elapsedTicks / ticksPerSecond;
 
-    let t = elapsedSeconds / pathData.duration;
+    // Apply variance multiplier to match server-side path duration calculation
+    // Server uses: pathDuration = CachedPathData.Duration * PathDurationVariance * 30f
+    // Client must match: t = elapsedSeconds / (duration * variance)
+    const variance = pathData.variance ?? 1.0; // Default to 1.0 for backwards compatibility
+    const adjustedDuration = pathData.duration * variance;
+    let t = elapsedSeconds / adjustedDuration;
 
     // VALIDATION: Check for progress anomalies
     if (t > 1.1) {
       console.error(
-        `[VALIDATION] Path progress exceeds 110%: ${(t * 100).toFixed(2)}% | Fish: ${pathData.fishId} | Elapsed: ${elapsedSeconds.toFixed(2)}s | Duration: ${pathData.duration.toFixed(2)}s | CurrentTick: ${currentTick} | StartTick: ${pathData.startTick}`,
+        `[VALIDATION] Path progress exceeds 110%: ${(t * 100).toFixed(2)}% | Fish: ${pathData.fishId} | Elapsed: ${elapsedSeconds.toFixed(2)}s | Duration: ${pathData.duration.toFixed(2)}s | Variance: ${variance.toFixed(3)} | Adjusted: ${adjustedDuration.toFixed(2)}s | CurrentTick: ${currentTick} | StartTick: ${pathData.startTick}`,
       );
       debugLog(
         'validation',
-        `[PROG ANOMALY] t: ${(t * 100).toFixed(2)}%, FishId: ${pathData.fishId}, Elapsed: ${elapsedSeconds.toFixed(2)}s, Duration: ${pathData.duration.toFixed(2)}s, Loop: ${pathData.loop}`,
+        `[PROG ANOMALY] t: ${(t * 100).toFixed(2)}%, FishId: ${pathData.fishId}, Elapsed: ${elapsedSeconds.toFixed(2)}s, Duration: ${pathData.duration.toFixed(2)}s, Variance: ${variance.toFixed(3)}, Loop: ${pathData.loop}`,
       );
     }
 

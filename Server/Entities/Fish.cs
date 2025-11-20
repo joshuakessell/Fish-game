@@ -60,9 +60,6 @@ public class Fish
         // Get initial position from path
         var startPos = path.GetPosition(0f);
         
-        // Cache path data to avoid per-tick allocations
-        var pathData = path.GetPathData();
-        
         var fish = new Fish
         {
             FishId = fishIdGuid,
@@ -73,7 +70,6 @@ public class Fish
             SpawnTick = currentTick,
             HitboxRadius = fishDef.HitboxRadius,
             Path = path, // Store the path for client synchronization
-            CachedPathData = pathData, // Cache for performance
             GroupId = groupId, // Store group ID for debugging
             TrailingRank = trailingRank // Store trailing rank for variance calculation
         };
@@ -103,6 +99,11 @@ public class Fish
         {
             fish.PathDurationVariance = 1.0f; // No variance for single fish or group leaders
         }
+        
+        // Cache path data with variance AFTER calculating PathDurationVariance
+        var pathData = path.GetPathData();
+        pathData.Variance = fish.PathDurationVariance; // Set variance in PathData for client
+        fish.CachedPathData = pathData; // Cache for performance
         
         // Set despawn time based on actual path duration with variance applied
         // This ensures fish are removed exactly when their path completes

@@ -1,6 +1,6 @@
 /**
  * MessagePack array format sent from server
- * [fishId, pathType, seed, startTick, speed, controlPoints, duration, loop]
+ * [fishId, pathType, seed, startTick, speed, controlPoints, duration, loop, variance]
  */
 export type PathDataTuple = [
   number, // [0] fishId
@@ -11,6 +11,7 @@ export type PathDataTuple = [
   number[][], // [5] controlPoints
   number, // [6] duration
   boolean, // [7] loop
+  number, // [8] variance - path duration variance multiplier (1.0 = no variance)
 ];
 
 /**
@@ -28,6 +29,7 @@ export interface PathData {
   // Additional metadata
   duration: number; // How long the path lasts in seconds
   loop: boolean; // Whether the path loops
+  variance: number; // Path duration variance multiplier (1.0 = no variance, used for group fish despawn stagger)
 }
 
 export enum PathType {
@@ -44,7 +46,7 @@ export enum PathType {
  * @returns Normalized PathData object or null
  */
 export function deserializePathData(tuple: PathDataTuple | null): PathData | null {
-  if (!tuple || !Array.isArray(tuple) || tuple.length < 8) {
+  if (!tuple || !Array.isArray(tuple) || tuple.length < 9) {
     return null;
   }
 
@@ -74,5 +76,6 @@ export function deserializePathData(tuple: PathDataTuple | null): PathData | nul
     controlPoints: tuple[5],
     duration: tuple[6],
     loop: tuple[7],
+    variance: tuple[8] ?? 1.0, // Default to 1.0 if variance not present (backwards compatibility)
   };
 }

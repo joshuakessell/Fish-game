@@ -39,6 +39,7 @@ function testLinearPathDeterminism() {
     controlPoints: [[0, 0], [1000, 500]],
     duration: 10,
     loop: false,
+    variance: 1.0,
   };
 
   const testPoints = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0];
@@ -88,6 +89,7 @@ function testSinePathDeterminism() {
     controlPoints: [[0, 0], [1000, 0], [50, 2]], // start, end, [amplitude, frequency]
     duration: 10,
     loop: false,
+    variance: 1.0,
   };
 
   const testPoints = [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1.0];
@@ -134,6 +136,7 @@ function testBezierPathDeterminism() {
     controlPoints: [p0, p1, p2, p3],
     duration: 10,
     loop: false,
+    variance: 1.0,
   };
 
   const testPoints = [0, 0.25, 0.5, 0.75, 1.0];
@@ -180,6 +183,7 @@ function testCircularPathDeterminism() {
     controlPoints: [center, [radiusX, radiusY], [startAngle, 0]], // clockwise=false
     duration: 10,
     loop: true,
+    variance: 1.0,
   };
 
   const testPoints = [0, 0.25, 0.5, 0.75, 1.0];
@@ -226,6 +230,7 @@ function testPathComputerIntegration() {
     ],
     duration: 10,
     loop: false,
+    variance: 1.0,
   };
 
   const pos1 = PathComputer.evaluatePathAtTime(linearPathData, 0.5);

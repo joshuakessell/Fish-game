@@ -31,6 +31,9 @@ public class PathData
     
     [Key(7)]
     public bool Loop { get; set; } // Whether the path loops
+    
+    [Key(8)]
+    public float Variance { get; set; } = 1.0f; // Path duration variance multiplier (default 1.0 = no variance)
 }
 
 public enum PathType

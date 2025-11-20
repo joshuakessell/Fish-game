@@ -33,6 +33,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.computePosition(pathData, 0);
@@ -53,6 +54,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.computePosition(pathData, 150);
@@ -73,6 +75,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.computePosition(pathData, 300);
@@ -93,6 +96,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.computePosition(pathData, 50);
@@ -140,6 +144,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.computePosition(pathData, 500);
@@ -163,6 +168,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const pos0 = PathComputer.evaluatePathAtTime(pathData, 0);
@@ -187,6 +193,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const pos0 = PathComputer.evaluatePathAtTime(pathData, 0);
@@ -234,6 +241,7 @@ describe('PathComputation Extended Tests', () => {
         controlPoints: [[0, 0]],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.evaluatePathAtTime(pathData, 0.5);
@@ -318,6 +326,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 0.1,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.computePosition(pathData, 2);
@@ -338,6 +347,7 @@ describe('PathComputation Extended Tests', () => {
         ],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.computePosition(pathData, 150);
@@ -357,6 +367,7 @@ describe('PathComputation Extended Tests', () => {
         controlPoints: [],
         duration: 10,
         loop: false,
+    variance: 1.0,
       };
 
       const position = PathComputer.computePosition(pathData, 100);
