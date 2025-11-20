@@ -5,6 +5,8 @@ export class LedgerUI {
   private ledger: TransactionLedger;
   private overlay: HTMLDivElement | null = null;
   private isVisible: boolean = false;
+  private currentPage: number = 0;
+  private readonly ITEMS_PER_PAGE: number = 10;
 
   private constructor() {
     this.ledger = TransactionLedger.getInstance();
@@ -28,6 +30,7 @@ export class LedgerUI {
   public show(): void {
     if (this.isVisible) return;
 
+    this.currentPage = 0; // Reset to first page when opening
     this.createOverlay();
     this.isVisible = true;
     console.log('📊 Ledger UI opened');
@@ -120,14 +123,12 @@ export class LedgerUI {
     // Stats section
     const stats = this.createStatsSection();
 
-    // Transactions list (scrollable)
+    // Transactions list (non-scrollable, paginated)
     const transactionsContainer = document.createElement('div');
     transactionsContainer.style.cssText = `
       flex: 1;
-      overflow-y: auto;
       padding: 20px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255, 215, 0, 0.8) rgba(0, 0, 0, 0.3);
+      overflow: hidden;
     `;
 
     const transactions = this.ledger.getTransactions();
@@ -145,10 +146,24 @@ export class LedgerUI {
       // Group transactions: combine shots between kills into single entries
       const groupedTransactions = this.groupTransactions(transactions);
 
-      // Show grouped transactions in reverse order (most recent first)
-      for (let i = groupedTransactions.length - 1; i >= 0; i--) {
-        const group = groupedTransactions[i];
-        transactionsContainer.appendChild(this.createTransactionRow(group));
+      // Reverse for most recent first
+      const reversedTransactions = [...groupedTransactions].reverse();
+
+      // Calculate pagination
+      const totalPages = Math.ceil(reversedTransactions.length / this.ITEMS_PER_PAGE);
+      const startIndex = this.currentPage * this.ITEMS_PER_PAGE;
+      const endIndex = Math.min(startIndex + this.ITEMS_PER_PAGE, reversedTransactions.length);
+      const pageTransactions = reversedTransactions.slice(startIndex, endIndex);
+
+      // Show current page of transactions
+      for (const transaction of pageTransactions) {
+        transactionsContainer.appendChild(this.createTransactionRow(transaction));
+      }
+
+      // Add pagination controls if needed
+      if (totalPages > 1) {
+        const paginationControls = this.createPaginationControls(totalPages);
+        transactionsContainer.appendChild(paginationControls);
       }
     }
 
@@ -251,9 +266,21 @@ export class LedgerUI {
     `;
 
     if (transaction.type === TransactionType.KILL && transaction.fishType !== undefined) {
-      // Fish image
+      // Fish image - map fish type to correct filename
+      const fishTypeToFilename: { [key: number]: string } = {
+        0: 'clownfish.png',
+        1: 'neon_tetra.png',
+        2: 'butterflyfish.png',
+        6: 'lionfish.png',
+        9: 'triggerfish.png',
+        12: 'hammerhead_shark.png',
+        14: 'giant_manta_ray.png',
+        21: 'wave_rider.png',
+      };
+      
       const fishImg = document.createElement('img');
-      fishImg.src = `assets/fish-${transaction.fishType}-static.png`;
+      const filename = fishTypeToFilename[transaction.fishType] || 'clownfish.png';
+      fishImg.src = `assets/fish/${filename}`;
       fishImg.style.cssText = `
         width: 100%;
         height: 100%;
@@ -412,6 +439,95 @@ export class LedgerUI {
     }
 
     return grouped;
+  }
+
+  private createPaginationControls(totalPages: number): HTMLDivElement {
+    const paginationDiv = document.createElement('div');
+    paginationDiv.style.cssText = `
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-top: 20px;
+      padding: 15px;
+    `;
+
+    // Previous button
+    const prevButton = document.createElement('button');
+    prevButton.textContent = '← Previous';
+    prevButton.disabled = this.currentPage === 0;
+    prevButton.style.cssText = `
+      background: ${this.currentPage === 0 ? 'rgba(100, 100, 100, 0.5)' : 'rgba(0, 102, 204, 0.8)'};
+      border: 2px solid ${this.currentPage === 0 ? '#666' : '#0066cc'};
+      color: ${this.currentPage === 0 ? '#999' : '#FFF'};
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: ${this.currentPage === 0 ? 'not-allowed' : 'pointer'};
+      transition: all 0.2s;
+      font-weight: bold;
+    `;
+    if (this.currentPage > 0) {
+      prevButton.onmouseover = () => {
+        prevButton.style.background = 'rgba(0, 136, 238, 1)';
+        prevButton.style.transform = 'scale(1.05)';
+      };
+      prevButton.onmouseout = () => {
+        prevButton.style.background = 'rgba(0, 102, 204, 0.8)';
+        prevButton.style.transform = 'scale(1)';
+      };
+      prevButton.onclick = () => {
+        this.currentPage--;
+        this.refresh();
+      };
+    }
+
+    // Page indicator
+    const pageIndicator = document.createElement('div');
+    pageIndicator.textContent = `Page ${this.currentPage + 1} of ${totalPages}`;
+    pageIndicator.style.cssText = `
+      font-size: 16px;
+      font-weight: bold;
+      color: #FFD700;
+      min-width: 120px;
+      text-align: center;
+    `;
+
+    // Next button
+    const nextButton = document.createElement('button');
+    nextButton.textContent = 'Next →';
+    nextButton.disabled = this.currentPage >= totalPages - 1;
+    nextButton.style.cssText = `
+      background: ${this.currentPage >= totalPages - 1 ? 'rgba(100, 100, 100, 0.5)' : 'rgba(0, 102, 204, 0.8)'};
+      border: 2px solid ${this.currentPage >= totalPages - 1 ? '#666' : '#0066cc'};
+      color: ${this.currentPage >= totalPages - 1 ? '#999' : '#FFF'};
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: ${this.currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer'};
+      transition: all 0.2s;
+      font-weight: bold;
+    `;
+    if (this.currentPage < totalPages - 1) {
+      nextButton.onmouseover = () => {
+        nextButton.style.background = 'rgba(0, 136, 238, 1)';
+        nextButton.style.transform = 'scale(1.05)';
+      };
+      nextButton.onmouseout = () => {
+        nextButton.style.background = 'rgba(0, 102, 204, 0.8)';
+        nextButton.style.transform = 'scale(1)';
+      };
+      nextButton.onclick = () => {
+        this.currentPage++;
+        this.refresh();
+      };
+    }
+
+    paginationDiv.appendChild(prevButton);
+    paginationDiv.appendChild(pageIndicator);
+    paginationDiv.appendChild(nextButton);
+
+    return paginationDiv;
   }
 
   private formatTimeAgo(timestamp: number): string {
