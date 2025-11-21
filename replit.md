@@ -29,6 +29,7 @@ The game employs a client-server architecture, using ASP.NET Core 8 for server-s
     - **Fish Catalog:** Defines fish types with properties like payout, capture probability, and movement characteristics.
     - **Casino Mechanics:** Features inverse risk/reward, progressive boss kills with logistic curve odds, and hidden hot seats providing controlled RTP variance.
     - **Homing Bullets:** Server-side projectiles with a 3.0 rad/s turn rate and 320 px/s speed that curve toward targets.
+    - **Path Validation System:** Strict endpoint validation ensures all fish spawn and despawn off-screen (X: ≤-10/≥1810, Y: ≤-10/≥910). ValidatePathEndpoints() throws InvalidOperationException to block invalid paths. Post-offset clamping preserves off-screen positioning after formation offsets. Graceful exception handling in spawning pipeline (SpawnWaveRider, SpawnSingleFish, SpawnFishGroup) logs failures without crashing matches.
     - **Protocol:** MessagePack configured for SignalR.
 - **Client-Side:**
     - **Framework:** Phaser 3 with TypeScript and Vite. Scene architecture includes Boot, Lobby, Game, and UI scenes.
