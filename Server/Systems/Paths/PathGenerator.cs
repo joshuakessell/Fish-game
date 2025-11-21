@@ -304,9 +304,18 @@ public class PathGenerator
             return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, precomputedEnd);
         }
         
-        // Top or bottom edge: create horizontal parabola that arcs out and returns
+        // Top or bottom edge: create horizontal parabola that arcs out and returns to same edge off-screen
+        const float SPAWN_OFFSET = -10f;
         float horizontalOffset = rng.NextFloat(-500f, 500f);
-        float[] parabolaEnd = new[] { Math.Clamp(start[0] + horizontalOffset, 150f, CANVAS_WIDTH - 150f), start[1] };
+        
+        // Return to same Y position (off-screen) but different X position
+        float endY = sharedParams.StartEdge == 2 ? SPAWN_OFFSET : CANVAS_HEIGHT - SPAWN_OFFSET;
+        float endX = start[0] + horizontalOffset;
+        
+        // Clamp X to ensure reasonable horizontal movement but still allow off-screen positioning
+        endX = MathF.Max(100f, MathF.Min(CANVAS_WIDTH - 100f, endX));
+        
+        float[] parabolaEnd = new[] { endX, endY };
         
         // Make the arc go deeper into the playfield
         float arcDepth = sharedParams.StartEdge == 2 ? 
@@ -429,13 +438,9 @@ public class PathGenerator
         end[0] = baseEnd[0] + (perpX * lateralOffset) + (dirX * longitudinalOffset);
         end[1] = baseEnd[1] + (perpY * lateralOffset) + (dirY * longitudinalOffset);
         
-        // Add buffer zone to prevent fish from getting stuck at exact boundaries
-        // Allow fish to spawn slightly outside and exit slightly outside for smooth transitions
-        const float EDGE_BUFFER = 50f;
-        start[0] = MathF.Max(-EDGE_BUFFER, MathF.Min(CANVAS_WIDTH + EDGE_BUFFER, start[0]));
-        start[1] = MathF.Max(-EDGE_BUFFER, MathF.Min(CANVAS_HEIGHT + EDGE_BUFFER, start[1]));
-        end[0] = MathF.Max(-EDGE_BUFFER, MathF.Min(CANVAS_WIDTH + EDGE_BUFFER, end[0]));
-        end[1] = MathF.Max(-EDGE_BUFFER, MathF.Min(CANVAS_HEIGHT + EDGE_BUFFER, end[1]));
+        // No clamping needed - fish should start and end off-screen
+        // Base anchors are already calculated with SPAWN_OFFSET (-10) to be off-screen
+        // Formation offsets maintain this off-screen positioning
         
         return (start, end);
     }
