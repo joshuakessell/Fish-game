@@ -149,23 +149,31 @@ public class FishManager
         // Wave Rider gets its own unique group ID
         long groupId = Interlocked.Increment(ref _groupIdCounter);
         
-        // Create Wave Rider fish using the standard CreateFish method
-        // Wave Rider (typeId=21) is a bonus fish, so PathGenerator will handle it specially
-        var fish = Fish.CreateFish(21, currentTick, spawnEdge, 0, 0, groupId);
-        
-        _activeFish[fish.FishId] = fish;
-        
-        // Update type count
-        _fishCountByType[21] = _fishCountByType.GetValueOrDefault(21, 0) + 1;
-        
-        _waveRiderSpawnFromLeft = !_waveRiderSpawnFromLeft;
-        
-        Console.WriteLine($"[WAVE RIDER] Spawned from {(!_waveRiderSpawnFromLeft ? "left" : "right")} edge with sine wave pattern");
-        
-        if (DEBUG_FISH_LIFECYCLE)
+        try
         {
-            float duration = fish.CachedPathData?.Duration ?? 0;
-            Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type 21 (Wave Rider) spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {duration:F1}s, group {groupId}");
+            // Create Wave Rider fish using the standard CreateFish method
+            // Wave Rider (typeId=21) is a bonus fish, so PathGenerator will handle it specially
+            var fish = Fish.CreateFish(21, currentTick, spawnEdge, 0, 0, groupId);
+            
+            _activeFish[fish.FishId] = fish;
+            
+            // Update type count
+            _fishCountByType[21] = _fishCountByType.GetValueOrDefault(21, 0) + 1;
+            
+            _waveRiderSpawnFromLeft = !_waveRiderSpawnFromLeft;
+            
+            Console.WriteLine($"[WAVE RIDER] Spawned from {(!_waveRiderSpawnFromLeft ? "left" : "right")} edge with sine wave pattern");
+            
+            if (DEBUG_FISH_LIFECYCLE)
+            {
+                float duration = fish.CachedPathData?.Duration ?? 0;
+                Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type 21 (Wave Rider) spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {duration:F1}s, group {groupId}");
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Path validation failed - skip this fish and log the error
+            Console.WriteLine($"❌ [SPAWN_FAILED] Wave Rider (type 21) failed to spawn: {ex.Message}");
         }
     }
 
@@ -190,17 +198,25 @@ public class FishManager
         // Single fish gets its own unique group ID (no formation)
         long groupId = Interlocked.Increment(ref _groupIdCounter);
         
-        // Create fish with spawn edge information for path generation
-        var fish = Fish.CreateFish(typeId, currentTick, spawnEdge, 0, 0, groupId);
-        _activeFish[fish.FishId] = fish;
-        
-        // Update type count
-        _fishCountByType[typeId] = _fishCountByType.GetValueOrDefault(typeId, 0) + 1;
-        
-        if (DEBUG_FISH_LIFECYCLE)
+        try
         {
-            float duration = fish.CachedPathData?.Duration ?? 0;
-            Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type {typeId} spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {duration * fish.PathDurationVariance:F1}s, group {groupId}");
+            // Create fish with spawn edge information for path generation
+            var fish = Fish.CreateFish(typeId, currentTick, spawnEdge, 0, 0, groupId);
+            _activeFish[fish.FishId] = fish;
+            
+            // Update type count
+            _fishCountByType[typeId] = _fishCountByType.GetValueOrDefault(typeId, 0) + 1;
+            
+            if (DEBUG_FISH_LIFECYCLE)
+            {
+                float duration = fish.CachedPathData?.Duration ?? 0;
+                Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type {typeId} spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {duration * fish.PathDurationVariance:F1}s, group {groupId}");
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Path validation failed - skip this fish and log the error
+            Console.WriteLine($"❌ [SPAWN_FAILED] Fish type {typeId} failed to spawn: {ex.Message}");
         }
     }
 
@@ -285,19 +301,27 @@ public class FishManager
             // This creates true follow-the-leader movement with more spacing between fish
             long spawnTick = currentTick + (i * 35);
             
-            // Create fish with future spawn tick, lateral index, and trailing rank
-            var fish = Fish.CreateFish(typeId, spawnTick, spawnEdge, lateralIndex, trailingRank, groupId);
-            
-            _activeFish[fish.FishId] = fish;
-            
-            // Update type count for small fish groups
-            _fishCountByType[typeId] = _fishCountByType.GetValueOrDefault(typeId, 0) + 1;
-            
-            if (DEBUG_FISH_LIFECYCLE)
+            try
             {
-                float duration = fish.CachedPathData?.Duration ?? 0;
-                float adjustedDuration = duration * fish.PathDurationVariance;
-                Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type {typeId} spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {adjustedDuration:F1}s, group {groupId}, rank {trailingRank}");
+                // Create fish with future spawn tick, lateral index, and trailing rank
+                var fish = Fish.CreateFish(typeId, spawnTick, spawnEdge, lateralIndex, trailingRank, groupId);
+                
+                _activeFish[fish.FishId] = fish;
+                
+                // Update type count for small fish groups
+                _fishCountByType[typeId] = _fishCountByType.GetValueOrDefault(typeId, 0) + 1;
+                
+                if (DEBUG_FISH_LIFECYCLE)
+                {
+                    float duration = fish.CachedPathData?.Duration ?? 0;
+                    float adjustedDuration = duration * fish.PathDurationVariance;
+                    Console.WriteLine($"[FISH_SPAWN] Fish {fish.FishId} type {typeId} spawned at ({fish.X:F0},{fish.Y:F0}) with path duration {adjustedDuration:F1}s, group {groupId}, rank {trailingRank}");
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Path validation failed - skip this fish and log the error, but continue spawning others in the group
+                Console.WriteLine($"❌ [SPAWN_FAILED] Fish type {typeId} (group {groupId}, rank {trailingRank}) failed to spawn: {ex.Message}");
             }
         }
     }
