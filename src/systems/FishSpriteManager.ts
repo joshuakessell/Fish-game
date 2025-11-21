@@ -92,8 +92,44 @@ export class FishSpriteManager {
     if (sprite) {
       const wasKilled = this.killedFishIds.has(fishId);
       
-      // Log removal reason for debugging
-      console.log(`Fish ${fishId} removed: killed=${wasKilled}`);
+      // Gather detailed diagnostic information
+      const position = { x: sprite.x, y: sprite.y };
+      const fishData = this.gameState.fish.get(fishId);
+      
+      // Get path info from fishData[4] (PathDataTuple)
+      let pathInfo = '';
+      if (fishData && fishData[4]) {
+        const pathTuple = fishData[4];
+        // PathData: [fishId, pathType, seed, startTick, speed, controlPoints, duration, loop, variance]
+        const startTick = pathTuple[3] as number;
+        const duration = pathTuple[6] as number;
+        const variance = pathTuple[8] as number || 1.0;
+        const ticksSinceSpawn = this.gameState.currentTick - startTick;
+        const adjustedDuration = duration * variance * 30; // Convert to ticks
+        const progress = adjustedDuration > 0 ? (ticksSinceSpawn / adjustedDuration) * 100 : 0;
+        
+        pathInfo = `Progress: ${progress.toFixed(1)}% | Duration: ${duration.toFixed(1)}s | Variance: ${variance.toFixed(3)}`;
+      } else {
+        pathInfo = 'No path data available';
+      }
+      
+      // Check if fish is mid-screen (within visible 1800x900 area)
+      const isMidScreen = position.x >= 0 && position.x <= 1800 && 
+                         position.y >= 0 && position.y <= 900;
+      
+      // DETAILED DIAGNOSTIC LOG
+      console.log(
+        `🐟 [FISH_REMOVE] ID: ${fishId} | Killed: ${wasKilled} | ` +
+        `Pos: (${position.x.toFixed(1)}, ${position.y.toFixed(1)}) | ` +
+        `MidScreen: ${isMidScreen} | ${pathInfo}`
+      );
+      
+      // Highlight mid-screen despawns for easy debugging
+      if (isMidScreen && !wasKilled) {
+        console.warn(
+          `⚠️ MID-SCREEN DESPAWN DETECTED! Fish ${fishId} despawned at (${position.x.toFixed(1)}, ${position.y.toFixed(1)}) without being killed!`
+        );
+      }
       
       if (wasKilled) {
         // Fish was killed by bullet - play death animation with flash
