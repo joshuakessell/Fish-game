@@ -238,6 +238,76 @@
             font-size: 0.85em;
         }
         
+        /* Player Ledger Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: rgba(0, 31, 63, 0.95);
+            border: 3px solid #FFD700;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal-title {
+            font-size: 1.8em;
+            color: #FFD700;
+        }
+        
+        .close-btn {
+            background: #e74c3c;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        .close-btn:hover {
+            background: #c0392b;
+        }
+        
+        .player-card {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .player-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-width: 6px;
+            transform: translateX(2px);
+        }
+        
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -359,6 +429,43 @@
         </div>
     </div>
     
+    <!-- Player Ledger Modal -->
+    <div class="modal-overlay" id="playerLedgerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalPlayerName">Player Ledger</h2>
+                <button class="close-btn" onclick="closePlayerLedger()">Close</button>
+            </div>
+            <div class="ledger-controls">
+                <div class="pagination">
+                    <button class="page-btn" id="modalPrevPage" onclick="changeModalPage(-1)" disabled>← Previous</button>
+                    <span class="page-info" id="modalPageInfo">Page 1 of 1</span>
+                    <button class="page-btn" id="modalNextPage" onclick="changeModalPage(1)" disabled>Next →</button>
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Balance</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalLedgerBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #95a5a6; padding: 40px 0;">
+                                No transactions yet
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
     <script>
         let connection = null;
         let ledger = [];
@@ -368,6 +475,11 @@
         let tickCount = 0;
         let tickRate = 0;
         let authToken = null;
+        
+        // Per-player ledgers
+        let playerLedgers = {}; // { playerId: [{time, type, amount, balance, details}] }
+        let currentModalPlayer = null;
+        let modalCurrentPage = 1;
         
         async function connect() {
             const statusEl = document.getElementById('connectionStatus');
@@ -474,7 +586,7 @@
             totalBankEl.textContent = `$${totalBank.toLocaleString()}`;
             
             playerListEl.innerHTML = players.map(player => `
-                <div class="player-card">
+                <div class="player-card" onclick="openPlayerLedger(${player.PlayerSlot}, '${player.DisplayName}')">
                     <div class="player-seat">P${player.PlayerSlot + 1}</div>
                     <div class="player-info">
                         <h3>${player.DisplayName}</h3>
@@ -483,6 +595,13 @@
                     <div class="player-credits">$${player.Credits.toLocaleString()}</div>
                 </div>
             `).join('');
+            
+            // Initialize player ledgers if not exists
+            players.forEach(player => {
+                if (!playerLedgers[player.PlayerSlot]) {
+                    playerLedgers[player.PlayerSlot] = [];
+                }
+            });
         }
         
         function handlePayoutEvents(events, players) {
@@ -495,10 +614,19 @@
                 const player = playerMap[event.PlayerId];
                 if (!player) return;
                 
-                // Add bet transaction
+                // Add bet transaction to global ledger
                 addLedgerEntry({
                     time: new Date(),
                     player: player.DisplayName,
+                    type: 'BET',
+                    amount: -event.BetValue,
+                    balance: player.Credits,
+                    details: `Fish #${event.FishTypeId}`
+                });
+                
+                // Add bet transaction to player's personal ledger
+                addPlayerLedgerEntry(player.PlayerSlot, {
+                    time: new Date(),
                     type: 'BET',
                     amount: -event.BetValue,
                     balance: player.Credits,
@@ -515,10 +643,23 @@
                         balance: player.Credits,
                         details: `Fish #${event.FishTypeId} (${event.Multiplier}x)`
                     });
+                    
+                    addPlayerLedgerEntry(player.PlayerSlot, {
+                        time: new Date(),
+                        type: 'WIN',
+                        amount: event.WinAmount,
+                        balance: player.Credits,
+                        details: `Fish #${event.FishTypeId} (${event.Multiplier}x)`
+                    });
                 }
             });
             
             renderLedger();
+            
+            // Update modal if currently viewing a player
+            if (currentModalPlayer !== null) {
+                renderPlayerLedger();
+            }
         }
         
         function addLedgerEntry(entry) {
@@ -585,6 +726,92 @@
                 renderLedger();
             }
         }
+        
+        function addPlayerLedgerEntry(playerSlot, entry) {
+            if (!playerLedgers[playerSlot]) {
+                playerLedgers[playerSlot] = [];
+            }
+            
+            playerLedgers[playerSlot].unshift(entry);
+            
+            // Keep only last 500 entries per player
+            if (playerLedgers[playerSlot].length > 500) {
+                playerLedgers[playerSlot] = playerLedgers[playerSlot].slice(0, 500);
+            }
+        }
+        
+        function openPlayerLedger(playerSlot, playerName) {
+            currentModalPlayer = playerSlot;
+            modalCurrentPage = 1;
+            document.getElementById('modalPlayerName').textContent = `${playerName} - Transaction Ledger`;
+            document.getElementById('playerLedgerModal').classList.add('active');
+            renderPlayerLedger();
+        }
+        
+        function closePlayerLedger() {
+            document.getElementById('playerLedgerModal').classList.remove('active');
+            currentModalPlayer = null;
+        }
+        
+        function renderPlayerLedger() {
+            if (currentModalPlayer === null) return;
+            
+            const playerTransactions = playerLedgers[currentModalPlayer] || [];
+            const ledgerBodyEl = document.getElementById('modalLedgerBody');
+            const pageInfoEl = document.getElementById('modalPageInfo');
+            const prevBtn = document.getElementById('modalPrevPage');
+            const nextBtn = document.getElementById('modalNextPage');
+            
+            if (playerTransactions.length === 0) {
+                ledgerBodyEl.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #95a5a6; padding: 40px 0;">No transactions yet</td></tr>';
+                pageInfoEl.textContent = 'Page 1 of 1';
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+            
+            const totalPages = Math.ceil(playerTransactions.length / ITEMS_PER_PAGE);
+            modalCurrentPage = Math.min(modalCurrentPage, totalPages);
+            
+            const startIdx = (modalCurrentPage - 1) * ITEMS_PER_PAGE;
+            const endIdx = startIdx + ITEMS_PER_PAGE;
+            const pageItems = playerTransactions.slice(startIdx, endIdx);
+            
+            ledgerBodyEl.innerHTML = pageItems.map(entry => {
+                const amountClass = entry.amount >= 0 ? 'amount-positive' : 'amount-negative';
+                const amountSign = entry.amount >= 0 ? '+' : '';
+                
+                return `
+                    <tr>
+                        <td class="timestamp">${entry.time.toLocaleTimeString()}</td>
+                        <td>${entry.type}</td>
+                        <td class="${amountClass}">${amountSign}$${Math.abs(entry.amount).toLocaleString()}</td>
+                        <td>$${entry.balance.toLocaleString()}</td>
+                        <td>${entry.details}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            pageInfoEl.textContent = `Page ${modalCurrentPage} of ${totalPages}`;
+            prevBtn.disabled = modalCurrentPage === 1;
+            nextBtn.disabled = modalCurrentPage >= totalPages;
+        }
+        
+        function changeModalPage(delta) {
+            if (currentModalPlayer === null) return;
+            
+            const playerTransactions = playerLedgers[currentModalPlayer] || [];
+            const totalPages = Math.ceil(playerTransactions.length / ITEMS_PER_PAGE);
+            modalCurrentPage = Math.max(1, Math.min(totalPages, modalCurrentPage + delta));
+            renderPlayerLedger();
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('playerLedgerModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePlayerLedger();
+            }
+        });
         
         // Auto-connect on page load
         window.addEventListener('load', connect);
