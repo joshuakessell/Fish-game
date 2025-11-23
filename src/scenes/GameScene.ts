@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { GameState } from "../systems/GameState";
 import { FishSpriteManager } from "../systems/FishSpriteManager";
 import { BettingUI } from "../entities/BettingUI";
+import { PlayersDisplayUI } from "../entities/PlayersDisplayUI";
 
 interface ClientBullet {
   id: number;
@@ -31,6 +32,7 @@ export default class GameScene extends Phaser.Scene {
   private turretBarrel!: Phaser.GameObjects.Graphics;
   private turretPosition!: { x: number; y: number };
   private bettingUI!: BettingUI;
+  private playersDisplayUI!: PlayersDisplayUI;
 
   private readonly BULLET_SPEED = 800;
   private readonly MAX_BULLETS_PER_PLAYER = 30;
@@ -65,6 +67,9 @@ export default class GameScene extends Phaser.Scene {
 
     this.createPlayerTurret();
 
+    // Initialize players display UI
+    this.playersDisplayUI = new PlayersDisplayUI(this);
+
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.handleShoot(pointer.x, pointer.y);
     });
@@ -72,6 +77,9 @@ export default class GameScene extends Phaser.Scene {
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       this.rotateTurretToPointer(pointer.x, pointer.y);
     });
+
+    // Start the ledger scene (but hidden)
+    this.scene.launch("LedgerScene");
 
     console.log("GameScene: Initialization complete");
   }

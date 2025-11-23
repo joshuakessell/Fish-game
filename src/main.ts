@@ -4,6 +4,7 @@ import LoginScene from "./scenes/LoginScene";
 import LobbyScene from "./scenes/LobbyScene";
 import GameScene from "./scenes/GameScene";
 import UIScene from "./scenes/UIScene";
+import LedgerScene from "./scenes/LedgerScene";
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -22,7 +23,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [BootScene, LoginScene, LobbyScene, GameScene, UIScene],
+  scene: [BootScene, LoginScene, LobbyScene, GameScene, UIScene, LedgerScene],
 };
 
 new Phaser.Game(config);
