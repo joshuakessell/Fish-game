@@ -89,13 +89,13 @@ public class GameHub : Hub
     {
         if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
         {
-            Console.WriteLine($"[FIRE_DEBUG] Connection {Context.ConnectionId} not found in _connectionToMatch dictionary");
+            // Connection not registered - player hasn't joined a match yet
             return;
         }
 
         if (!_connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerId))
         {
-            Console.WriteLine($"[FIRE_DEBUG] Connection {Context.ConnectionId} not found in _connectionToPlayer dictionary");
+            // Player ID not found - connection not properly initialized
             return;
         }
 
@@ -112,7 +112,7 @@ public class GameHub : Hub
         
         if (match == null)
         {
-            Console.WriteLine($"[FIRE_DEBUG] Match {matchId} not found in MatchManager or LobbyManager");
+            // Match not found - may have been removed
             return;
         }
 

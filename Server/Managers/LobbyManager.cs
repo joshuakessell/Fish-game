@@ -13,6 +13,22 @@ public class LobbyManager
     public LobbyManager(MatchManager matchManager)
     {
         _matchManager = matchManager;
+        
+        // Initialize default public matches for immediate availability
+        InitializeDefaultMatches();
+    }
+    
+    private void InitializeDefaultMatches()
+    {
+        // Create 4 default public matches (match_0, match_1, match_2, match_3)
+        for (int i = 0; i < 4; i++)
+        {
+            var match = _matchManager.CreateEmptyMatch();
+            if (match != null)
+            {
+                Console.WriteLine($"[LobbyManager] Initialized default match: {match.MatchId}");
+            }
+        }
     }
     
     public RoomListResponse GetRoomList(int page = 0)
@@ -135,24 +151,40 @@ public class LobbyManager
     public MatchInstance? JoinRoom(string matchId, string playerId, int seatIndex)
     {
         var match = _matchManager.GetMatch(matchId);
-        if (match == null || !match.CanJoin())
+        if (match == null)
         {
+            Console.WriteLine($"[LobbyManager.JoinRoom] Match '{matchId}' not found");
+            return null;
+        }
+        
+        var canJoin = match.CanJoin();
+        var playerCount = match.GetPlayerCount();
+        var isSolo = match.IsSolo();
+        Console.WriteLine($"[LobbyManager.JoinRoom] Match '{matchId}' - CanJoin={canJoin}, PlayerCount={playerCount}, IsSolo={isSolo}");
+        
+        if (!canJoin)
+        {
+            Console.WriteLine($"[LobbyManager.JoinRoom] Match '{matchId}' cannot be joined (solo={isSolo}, players={playerCount}/{MatchManager.MAX_PLAYERS_PER_MATCH})");
             return null;
         }
         
         // Validate seat index
         if (seatIndex < 0 || seatIndex >= MatchManager.MAX_PLAYERS_PER_MATCH)
         {
+            Console.WriteLine($"[LobbyManager.JoinRoom] Invalid seat index {seatIndex}");
             return null;
         }
         
         // Check if seat is available
         var availableSlots = match.GetAvailableSlots();
+        Console.WriteLine($"[LobbyManager.JoinRoom] Available slots: [{string.Join(", ", availableSlots)}]");
         if (!availableSlots.Contains(seatIndex))
         {
+            Console.WriteLine($"[LobbyManager.JoinRoom] Seat {seatIndex} is already occupied");
             return null; // Seat already occupied
         }
         
+        Console.WriteLine($"[LobbyManager.JoinRoom] Match '{matchId}' validated successfully for seat {seatIndex}");
         return match;
     }
     

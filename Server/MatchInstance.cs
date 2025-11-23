@@ -383,12 +383,18 @@ public class MatchInstance
     
     private void CheckEmptyRoomTimeout()
     {
+        // Only clean up solo matches - keep public lobby matches alive
+        if (!_isSolo)
+        {
+            return;
+        }
+        
         if (_playerManager.GetPlayerCount() == 0)
         {
             var timeSinceLastCheck = (DateTime.UtcNow - _lastPlayerCheckTime).TotalSeconds;
             if (timeSinceLastCheck > EMPTY_ROOM_TIMEOUT_SECONDS)
             {
-                Console.WriteLine($"Match {MatchId} empty for {EMPTY_ROOM_TIMEOUT_SECONDS}s - shutting down");
+                Console.WriteLine($"Solo match {MatchId} empty for {EMPTY_ROOM_TIMEOUT_SECONDS}s - shutting down");
                 _matchManager.RemoveMatch(MatchId);
             }
         }

@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
     }
     
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public IActionResult Login([FromBody] LoginRequest request)
     {
         // TODO: Implement actual user authentication
         // For now, return not implemented
