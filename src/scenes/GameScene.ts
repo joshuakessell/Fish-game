@@ -128,8 +128,8 @@ export default class GameScene extends Phaser.Scene {
       this.fishSpriteManager.removeFish(fishId);
     };
 
-    this.gameState.onPayoutReceived = (fishId: string, payout: number) => {
-      this.showCreditPopup(fishId, payout);
+    this.gameState.onPayoutReceived = (fishId: number, payout: number) => {
+      this.showCreditPopup(fishId.toString(), payout);
     };
 
     this.gameState.onCreditsChanged = () => {
@@ -258,23 +258,63 @@ export default class GameScene extends Phaser.Scene {
       this.turretPosition.y,
     );
 
+    // Detailed turret base - golden ring platform
+    const platform = this.add.graphics();
+    platform.fillStyle(0xCC8800, 1);
+    platform.fillEllipse(0, 0, 90, 35);
+    platform.fillStyle(0xFFAA00, 0.9);
+    platform.fillEllipse(0, 0, 85, 32);
+    platform.lineStyle(3, 0x996600, 1);
+    platform.strokeEllipse(0, 0, 90, 35);
+    platform.lineStyle(2, 0xFFCC33, 0.6);
+    platform.strokeEllipse(0, 0, 70, 26);
+
+    // Turret base - cylindrical body
     const base = this.add.graphics();
-    base.fillStyle(0xb8860b, 1);
-    base.fillCircle(0, 0, 35);
-    base.fillStyle(0xdaa520, 1);
-    base.fillCircle(0, 0, 28);
-    base.lineStyle(2, 0x8b6914);
-    base.strokeCircle(0, 0, 35);
+    base.fillStyle(0xB8860B, 1);
+    base.fillEllipse(0, -5, 55, 22);
+    base.fillStyle(0xDAA520, 0.95);
+    base.fillEllipse(0, -5, 50, 20);
+    base.lineStyle(2, 0x8B6914, 1);
+    base.strokeEllipse(0, -5, 55, 22);
+    
+    // Top dome
+    const dome = this.add.graphics();
+    dome.fillStyle(0xFFAA00, 1);
+    dome.fillEllipse(0, -15, 40, 18);
+    dome.fillStyle(0xFFCC33, 0.8);
+    dome.fillEllipse(0, -18, 35, 15);
+    dome.lineStyle(2, 0xCC8800, 1);
+    dome.strokeEllipse(0, -15, 40, 18);
 
+    // Barrel mount
+    const mount = this.add.graphics();
+    mount.fillStyle(0xB8860B, 1);
+    mount.fillRect(-8, -12, 16, 8);
+    mount.fillStyle(0xDAA520, 1);
+    mount.fillRect(-6, -11, 12, 6);
+
+    // Detailed barrel
     this.turretBarrel = this.add.graphics();
-    this.turretBarrel.fillStyle(0xb8860b, 1);
-    this.turretBarrel.fillRect(0, -8, 50, 16);
-    this.turretBarrel.fillStyle(0xdaa520, 1);
-    this.turretBarrel.fillRect(5, -6, 40, 12);
-    this.turretBarrel.lineStyle(2, 0x8b6914);
-    this.turretBarrel.strokeRect(0, -8, 50, 16);
+    this.turretBarrel.fillStyle(0x8B6914, 1);
+    this.turretBarrel.fillRoundedRect(0, -10, 60, 20, 3);
+    this.turretBarrel.fillStyle(0xB8860B, 1);
+    this.turretBarrel.fillRoundedRect(2, -9, 56, 18, 3);
+    this.turretBarrel.fillStyle(0xDAA520, 0.9);
+    this.turretBarrel.fillRoundedRect(4, -7, 52, 14, 2);
+    
+    // Barrel tip (darker)
+    this.turretBarrel.fillStyle(0x6B5010, 1);
+    this.turretBarrel.fillCircle(58, 0, 6);
+    this.turretBarrel.fillStyle(0x4A3808, 1);
+    this.turretBarrel.fillCircle(58, 0, 4);
+    
+    // Barrel details
+    this.turretBarrel.lineStyle(1, 0xFFCC33, 0.5);
+    this.turretBarrel.strokeRect(10, -6, 35, 12);
+    this.turretBarrel.strokeRect(20, -5, 25, 10);
 
-    this.myTurret.add([base, this.turretBarrel]);
+    this.myTurret.add([platform, base, dome, mount, this.turretBarrel]);
     this.myTurret.setDepth(100);
 
     console.log(
@@ -352,10 +392,23 @@ export default class GameScene extends Phaser.Scene {
     const bulletId = this.nextBulletId++;
 
     const graphics = this.add.graphics();
-    graphics.fillStyle(0xffff00, 1);
-    graphics.fillEllipse(0, 0, 20, 6);
-    graphics.lineStyle(1, 0xffaa00);
-    graphics.strokeEllipse(0, 0, 20, 6);
+    
+    // Create glowing blurred bullet effect
+    graphics.fillStyle(0xFFFF99, 0.3);
+    graphics.fillEllipse(0, 0, 32, 12);
+    
+    graphics.fillStyle(0xFFFF66, 0.5);
+    graphics.fillEllipse(0, 0, 24, 9);
+    
+    graphics.fillStyle(0xFFFF00, 0.8);
+    graphics.fillEllipse(0, 0, 16, 6);
+    
+    graphics.fillStyle(0xFFFFCC, 1);
+    graphics.fillEllipse(0, 0, 10, 4);
+    
+    // Core bright spot
+    graphics.fillStyle(0xFFFFFF, 1);
+    graphics.fillEllipse(0, 0, 6, 2);
 
     const bullet: ClientBullet = {
       id: bulletId,

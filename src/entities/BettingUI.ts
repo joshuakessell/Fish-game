@@ -27,24 +27,31 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
   private createUI() {
     this.createGoldenCircularContainer();
+    this.createBankDisplay();
     this.createMinusButton();
     this.createBetDisplay();
     this.createPlusButton();
-    this.createBankDisplay();
     this.createPlayerNameDisplay();
   }
 
   private createGoldenCircularContainer() {
     const container = this.scene.add.graphics();
 
-    container.fillStyle(0xb8860b, 1);
-    container.fillEllipse(0, 0, 280, 80);
+    // Outer golden ring
+    container.fillStyle(0xCC8800, 1);
+    container.fillEllipse(0, 0, 400, 85);
 
-    container.fillStyle(0xdaa520, 0.8);
-    container.fillEllipse(0, 0, 260, 70);
+    // Inner golden platform
+    container.fillStyle(0xFFAA00, 0.9);
+    container.fillEllipse(0, 0, 390, 78);
 
-    container.lineStyle(3, 0x8b6914, 1);
-    container.strokeEllipse(0, 0, 280, 80);
+    // Dark outline
+    container.lineStyle(3, 0x996600, 1);
+    container.strokeEllipse(0, 0, 400, 85);
+
+    // Light highlight
+    container.lineStyle(2, 0xFFCC33, 0.5);
+    container.strokeEllipse(0, 0, 370, 72);
 
     this.add(container);
   }
@@ -52,26 +59,26 @@ export class BettingUI extends Phaser.GameObjects.Container {
   private createMinusButton() {
     this.minusButton = this.scene.add.graphics();
 
-    this.minusButton.fillStyle(0x0066cc, 1);
-    this.minusButton.fillCircle(-100, 0, 30);
+    this.minusButton.fillStyle(0x0055AA, 1);
+    this.minusButton.fillCircle(-60, 0, 32);
 
-    this.minusButton.lineStyle(2, 0x004499, 1);
-    this.minusButton.strokeCircle(-100, 0, 30);
+    this.minusButton.lineStyle(3, 0x003377, 1);
+    this.minusButton.strokeCircle(-60, 0, 32);
 
-    const minusText = this.scene.add.text(-100, 0, "-", {
-      fontSize: "48px",
+    const minusText = this.scene.add.text(-60, 0, "-", {
+      fontSize: "52px",
       color: "#ffffff",
       fontStyle: "bold",
     });
     minusText.setOrigin(0.5, 0.5);
 
-    this.minusHitArea = this.scene.add.zone(-100, 0, 60, 60);
+    this.minusHitArea = this.scene.add.zone(-60, 0, 64, 64);
     this.minusHitArea.setInteractive({ useHandCursor: true });
 
     this.minusHitArea.on("pointerdown", () => {
       if (this.gameState.decreaseBet()) {
         this.updateBetDisplay();
-        this.playButtonFeedback(this.minusButton, -100, 0);
+        this.playButtonFeedback(this.minusButton, -60, 0);
         this.sendBetValueToServer();
       }
     });
@@ -79,19 +86,19 @@ export class BettingUI extends Phaser.GameObjects.Container {
     this.minusHitArea.on("pointerover", () => {
       if (this.gameState.currentBet > this.gameState.MIN_BET) {
         this.minusButton.clear();
-        this.minusButton.fillStyle(0x0088ee, 1);
-        this.minusButton.fillCircle(-100, 0, 30);
-        this.minusButton.lineStyle(2, 0x004499, 1);
-        this.minusButton.strokeCircle(-100, 0, 30);
+        this.minusButton.fillStyle(0x0077DD, 1);
+        this.minusButton.fillCircle(-60, 0, 32);
+        this.minusButton.lineStyle(3, 0x003377, 1);
+        this.minusButton.strokeCircle(-60, 0, 32);
       }
     });
 
     this.minusHitArea.on("pointerout", () => {
       this.minusButton.clear();
-      this.minusButton.fillStyle(0x0066cc, 1);
-      this.minusButton.fillCircle(-100, 0, 30);
-      this.minusButton.lineStyle(2, 0x004499, 1);
-      this.minusButton.strokeCircle(-100, 0, 30);
+      this.minusButton.fillStyle(0x0055AA, 1);
+      this.minusButton.fillCircle(-60, 0, 32);
+      this.minusButton.lineStyle(3, 0x003377, 1);
+      this.minusButton.strokeCircle(-60, 0, 32);
     });
 
     this.add([this.minusButton, minusText, this.minusHitArea]);
@@ -103,11 +110,11 @@ export class BettingUI extends Phaser.GameObjects.Container {
       0,
       this.gameState.currentBet.toString(),
       {
-        fontSize: "56px",
-        color: "#ffffff",
+        fontSize: "64px",
+        color: "#FFFFFF",
         fontStyle: "bold",
         stroke: "#8B6914",
-        strokeThickness: 3,
+        strokeThickness: 4,
       },
     );
     this.betText.setOrigin(0.5, 0.5);
@@ -118,26 +125,26 @@ export class BettingUI extends Phaser.GameObjects.Container {
   private createPlusButton() {
     this.plusButton = this.scene.add.graphics();
 
-    this.plusButton.fillStyle(0x0066cc, 1);
-    this.plusButton.fillCircle(100, 0, 30);
+    this.plusButton.fillStyle(0x0055AA, 1);
+    this.plusButton.fillCircle(60, 0, 32);
 
-    this.plusButton.lineStyle(2, 0x004499, 1);
-    this.plusButton.strokeCircle(100, 0, 30);
+    this.plusButton.lineStyle(3, 0x003377, 1);
+    this.plusButton.strokeCircle(60, 0, 32);
 
-    const plusText = this.scene.add.text(100, 0, "+", {
-      fontSize: "48px",
+    const plusText = this.scene.add.text(60, 0, "+", {
+      fontSize: "52px",
       color: "#ffffff",
       fontStyle: "bold",
     });
     plusText.setOrigin(0.5, 0.5);
 
-    this.plusHitArea = this.scene.add.zone(100, 0, 60, 60);
+    this.plusHitArea = this.scene.add.zone(60, 0, 64, 64);
     this.plusHitArea.setInteractive({ useHandCursor: true });
 
     this.plusHitArea.on("pointerdown", () => {
       if (this.gameState.increaseBet()) {
         this.updateBetDisplay();
-        this.playButtonFeedback(this.plusButton, 100, 0);
+        this.playButtonFeedback(this.plusButton, 60, 0);
         this.sendBetValueToServer();
       }
     });
@@ -145,54 +152,52 @@ export class BettingUI extends Phaser.GameObjects.Container {
     this.plusHitArea.on("pointerover", () => {
       if (this.gameState.currentBet < this.gameState.MAX_BET) {
         this.plusButton.clear();
-        this.plusButton.fillStyle(0x0088ee, 1);
-        this.plusButton.fillCircle(100, 0, 30);
-        this.plusButton.lineStyle(2, 0x004499, 1);
-        this.plusButton.strokeCircle(100, 0, 30);
+        this.plusButton.fillStyle(0x0077DD, 1);
+        this.plusButton.fillCircle(60, 0, 32);
+        this.plusButton.lineStyle(3, 0x003377, 1);
+        this.plusButton.strokeCircle(60, 0, 32);
       }
     });
 
     this.plusHitArea.on("pointerout", () => {
       this.plusButton.clear();
-      this.plusButton.fillStyle(0x0066cc, 1);
-      this.plusButton.fillCircle(100, 0, 30);
-      this.plusButton.lineStyle(2, 0x004499, 1);
-      this.plusButton.strokeCircle(100, 0, 30);
+      this.plusButton.fillStyle(0x0055AA, 1);
+      this.plusButton.fillCircle(60, 0, 32);
+      this.plusButton.lineStyle(3, 0x003377, 1);
+      this.plusButton.strokeCircle(60, 0, 32);
     });
 
     this.add([this.plusButton, plusText, this.plusHitArea]);
   }
 
   private createBankDisplay() {
-    const bankBg = this.scene.add.graphics();
-    bankBg.fillStyle(0x000000, 0.6);
-    bankBg.fillRoundedRect(-160, 50, 120, 40, 5);
-
     const credits = this.gameState.playerAuth?.credits || 0;
     const formattedCredits = this.formatNumber(credits);
 
-    this.bankText = this.scene.add.text(-100, 70, `Bank: ${formattedCredits}`, {
-      fontSize: "18px",
-      color: "#ffffff",
+    this.bankText = this.scene.add.text(-160, 0, formattedCredits, {
+      fontSize: "26px",
+      color: "#FFD700",
       fontStyle: "bold",
+      stroke: "#8B6914",
+      strokeThickness: 3,
     });
     this.bankText.setOrigin(0.5, 0.5);
 
-    this.add([bankBg, this.bankText]);
+    this.add(this.bankText);
   }
 
   private createPlayerNameDisplay() {
     const playerName = this.gameState.playerAuth?.name || "Player";
 
     const nameBg = this.scene.add.graphics();
-    nameBg.fillStyle(0x8b4513, 0.8);
-    nameBg.fillRoundedRect(140, -20, 120, 40, 5);
-    nameBg.lineStyle(2, 0xdaa520, 1);
-    nameBg.strokeRoundedRect(140, -20, 120, 40, 5);
+    nameBg.fillStyle(0x8B4513, 0.85);
+    nameBg.fillRoundedRect(110, -20, 130, 40, 8);
+    nameBg.lineStyle(2, 0xFFAA00, 1);
+    nameBg.strokeRoundedRect(110, -20, 130, 40, 8);
 
-    this.playerNameText = this.scene.add.text(200, 0, playerName, {
-      fontSize: "20px",
-      color: "#ffffff",
+    this.playerNameText = this.scene.add.text(175, 0, playerName, {
+      fontSize: "22px",
+      color: "#FFE4B5",
       fontStyle: "bold",
     });
     this.playerNameText.setOrigin(0.5, 0.5);
@@ -207,7 +212,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
   public updateBankDisplay() {
     const credits = this.gameState.playerAuth?.credits || 0;
     const formattedCredits = this.formatNumber(credits);
-    this.bankText.setText(`Bank: ${formattedCredits}`);
+    this.bankText.setText(formattedCredits);
   }
 
   private formatNumber(num: number): string {
