@@ -28,7 +28,7 @@ public class AuthController : ControllerBase
         // Generate guest ID and create token (no database persistence - guests are ephemeral)
         var guestId = Guid.NewGuid();
         var guestName = request.Name.Trim();
-        var guestCredits = 1000;
+        var guestCredits = 10000;
         
         // Generate JWT token with all guest data embedded
         var token = _tokenService.GenerateToken(

@@ -213,21 +213,33 @@ public class MatchInstance
     private void HandleFireCommand(GameCommand command)
     {
         var player = _playerManager.GetPlayer(command.PlayerId);
-        if (player == null) return;
+        if (player == null)
+        {
+            Console.WriteLine($"[FIRE_REJECT] Player {command.PlayerId} not found");
+            return;
+        }
 
         // Validate fire rate
-        if (!player.CanFire()) return;
+        if (!player.CanFire())
+        {
+            Console.WriteLine($"[FIRE_REJECT] Player {player.DisplayName} fire rate limit (100ms)");
+            return;
+        }
 
         // Validate credits
         var cost = player.BetValue;
-        if (player.Credits < cost) return;
+        if (player.Credits < cost)
+        {
+            Console.WriteLine($"[FIRE_REJECT] Player {player.DisplayName} insufficient credits ({player.Credits} < {cost})");
+            return;
+        }
 
         // Validate projectile coordinates are within play area boundaries
-        // Client now sends coordinates directly in 0-1800 × 0-900 space (no offset)
         if (command.X < 0 || command.X > ARENA_WIDTH || 
             command.Y < 0 || command.Y > ARENA_HEIGHT)
         {
-            return; // Reject fire command if outside play area
+            Console.WriteLine($"[FIRE_REJECT] Player {player.DisplayName} out of bounds ({command.X}, {command.Y})");
+            return;
         }
 
         // Deduct credits immediately (authoritative)
@@ -245,10 +257,11 @@ public class MatchInstance
             DirectionX = command.DirectionX,
             DirectionY = command.DirectionY,
             Damage = 10f * player.CannonLevel,
-            BetValue = cost // Snapshot bet value at fire time (immutable)
+            BetValue = cost
         };
 
         _projectileManager.AddProjectile(projectile);
+        Console.WriteLine($"[BULLET_CREATED] Player {player.DisplayName} fired at ({command.X:F1}, {command.Y:F1}) dir=({command.DirectionX:F2}, {command.DirectionY:F2}) cost={cost} remaining={player.Credits}");
     }
 
     private void HandleSetBetValue(GameCommand command)

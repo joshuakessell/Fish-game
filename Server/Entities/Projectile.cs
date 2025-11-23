@@ -14,7 +14,6 @@ public class Projectile
     public float Damage { get; set; }
     public decimal BetValue { get; set; } // Shot value (10-200 credits)
     
-    public int TtlTicks { get; set; } = 900; // 30 seconds at 30 TPS (bullets bounce until hitting fish)
     public bool IsSpent { get; set; } = false;
     
     private const float ARENA_WIDTH = 1800f;
@@ -24,7 +23,6 @@ public class Projectile
     {
         X += DirectionX * Speed * deltaTime;
         Y += DirectionY * Speed * deltaTime;
-        TtlTicks--;
         
         // Bounce off screen edges
         if (X < 0)
@@ -50,5 +48,5 @@ public class Projectile
         }
     }
 
-    public bool ShouldRemove() => TtlTicks <= 0 || IsSpent;
+    public bool ShouldRemove() => IsSpent; // Only remove when hitting fish, bullets bounce indefinitely
 }

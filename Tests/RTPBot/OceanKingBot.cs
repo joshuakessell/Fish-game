@@ -129,8 +129,8 @@ public class OceanKingBot
                 Console.Write($"{progress:F0}% ");
             }
             
-            // Small delay to avoid overwhelming server
-            await Task.Delay(50);
+            // Delay to match server fire rate limit (100ms minimum)
+            await Task.Delay(100);
         }
         
         Console.WriteLine("\n");
@@ -148,23 +148,17 @@ public class OceanKingBot
             const float turretX = 216f;
             const float turretY = 90f;
             
-            // Fire at random coordinates within game bounds
-            var targetX = (float)_rng.Next(100, 1700);
-            var targetY = (float)_rng.Next(100, 800);
-            
-            // Calculate direction vector from turret to target
-            var dx = targetX - turretX;
-            var dy = targetY - turretY;
-            var distance = MathF.Sqrt(dx * dx + dy * dy);
-            
-            // Normalize direction (avoid division by zero)
-            var directionX = distance > 0 ? dx / distance : 0f;
-            var directionY = distance > 0 ? dy / distance : 0f;
+            // Generate random direction vector
+            var angle = (float)(_rng.NextDouble() * 2 * Math.PI);
+            var directionX = MathF.Cos(angle);
+            var directionY = MathF.Sin(angle);
             
             _stats.TotalWagered += betValue;
             
             // Fire(float x, float y, float directionX, float directionY)
-            await _connection.InvokeAsync("Fire", targetX, targetY, directionX, directionY);
+            // x, y = turret position (bullet start point)
+            // directionX, directionY = normalized direction vector
+            await _connection.SendAsync("Fire", turretX, turretY, directionX, directionY);
         }
         catch (Exception ex)
         {

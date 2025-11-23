@@ -48,6 +48,6 @@ public class JwtTokenService
     public string GenerateGuestToken(string name)
     {
         var guestId = $"guest_{Guid.NewGuid()}";
-        return GenerateToken(guestId, name, 1000, isGuest: true, role: "Guest");
+        return GenerateToken(guestId, name, 10000, isGuest: true, role: "Guest");
     }
 }

@@ -179,6 +179,11 @@ public class LobbyManager
             Console.WriteLine($"Removed solo match: {matchId}");
         }
     }
+    
+    public MatchInstance? GetSoloMatch(string matchId)
+    {
+        return _soloMatches.TryGetValue(matchId, out var match) ? match : null;
+    }
 }
 
 public class SeatOccupancy

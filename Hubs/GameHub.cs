@@ -88,15 +88,33 @@ public class GameHub : Hub
     public void Fire(float x, float y, float directionX, float directionY)
     {
         if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
+        {
+            Console.WriteLine($"[FIRE_DEBUG] Connection {Context.ConnectionId} not found in _connectionToMatch dictionary");
             return;
+        }
 
         if (!_connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerId))
+        {
+            Console.WriteLine($"[FIRE_DEBUG] Connection {Context.ConnectionId} not found in _connectionToPlayer dictionary");
             return;
+        }
 
+        // Try to get match from MatchManager first, then check LobbyManager for solo matches
         var matchManager = _gameServer.GetMatchManager();
         var match = matchManager.GetMatch(matchId);
         
-        if (match == null) return;
+        if (match == null)
+        {
+            // Check if it's a solo match
+            var lobbyManager = _gameServer.GetLobbyManager();
+            match = lobbyManager.GetSoloMatch(matchId);
+        }
+        
+        if (match == null)
+        {
+            Console.WriteLine($"[FIRE_DEBUG] Match {matchId} not found in MatchManager or LobbyManager");
+            return;
+        }
 
         match.EnqueueCommand(new GameCommand
         {
