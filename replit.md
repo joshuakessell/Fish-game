@@ -71,6 +71,30 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - **Vite:** Fast development server and build tool (port 5000).
 - **SignalR Client:** @microsoft/signalr for real-time server communication.
 
+## Transaction Ledger System (2025-11-23)
+**Purpose:** Comprehensive transaction tracking system with access controls for monitoring player bets, wins, and credit changes in real-time.
+
+**Client-Side Implementation:**
+- **GameState Ledger Tracking:** Auto-records all bets (via bullet count monitoring) and wins (via PayoutEvents) for all players, storing per-player transaction history with timestamps, amounts, and running balances.
+- **Event Subscription System:** Multi-subscriber event pattern (add/remove listener methods) allows multiple UI components (BettingUI, PlayersDisplayUI, LedgerScene) to listen to credit changes, payouts, and game events without conflicts.
+- **LedgerScene Modal:** Paginated modal UI (20 transactions per page) displaying transaction history with timestamp, type (BET/WIN), amount (color-coded red/green), balance, and fish details. Supports keyboard navigation (Escape to close).
+- **PlayersDisplayUI:** Shows all active players with clickable bank displays positioned by seat slot. Clicking a player's bank opens their ledger modal (subject to access control).
+- **Access Control:** Normal players can only view their own ledger; spectator mode (myPlayerSlot === null) can view any player's ledger for multi-bot testing scenarios.
+- **StateDelta PascalCase:** Client properly consumes PascalCase fields (TickId, Fish, Projectiles, Players, PayoutEvents) matching C# server contract for correct runtime behavior.
+
+**Spectator Mode (spectator.html):**
+- **Per-Player Ledger Modals:** Clickable player cards open individual transaction history modals with pagination.
+- **Bet Tracking:** Monitors projectile count changes to detect and record new shots (bets) with player bet values.
+- **Win Tracking:** Parses PayoutEvents with PascalCase field names (FishId, Payout, PlayerSlot) to record win transactions.
+- **Global + Per-Player Ledgers:** Maintains both a global ledger (all transactions) and per-player ledgers (individual histories) for comprehensive multi-bot testing.
+
+**Key Files:**
+- `src/systems/GameState.ts`: Event subscription system, ledger data storage, StateDelta handling with PascalCase
+- `src/types/LedgerTypes.ts`: Transaction data structures (BET/WIN types, LedgerEntry, PlayerLedger)
+- `src/scenes/LedgerScene.ts`: Modal UI with pagination and transaction table rendering
+- `src/entities/PlayersDisplayUI.ts`: Multi-player bank display with click handlers and access control
+- `Public/spectator.html`: Spectator dashboard with per-player ledger modals and bullet-count bet tracking
+
 ## Recent Changes (2025-11-12)
 - **Migrated to Phaser 3:** Replaced vanilla Canvas with Phaser framework for better sprite/animation management.
 - **Implemented Parametric Path System:** Fish movement now uses deterministic path functions (Linear, Sine, Bezier, Circular).
