@@ -9,7 +9,7 @@ Console.WriteLine(@"
 // Parse command line arguments
 var shotCount = args.Length > 0 && int.TryParse(args[0], out var shots) ? shots : 1000;
 var betValue = args.Length > 1 && int.TryParse(args[1], out var bet) ? bet : 10;
-var baseUrl = args.Length > 2 ? args[2] : "http://localhost:8080";
+var baseUrl = args.Length > 2 ? args[2] : "http://localhost:8000";
 
 Console.WriteLine($"Configuration:");
 Console.WriteLine($"  Shot Count:  {shotCount:N0}");
@@ -29,10 +29,10 @@ try
         return 1;
     }
     
-    // Join room
-    if (!await bot.JoinRoomAsync())
+    // Create solo game
+    if (!await bot.CreateSoloGameAsync())
     {
-        Console.WriteLine("Failed to join room.");
+        Console.WriteLine("Failed to create solo game.");
         return 1;
     }
     

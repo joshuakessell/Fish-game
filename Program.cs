@@ -84,7 +84,7 @@ builder.Services.AddSignalR(options =>
     options.EnableDetailedErrors = true; // Enable for debugging
     options.MaximumReceiveMessageSize = 32768; // 32KB default
     options.StatefulReconnectBufferSize = 100000; // Enable stateful reconnect for mobile
-});
+}).AddMessagePackProtocol(); // Support MessagePack protocol for reduced bandwidth
 
 // Register game server as singleton
 builder.Services.AddSingleton<GameServerHost>();

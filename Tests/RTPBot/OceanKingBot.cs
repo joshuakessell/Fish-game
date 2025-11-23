@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -14,7 +15,7 @@ public class OceanKingBot
     private string? _token;
     private bool _isRunning;
     
-    public OceanKingBot(string botName, string baseUrl = "http://localhost:8080")
+    public OceanKingBot(string botName, string baseUrl = "http://localhost:8000")
     {
         _botName = botName;
         _stats = new BotStatistics();
@@ -75,7 +76,7 @@ public class OceanKingBot
         }
     }
     
-    public async Task<bool> JoinRoomAsync(string roomId = "solo_bot_test")
+    public async Task<bool> CreateSoloGameAsync()
     {
         if (_connection == null)
         {
@@ -85,14 +86,18 @@ public class OceanKingBot
         
         try
         {
-            Console.WriteLine($"[{_botName}] Joining room '{roomId}'...");
-            await _connection.InvokeAsync("JoinRoom", roomId, 1); // Seat 1
-            Console.WriteLine($"[{_botName}] ✅ Joined room '{roomId}' at seat 1");
+            Console.WriteLine($"[{_botName}] Creating solo game...");
+            
+            // Call CreateSoloGame without expecting a structured response
+            // The method creates the game but may not return a parseable object
+            await _connection.InvokeAsync("CreateSoloGame", _botName);
+            
+            Console.WriteLine($"[{_botName}] ✅ Solo game created successfully");
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[{_botName}] ❌ Failed to join room: {ex.Message}");
+            Console.WriteLine($"[{_botName}] ❌ Failed to create solo game: {ex.Message}");
             return false;
         }
     }
@@ -139,14 +144,27 @@ public class OceanKingBot
         
         try
         {
+            // Bot is at seat 1 - turret position at (216, 90) based on 12% of 1800 width
+            const float turretX = 216f;
+            const float turretY = 90f;
+            
             // Fire at random coordinates within game bounds
-            var x = _rng.Next(100, 1700);
-            var y = _rng.Next(100, 800);
-            var bulletId = Guid.NewGuid().ToString();
+            var targetX = (float)_rng.Next(100, 1700);
+            var targetY = (float)_rng.Next(100, 800);
+            
+            // Calculate direction vector from turret to target
+            var dx = targetX - turretX;
+            var dy = targetY - turretY;
+            var distance = MathF.Sqrt(dx * dx + dy * dy);
+            
+            // Normalize direction (avoid division by zero)
+            var directionX = distance > 0 ? dx / distance : 0f;
+            var directionY = distance > 0 ? dy / distance : 0f;
             
             _stats.TotalWagered += betValue;
             
-            await _connection.InvokeAsync("Fire", x, y, bulletId);
+            // Fire(float x, float y, float directionX, float directionY)
+            await _connection.InvokeAsync("Fire", targetX, targetY, directionX, directionY);
         }
         catch (Exception ex)
         {

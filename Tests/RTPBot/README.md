@@ -14,7 +14,7 @@ Automated SignalR client that validates the game's Return-to-Player (RTP) mechan
 ## Prerequisites
 
 - .NET 8 SDK
-- Ocean King backend server running on `http://localhost:8080` (or custom URL)
+- Ocean King backend server running on `http://localhost:8000` (default port)
 
 ## Installation
 
@@ -42,7 +42,7 @@ dotnet run 5000 50
 
 ### Custom Server URL
 ```bash
-dotnet run 1000 10 http://yourdomain.com:8080
+dotnet run 1000 10 http://yourdomain.com:8000
 ```
 
 ## Command Line Arguments
@@ -54,8 +54,8 @@ dotnet run [shotCount] [betValue] [serverUrl]
 | Argument | Default | Description |
 |----------|---------|-------------|
 | shotCount | 1000 | Number of shots to fire |
-| betValue | 10 | Credits to wager per shot |
-| serverUrl | http://localhost:8080 | Backend server URL |
+| betValue | 10 | Credits to wager per shot (not currently supported by server) |
+| serverUrl | http://localhost:8000 | Backend server URL |
 
 ## Output
 
@@ -68,14 +68,14 @@ dotnet run [shotCount] [betValue] [serverUrl]
 Configuration:
   Shot Count:  5,000
   Bet Value:   $10
-  Server URL:  http://localhost:8080
+  Server URL:  http://localhost:8000
 
 [RTPBot_142530] Authenticating as guest...
-[RTPBot_142530] ✅ Authenticated with 1000 credits
+[RTPBot_142530] ✅ Authenticated with 10000 credits
 [RTPBot_142530] Connecting to SignalR hub...
 [RTPBot_142530] ✅ Connected to SignalR
-[RTPBot_142530] Joining room 'solo_bot_test'...
-[RTPBot_142530] ✅ Joined room 'solo_bot_test' at seat 1
+[RTPBot_142530] Creating solo game...
+[RTPBot_142530] ✅ Solo game created successfully
 [RTPBot_142530] Starting RTP test: 5000 shots at $10 bet
 [RTPBot_142530] Progress: 5% 10% 15% 20% 25% 30% 35% 40% 45% 50% 55% 60% 65% 70% 75% 80% 85% 90% 95% 100% 
 
@@ -188,10 +188,11 @@ dotnet run 1000 10   # Standard test
 ### Architecture
 ```
 OceanKingBot
-├── ConnectAsync()        # Authenticates and connects to SignalR
-├── JoinRoomAsync()       # Joins game room at seat 1
-├── RunTestAsync()        # Main test loop
-└── OnPayoutEvent()       # Tracks payout statistics
+├── ConnectAsync()         # Authenticates and connects to SignalR
+├── CreateSoloGameAsync()  # Creates solo game instance
+├── RunTestAsync()         # Main test loop
+├── FireRandomShotAsync()  # Fires shots with direction vectors
+└── OnPayoutEvent()        # Tracks payout statistics
 
 BotStatistics
 ├── TotalShots, Wagered, Won
@@ -206,17 +207,34 @@ BotStatistics
 ### HTTP Endpoints
 - **POST** `/api/auth/guest` - Guest authentication with JWT
 
-## Limitations
+## Current Status
 
-- Bot fires at random coordinates (no fish targeting)
+### ✅ Working Features
+- Guest authentication via JWT (1000 starting credits)
+- SignalR connection with MessagePack protocol
+- Solo game creation via CreateSoloGame hub method
+- Shot firing with normalized direction vectors (x, y, directionX, directionY)
+- Real-time progress tracking (20 updates per test)
+- Fish spawning in solo matches (verified in backend logs)
+
+### ⚠️ Known Limitations
+- **0% RTP with random shooting**: Bot fires at completely random coordinates (100-1700, 100-800), resulting in ~0.1% hit chance on fast-moving fish with specific hitboxes
+- **Bet value not implemented**: Server Fire method currently doesn't accept betAmount parameter, so all shots use default bet value
+- Requires intelligent targeting (StateDelta subscription) to validate RTP mechanics
 - Does not validate client-side rendering or animations
 - Single bot instance per execution (no multi-bot tests)
-- Credits can go negative (no bankruptcy logic)
 
-## Future Enhancements
+## Next Steps
 
+### Priority Enhancements
+1. **Intelligent Fish Targeting** - Subscribe to `StateDelta` to track fish positions and fire at actual targets
+2. **Hit Detection Validation** - Verify collision detection works with targeted shots
+3. **RTP Convergence Testing** - Once targeting works, run 50,000+ shot tests to validate 95-97% RTP
+
+### Future Enhancements
 - [ ] Multi-bot concurrent testing
-- [ ] Targeted shooting at specific fish types
+- [ ] Targeted shooting at specific fish types based on value/probability
 - [ ] JSON session logging for detailed analysis
 - [ ] Graphical RTP convergence plots
 - [ ] Automated pass/fail assertions based on target RTP
+- [ ] Fish position prediction using parametric path formulas
