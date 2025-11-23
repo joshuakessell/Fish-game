@@ -27,10 +27,10 @@ export class PlayersDisplayUI {
   }
 
   private setupUpdateHandlers() {
-    // Update displays when credits change
-    this.gameState.onCreditsChanged = () => {
+    // Subscribe to credit changes using the new listener pattern
+    this.gameState.addCreditsChangedListener(() => {
       this.updateAllDisplays();
-    };
+    });
   }
 
   public updateAllDisplays() {

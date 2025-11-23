@@ -481,6 +481,9 @@
         let currentModalPlayer = null;
         let modalCurrentPage = 1;
         
+        // Track bullet counts for bet detection
+        let previousBulletCounts = {}; // { playerSlot: count }
+        
         async function connect() {
             const statusEl = document.getElementById('connectionStatus');
             
@@ -558,8 +561,55 @@
                 document.getElementById('fishCount').textContent = delta.Fish.length;
             }
             
-            if (delta.Projectiles) {
+            if (delta.Projectiles && delta.Players) {
                 document.getElementById('bulletCount').textContent = delta.Projectiles.length;
+                
+                // Track bullet counts per player to detect bets
+                const currentBulletCounts = {};
+                delta.Projectiles.forEach(bullet => {
+                    const slot = bullet.PlayerSlot;
+                    currentBulletCounts[slot] = (currentBulletCounts[slot] || 0) + 1;
+                });
+                
+                // Detect new bullets (bets)
+                for (const [slotStr, newCount] of Object.entries(currentBulletCounts)) {
+                    const slot = parseInt(slotStr);
+                    const oldCount = previousBulletCounts[slot] || 0;
+                    const newBullets = newCount - oldCount;
+                    
+                    if (newBullets > 0) {
+                        const player = delta.Players.find(p => p.PlayerSlot === slot);
+                        if (player) {
+                            // Record bet transactions
+                            for (let i = 0; i < newBullets; i++) {
+                                const betEntry = {
+                                    time: new Date(),
+                                    player: player.DisplayName,
+                                    type: 'BET',
+                                    amount: -player.BetValue,
+                                    balance: player.Credits,
+                                    details: `Shot #${oldCount + i + 1}`
+                                };
+                                addLedgerEntry(betEntry);
+                                addPlayerLedgerEntry(slot, {
+                                    time: new Date(),
+                                    type: 'BET',
+                                    amount: -player.BetValue,
+                                    balance: player.Credits,
+                                    details: `Shot #${oldCount + i + 1}`
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                previousBulletCounts = currentBulletCounts;
+                renderLedger();
+                
+                // Update modal if viewing a player
+                if (currentModalPlayer !== null) {
+                    renderPlayerLedger();
+                }
             }
             
             // Handle payout events for ledger
@@ -605,53 +655,37 @@
         }
         
         function handlePayoutEvents(events, players) {
+            if (!events || events.length === 0) return;
+            
+            // Build player slot to player map
             const playerMap = {};
             players.forEach(p => {
-                playerMap[p.PlayerId] = p;
+                playerMap[p.PlayerSlot] = p;
             });
             
             events.forEach(event => {
-                const player = playerMap[event.PlayerId];
+                // Event structure from C# server: { FishId: string, Payout: int, PlayerSlot: int }
+                const player = playerMap[event.PlayerSlot];
                 if (!player) return;
                 
-                // Add bet transaction to global ledger
-                addLedgerEntry({
+                // Record WIN transaction for this payout
+                const winEntry = {
                     time: new Date(),
                     player: player.DisplayName,
-                    type: 'BET',
-                    amount: -event.BetValue,
+                    type: 'WIN',
+                    amount: event.Payout,
                     balance: player.Credits,
-                    details: `Fish #${event.FishTypeId}`
-                });
+                    details: `Fish ${event.FishId}`
+                };
                 
-                // Add bet transaction to player's personal ledger
-                addPlayerLedgerEntry(player.PlayerSlot, {
+                addLedgerEntry(winEntry);
+                addPlayerLedgerEntry(event.PlayerSlot, {
                     time: new Date(),
-                    type: 'BET',
-                    amount: -event.BetValue,
+                    type: 'WIN',
+                    amount: event.Payout,
                     balance: player.Credits,
-                    details: `Fish #${event.FishTypeId}`
+                    details: `Fish ${event.FishId}`
                 });
-                
-                // Add win transaction if won
-                if (event.WinAmount > 0) {
-                    addLedgerEntry({
-                        time: new Date(),
-                        player: player.DisplayName,
-                        type: 'WIN',
-                        amount: event.WinAmount,
-                        balance: player.Credits,
-                        details: `Fish #${event.FishTypeId} (${event.Multiplier}x)`
-                    });
-                    
-                    addPlayerLedgerEntry(player.PlayerSlot, {
-                        time: new Date(),
-                        type: 'WIN',
-                        amount: event.WinAmount,
-                        balance: player.Credits,
-                        details: `Fish #${event.FishTypeId} (${event.Multiplier}x)`
-                    });
-                }
             });
             
             renderLedger();
