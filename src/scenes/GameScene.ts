@@ -25,8 +25,6 @@ export default class GameScene extends Phaser.Scene {
   private readonly MS_PER_TICK = 1000 / 30;
   private readonly MAX_DELTA = 100;
 
-  private debugText!: Phaser.GameObjects.Text;
-  private fpsText!: Phaser.GameObjects.Text;
 
   private myTurret!: Phaser.GameObjects.Container;
   private turretBarrel!: Phaser.GameObjects.Graphics;
@@ -55,8 +53,6 @@ export default class GameScene extends Phaser.Scene {
     this.createAmbientBubbles();
 
     this.fishSpriteManager = new FishSpriteManager(this);
-
-    this.createDebugOverlay();
 
     this.setupFishLifecycleCallbacks();
 
@@ -108,16 +104,6 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  private createDebugOverlay() {
-    this.debugText = this.add.text(10, 10, "", {
-      fontSize: "16px",
-      color: "#ffffff",
-      backgroundColor: "#000000",
-      padding: { x: 10, y: 10 },
-    });
-    this.debugText.setDepth(1000);
-    this.debugText.setScrollFactor(0);
-  }
 
   private setupFishLifecycleCallbacks() {
     this.gameState.onFishSpawned = (fishId: number, typeId: number) => {
@@ -179,38 +165,12 @@ export default class GameScene extends Phaser.Scene {
 
     this.fishSpriteManager.renderAllFish(tickProgress);
     this.updateBullets(delta);
-
-    this.updateDebugOverlay(tickProgress);
   }
 
   private fixedUpdate(tick: number) {
     this.fishSpriteManager.updateAllFish(tick);
   }
 
-  private updateDebugOverlay(tickProgress: number) {
-    const fps = Math.round(this.game.loop.actualFps);
-    const activeFish = this.fishSpriteManager.getActiveFishCount();
-    const pathMode =
-      this.gameState.fishPathManager.getTrackedFishCount() > 0 ? "ON" : "OFF";
-    const accumulatorDrift = this.accumulator.toFixed(2);
-    const tickDrift = this.gameState.tickDrift;
-    const seat =
-      this.gameState.myPlayerSlot !== null
-        ? this.gameState.myPlayerSlot
-        : "N/A";
-
-    this.debugText.setText([
-      `Current Tick: ${this.gameState.currentTick}`,
-      `FPS: ${fps}`,
-      `My Seat: ${seat}`,
-      `Active Fish: ${activeFish}`,
-      `Active Bullets: ${this.clientBullets.size}`,
-      `Path Mode: ${pathMode}`,
-      `Accumulator: ${accumulatorDrift}ms`,
-      `Tick Progress: ${(tickProgress * 100).toFixed(1)}%`,
-      `Tick Drift: ${tickDrift}`,
-    ]);
-  }
 
   private createAmbientBubbles() {
     // Create some animated bubbles for atmosphere
@@ -251,7 +211,19 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.turretPosition = this.getTurretPosition(seat);
+    const basePosition = this.getTurretPosition(seat);
+    const isBottomSeat = seat < 3;
+    
+    // Bottom seats (0-2): turret ABOVE controls (negative Y offset)
+    // Top seats (3-5): turret BELOW controls (positive Y offset)
+    const turretOffsetY = isBottomSeat ? -70 : 70;
+    const controlsOffsetY = isBottomSeat ? 0 : 0;
+
+    // Store the position for shooting
+    this.turretPosition = {
+      x: basePosition.x,
+      y: basePosition.y + turretOffsetY
+    };
 
     this.myTurret = this.add.container(
       this.turretPosition.x,
@@ -321,17 +293,15 @@ export default class GameScene extends Phaser.Scene {
       `GameScene: Created turret at seat ${seat}, position (${this.turretPosition.x}, ${this.turretPosition.y})`,
     );
 
-    this.createBettingUI(seat);
+    this.createBettingUI(seat, basePosition, controlsOffsetY);
   }
 
-  private createBettingUI(seat: number) {
-    const isBottomSeat = seat < 3;
-    const offsetY = isBottomSeat ? -60 : 60;
-
+  private createBettingUI(seat: number, basePosition: {x: number, y: number}, offsetY: number) {
     this.bettingUI = new BettingUI(
       this,
-      this.turretPosition.x,
-      this.turretPosition.y + offsetY,
+      basePosition.x,
+      basePosition.y + offsetY,
+      seat,
     );
 
     console.log(`GameScene: Created betting UI at seat ${seat}`);
