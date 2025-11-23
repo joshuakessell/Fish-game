@@ -14,6 +14,12 @@ public class FishManager
     private long _lastSpawnTick = 0;
     private const int MIN_TICKS_BETWEEN_SPAWNS = 5; // Spawn every ~0.16 seconds
     
+    // Boss and Special fish spawn control - spawn only every 8 seconds
+    private long _lastBossSpawnTick = 0;
+    private long _lastSpecialSpawnTick = 0;
+    private const int MIN_TICKS_BETWEEN_BOSS_SPAWNS = 240; // 8 seconds at 30 TPS
+    private const int MIN_TICKS_BETWEEN_SPECIAL_SPAWNS = 180; // 6 seconds at 30 TPS
+    
     // Limit rare fish
     private const int MAX_LARGE_FISH = 3;
     private const int MAX_BOSS_FISH = 1;
@@ -26,9 +32,11 @@ public class FishManager
         {
             fish.UpdatePosition(deltaTime, currentTick);
 
-            // Remove fish immediately when they exit the play area boundaries
-            if (fish.X < 0 || fish.X > ARENA_WIDTH ||
-                fish.Y < 0 || fish.Y > ARENA_HEIGHT)
+            // Remove fish when they're far outside the buffer zone (-100 to +100 pixels)
+            // This allows off-screen spawning (-10/1810, -10/910), fish group formations, and smooth exits
+            const int BUFFER = 100;
+            if (fish.X < -BUFFER || fish.X > ARENA_WIDTH + BUFFER ||
+                fish.Y < -BUFFER || fish.Y > ARENA_HEIGHT + BUFFER)
             {
                 fishToRemove.Add(fish.FishId);
             }
@@ -46,8 +54,8 @@ public class FishManager
         int specialItemCount = _activeFish.Values.Count(f => f.TypeId >= 21 && f.TypeId <= 24);
         int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 25 && f.TypeId <= 28);
         
-        // Spawn Special Item if missing
-        if (specialItemCount == 0)
+        // Spawn Special Item if missing AND enough time has passed
+        if (specialItemCount == 0 && (currentTick - _lastSpecialSpawnTick >= MIN_TICKS_BETWEEN_SPECIAL_SPAWNS || _lastSpecialSpawnTick == 0))
         {
             if (_activeFish.Count >= MAX_FISH_COUNT)
             {
@@ -67,11 +75,11 @@ public class FishManager
             // Spawn random Special Item (21-24)
             int specialTypeId = Random.Shared.Next(21, 25);
             SpawnSingleFish(specialTypeId, currentTick);
-            Console.WriteLine($"[SPECIAL] Spawned Special Item type {specialTypeId}");
+            _lastSpecialSpawnTick = currentTick;
         }
         
-        // Spawn Boss Fish if missing
-        if (bossFishCount == 0)
+        // Spawn Boss Fish if missing AND enough time has passed
+        if (bossFishCount == 0 && (currentTick - _lastBossSpawnTick >= MIN_TICKS_BETWEEN_BOSS_SPAWNS || _lastBossSpawnTick == 0))
         {
             if (_activeFish.Count >= MAX_FISH_COUNT)
             {
@@ -84,29 +92,28 @@ public class FishManager
                 if (lowestValueFish != null)
                 {
                     _activeFish.Remove(lowestValueFish.FishId);
-                    Console.WriteLine($"[BOSS] Removed low-value fish to make room for Boss Fish");
                 }
             }
             
             // Spawn random Boss Fish (25-28)
             int bossTypeId = Random.Shared.Next(25, 29);
             SpawnSingleFish(bossTypeId, currentTick);
-            Console.WriteLine($"[BOSS] Spawned Boss Fish type {bossTypeId}");
+            _lastBossSpawnTick = currentTick;
         }
-
-        if (_activeFish.Count >= MAX_FISH_COUNT)
-            return;
             
-        // Regular spawning for normal fish
+        // Regular spawning for normal fish (respect MAX_FISH_COUNT cap)
         if (_activeFish.Count < MIN_FISH_COUNT)
         {
+            int spawned = 0;
             while (_activeFish.Count < MIN_FISH_COUNT && _activeFish.Count < MAX_FISH_COUNT)
             {
                 SpawnRandomFish(currentTick);
+                spawned++;
+                if (spawned > 100) break; // Safety limit to prevent infinite loop
             }
             _lastSpawnTick = currentTick;
         }
-        else
+        else if (_activeFish.Count < MAX_FISH_COUNT)
         {
             if (currentTick - _lastSpawnTick >= MIN_TICKS_BETWEEN_SPAWNS)
             {
@@ -121,60 +128,65 @@ public class FishManager
 
     private void SpawnSingleFish(int typeId, long currentTick)
     {
+        // Enforce MAX_FISH_COUNT cap centrally to prevent violations from any code path
+        if (_activeFish.Count >= MAX_FISH_COUNT)
+            return;
+            
         var fishDef = Entities.FishCatalog.GetFish(typeId);
         if (fishDef == null) return;
 
         // Choose spawn direction (8 possibilities for varied movement)
+        // Fish spawn OFF-SCREEN at X: -10/1810, Y: -10/910 for smooth edge-to-edge movement
         int spawnDirection = Random.Shared.Next(8);
         float x, y, velocityX, velocityY;
         
         switch (spawnDirection)
         {
             case 0: // Left to right (horizontal)
-                x = 0;
+                x = -10;
                 y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = fishDef.BaseSpeed;
                 velocityY = 0;
                 break;
             case 1: // Right to left (horizontal)
-                x = ARENA_WIDTH;
+                x = ARENA_WIDTH + 10;
                 y = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = -fishDef.BaseSpeed;
                 velocityY = 0;
                 break;
             case 2: // Top to bottom (vertical)
                 x = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                y = 0;
+                y = -10;
                 velocityX = 0;
                 velocityY = fishDef.BaseSpeed;
                 break;
             case 3: // Bottom to top (vertical)
                 x = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                y = ARENA_HEIGHT;
+                y = ARENA_HEIGHT + 10;
                 velocityX = 0;
                 velocityY = -fishDef.BaseSpeed;
                 break;
             case 4: // Top-left to bottom-right (diagonal)
-                x = 0;
-                y = 0;
+                x = -10;
+                y = -10;
                 velocityX = fishDef.BaseSpeed * 0.707f;
                 velocityY = fishDef.BaseSpeed * 0.707f;
                 break;
             case 5: // Top-right to bottom-left (diagonal)
-                x = ARENA_WIDTH;
-                y = 0;
+                x = ARENA_WIDTH + 10;
+                y = -10;
                 velocityX = -fishDef.BaseSpeed * 0.707f;
                 velocityY = fishDef.BaseSpeed * 0.707f;
                 break;
             case 6: // Bottom-left to top-right (diagonal)
-                x = 0;
-                y = ARENA_HEIGHT;
+                x = -10;
+                y = ARENA_HEIGHT + 10;
                 velocityX = fishDef.BaseSpeed * 0.707f;
                 velocityY = -fishDef.BaseSpeed * 0.707f;
                 break;
             default: // Bottom-right to top-left (diagonal)
-                x = ARENA_WIDTH;
-                y = ARENA_HEIGHT;
+                x = ARENA_WIDTH + 10;
+                y = ARENA_HEIGHT + 10;
                 velocityX = -fishDef.BaseSpeed * 0.707f;
                 velocityY = -fishDef.BaseSpeed * 0.707f;
                 break;
@@ -252,20 +264,21 @@ public class FishManager
         }
         
         // Choose spawn direction (8 possibilities for varied movement)
+        // Fish spawn OFF-SCREEN at X: -10/1810, Y: -10/910 for smooth edge-to-edge movement
         int spawnDirection = Random.Shared.Next(8);
         float baseX, baseY, velocityX, velocityY;
         
         switch (spawnDirection)
         {
             case 0: // Left to right (horizontal)
-                baseX = 0;
+                baseX = -10;
                 baseY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = GetSpeedForType(typeId);
                 velocityY = (Random.Shared.NextSingle() - 0.5f) * 20f;
                 break;
                 
             case 1: // Right to left (horizontal)
-                baseX = ARENA_WIDTH;
+                baseX = ARENA_WIDTH + 10;
                 baseY = Random.Shared.Next(100, ARENA_HEIGHT - 100);
                 velocityX = -GetSpeedForType(typeId);
                 velocityY = (Random.Shared.NextSingle() - 0.5f) * 20f;
@@ -273,48 +286,48 @@ public class FishManager
                 
             case 2: // Top to bottom (vertical)
                 baseX = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                baseY = 0;
+                baseY = -10;
                 velocityX = (Random.Shared.NextSingle() - 0.5f) * 30f;
                 velocityY = GetSpeedForType(typeId) * 0.7f;
                 break;
                 
             case 3: // Bottom to top (vertical)
                 baseX = Random.Shared.Next(100, ARENA_WIDTH - 100);
-                baseY = ARENA_HEIGHT;
+                baseY = ARENA_HEIGHT + 10;
                 velocityX = (Random.Shared.NextSingle() - 0.5f) * 30f;
                 velocityY = -GetSpeedForType(typeId) * 0.7f;
                 break;
                 
             case 4: // Top-left to bottom-right (diagonal)
-                baseX = 0;
-                baseY = 0;
+                baseX = -10;
+                baseY = -10;
                 velocityX = GetSpeedForType(typeId) * 0.8f;
                 velocityY = GetSpeedForType(typeId) * 0.6f;
                 break;
                 
             case 5: // Top-right to bottom-left (diagonal)
-                baseX = ARENA_WIDTH;
-                baseY = 0;
+                baseX = ARENA_WIDTH + 10;
+                baseY = -10;
                 velocityX = -GetSpeedForType(typeId) * 0.8f;
                 velocityY = GetSpeedForType(typeId) * 0.6f;
                 break;
                 
             case 6: // Complex path: top to center then to bottom-right corner
                 baseX = Random.Shared.Next(200, ARENA_WIDTH - 200);
-                baseY = 0;
+                baseY = -10;
                 velocityX = GetSpeedForType(typeId) * 0.4f;
                 velocityY = GetSpeedForType(typeId) * 0.8f;
                 break;
                 
             case 7: // Complex path: left to center then to top-right corner
-                baseX = 0;
+                baseX = -10;
                 baseY = Random.Shared.Next(200, ARENA_HEIGHT - 200);
                 velocityX = GetSpeedForType(typeId) * 0.9f;
                 velocityY = -GetSpeedForType(typeId) * 0.3f;
                 break;
                 
             default:
-                baseX = 0;
+                baseX = -10;
                 baseY = ARENA_HEIGHT / 2;
                 velocityX = GetSpeedForType(typeId);
                 velocityY = 0;
