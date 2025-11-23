@@ -1,6 +1,11 @@
 import * as signalR from "@microsoft/signalr";
 import { FishData, PlayerData, BulletData } from "../types/GameTypes";
 import { FishPathManager } from "./FishPathManager";
+import {
+  LedgerEntry,
+  PlayerLedger,
+  TransactionType,
+} from "../types/LedgerTypes";
 
 interface StateDelta {
   tick?: number;
@@ -51,6 +56,11 @@ export class GameState {
 
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
+
+  // Ledger system - track all player transactions
+  private ledgers: Map<number, LedgerEntry[]> = new Map();
+  private previousBulletCounts: Map<string, number> = new Map();
+  public onLedgerUpdated: ((playerSlot: number) => void) | null = null;
 
   public onFishSpawned: ((fishId: number, typeId: number) => void) | null =
     null;
@@ -161,6 +171,85 @@ export class GameState {
     this.myPlayerSlot = null;
     this.currentRoomId = null;
     this.fishPathManager.clear();
+    this.ledgers.clear();
+    this.previousBulletCounts.clear();
+  }
+
+  public recordBetTransaction(
+    playerSlot: number,
+    betAmount: number,
+    currentBalance: number,
+  ) {
+    if (!this.ledgers.has(playerSlot)) {
+      this.ledgers.set(playerSlot, []);
+    }
+
+    const ledger = this.ledgers.get(playerSlot)!;
+    ledger.push({
+      timestamp: Date.now(),
+      type: TransactionType.BET,
+      amount: -betAmount,
+      balance: currentBalance,
+    });
+
+    if (this.onLedgerUpdated) {
+      this.onLedgerUpdated(playerSlot);
+    }
+  }
+
+  public recordWinTransaction(
+    playerSlot: number,
+    winAmount: number,
+    currentBalance: number,
+    fishId: number,
+    fishType: number,
+    multiplier?: number,
+  ) {
+    if (!this.ledgers.has(playerSlot)) {
+      this.ledgers.set(playerSlot, []);
+    }
+
+    const ledger = this.ledgers.get(playerSlot)!;
+    ledger.push({
+      timestamp: Date.now(),
+      type: TransactionType.WIN,
+      amount: winAmount,
+      balance: currentBalance,
+      fishId,
+      fishType,
+      multiplier,
+    });
+
+    if (this.onLedgerUpdated) {
+      this.onLedgerUpdated(playerSlot);
+    }
+  }
+
+  public getPlayerLedger(playerSlot: number): PlayerLedger | null {
+    const player = this.players.get(playerSlot);
+    if (!player) {
+      return null;
+    }
+
+    const transactions = this.ledgers.get(playerSlot) || [];
+    return {
+      playerSlot,
+      playerName: player.name,
+      transactions: [...transactions],
+    };
+  }
+
+  public getAllPlayerLedgers(): PlayerLedger[] {
+    const ledgers: PlayerLedger[] = [];
+    for (const [slot, player] of this.players) {
+      const transactions = this.ledgers.get(slot) || [];
+      ledgers.push({
+        playerSlot: slot,
+        playerName: player.name,
+        transactions: [...transactions],
+      });
+    }
+    return ledgers;
   }
 
   private setupSignalRHandlers() {
@@ -204,6 +293,42 @@ export class GameState {
       }
 
       if (update.bullets) {
+        // Track bullet count per player to detect new shots (bets)
+        const currentBulletCounts = new Map<string, number>();
+        
+        for (const bulletData of update.bullets) {
+          const playerId = bulletData.playerId;
+          currentBulletCounts.set(
+            playerId,
+            (currentBulletCounts.get(playerId) || 0) + 1,
+          );
+        }
+
+        // Detect new bullets (shots) for ledger tracking
+        for (const [playerId, newCount] of currentBulletCounts) {
+          const oldCount = this.previousBulletCounts.get(playerId) || 0;
+          const newBullets = newCount - oldCount;
+
+          if (newBullets > 0) {
+            // Find player slot by userId
+            const player = Array.from(this.players.values()).find(
+              (p) => p.userId === playerId,
+            );
+            if (player) {
+              // Record bet transaction for each new bullet
+              for (let i = 0; i < newBullets; i++) {
+                this.recordBetTransaction(
+                  player.slot,
+                  player.betValue,
+                  player.credits,
+                );
+              }
+            }
+          }
+        }
+
+        this.previousBulletCounts = currentBulletCounts;
+        
         this.bullets.clear();
         for (const bulletData of update.bullets) {
           this.bullets.set(bulletData.id, bulletData);
@@ -230,6 +355,19 @@ export class GameState {
 
       if (update.payoutEvents) {
         for (const event of update.payoutEvents) {
+          // Record win transaction for ALL players (not just local player)
+          const player = this.players.get(event.playerSlot);
+          if (player) {
+            this.recordWinTransaction(
+              event.playerSlot,
+              event.payout,
+              player.credits,
+              event.fishId,
+              0, // Fish type not available in payout event
+            );
+          }
+
+          // Show payout animation only for local player
           if (event.playerSlot === this.myPlayerSlot && this.onPayoutReceived) {
             this.onPayoutReceived(event.fishId, event.payout);
           }
