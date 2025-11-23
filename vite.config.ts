@@ -10,16 +10,14 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     proxy: {
-      // SignalR hub - strip /api prefix to match backend /gamehub endpoint
-      '/api/gamehub': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
+      // Proxy SignalR and API calls to C# backend
+      '/gamehub': {
+        target: 'http://localhost:8000',
         ws: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        changeOrigin: true,
       },
-      // Regular API endpoints - keep /api prefix
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },

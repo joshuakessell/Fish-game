@@ -1,34 +1,18 @@
-import * as signalR from '@microsoft/signalr';
-import { MessagePackHubProtocol } from '@microsoft/signalr-protocol-msgpack';
-import { FishData, PlayerData, BulletData } from '../types/GameTypes';
-import { FishPathManager } from './FishPathManager';
-import { deserializePathData } from './paths/PathData';
-import { debugLog } from '../config/DebugConfig';
-import { TransactionLedger } from './TransactionLedger';
+import * as signalR from "@microsoft/signalr";
+import { FishData, PlayerData, BulletData } from "../types/GameTypes";
+import { FishPathManager } from "./FishPathManager";
 
-interface ServerPlayerState {
-  PlayerId: string;
-  DisplayName: string;
-  Credits: number;
-  CannonLevel: number;
-  PlayerSlot: number;
-  TotalKills: number;
-  BetValue: number;
+interface StateDelta {
+  tick?: number;
+  fish?: FishData[];
+  bullets?: BulletData[];
+  players?: PlayerData[];
+  payoutEvents?: Array<{
+    fishId: number;
+    payout: number;
+    playerSlot: number;
+  }>;
 }
-
-// MessagePack sends this as an array with indices [0-9], not object with properties
-type StateDelta = [
-  number, // [0] Tick
-  number, // [1] RoundNumber
-  number, // [2] TimeRemainingTicks
-  boolean, // [3] IsRoundTransitioning
-  ServerPlayerState[], // [4] Players
-  FishData[], // [5] Fish
-  BulletData[], // [6] Projectiles
-  any[], // [7] ActiveBossSequences
-  any[], // [8] PendingInteractions
-  Array<[number, number, number]>, // [9] PayoutEvents: [fishId, payout, playerSlot]
-];
 
 export class GameState {
   private static instance: GameState;
@@ -61,37 +45,19 @@ export class GameState {
   public currentTick: number = 0;
 
   // Tick synchronization
-  public isSynced: boolean = false;
   public tickDrift: number = 0;
-  public accumulatorAdjustment: number = 0;
   private lastServerTick: number = 0;
   private readonly TICK_DRIFT_THRESHOLD = 5;
-
-  // Dev mode auto-join
-  public devModeSeat: number | null = null;
-
-  // Debug overlay state
-  public debugOverlayEnabled: boolean = false;
 
   // Path system
   public fishPathManager: FishPathManager = new FishPathManager();
 
-  public onFishSpawned: ((fishId: number, typeId: number) => void) | null = null;
+  public onFishSpawned: ((fishId: number, typeId: number) => void) | null =
+    null;
   public onFishRemoved: ((fishId: number) => void) | null = null;
-  public onBulletSpawned: ((bulletData: BulletData) => void) | null = null;
-  public onBulletRemoved: ((bulletId: number) => void) | null = null;
-  public onPayoutEvent:
-    | ((fishId: number, payout: number, playerSlot: number, isOwnKill: boolean) => void)
-    | null = null;
-  public onPayoutReceived: ((fishId: number, payout: number) => void) | null = null;
+  public onPayoutReceived: ((fishId: number, payout: number) => void) | null =
+    null;
   public onCreditsChanged: (() => void) | null = null;
-  public onTickSnapped: (() => void) | null = null;
-
-  // Room join lifecycle
-  public onRoomJoined: (() => void) | null = null;
-  public onRoomLeft: (() => void) | null = null;
-  private roomJoinResolve: (() => void) | null = null;
-  private roomJoinPromise: Promise<void> | null = null;
 
   private constructor() {}
 
@@ -104,16 +70,16 @@ export class GameState {
 
   public async guestLogin(name: string): Promise<boolean> {
     try {
-      const response = await fetch('/api/auth/guest', {
-        method: 'POST',
+      const response = await fetch("/api/auth/guest", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ name }),
       });
 
       if (!response.ok) {
-        console.error('Guest login failed:', response.statusText);
+        console.error("Guest login failed:", response.statusText);
         return false;
       }
 
@@ -126,64 +92,36 @@ export class GameState {
         isGuest: data.isGuest,
       };
 
-      console.log('Guest login successful:', this.playerAuth);
+      console.log("Guest login successful:", this.playerAuth);
       return true;
     } catch (error) {
-      console.error('Guest login error:', error);
+      console.error("Guest login error:", error);
       return false;
     }
   }
 
   public async connectToSignalR(): Promise<boolean> {
     if (this.isConnected || !this.playerAuth) {
-      console.log(`SignalR: Already connected or no auth. isConnected=${this.isConnected}, hasAuth=${!!this.playerAuth}`);
       return this.isConnected;
     }
 
     try {
-      // Use the /api/gamehub endpoint which goes through Vite proxy
-      // Vite will proxy WebSocket connections to port 8080
-      const hubUrl = `/api/gamehub`;
-      
-      console.log(`SignalR: Connecting to ${hubUrl}...`);
-      console.log(`SignalR: Using token: ${this.playerAuth!.token.substring(0, 50)}...`);
-
-      // Connect through Vite proxy
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl(hubUrl, {
-          accessTokenFactory: () => {
-            console.log('SignalR: Token factory called');
-            return this.playerAuth!.token;
-          },
+        .withUrl("/gamehub", {
+          accessTokenFactory: () => this.playerAuth!.token,
         })
-        .withHubProtocol(new MessagePackHubProtocol())
         .withAutomaticReconnect()
         .configureLogging(signalR.LogLevel.Information)
         .build();
-
-      // Add connection lifecycle event handlers
-      this.connection.onclose((error) => {
-        console.error('❌ SignalR connection closed:', error || 'No error provided');
-        this.isConnected = false;
-      });
-
-      this.connection.onreconnecting((error) => {
-        console.warn('🔄 SignalR attempting to reconnect:', error || 'No error provided');
-      });
-
-      this.connection.onreconnected((connectionId) => {
-        console.log('✅ SignalR reconnected with connectionId:', connectionId);
-        this.isConnected = true;
-      });
 
       this.setupSignalRHandlers();
 
       await this.connection.start();
       this.isConnected = true;
-      console.log('Connected to SignalR game hub');
+      console.log("Connected to SignalR game hub");
       return true;
     } catch (error) {
-      console.error('SignalR connection failed:', error);
+      console.error("SignalR connection failed:", error);
       this.isConnected = false;
       return false;
     }
@@ -193,45 +131,36 @@ export class GameState {
     if (this.connection) {
       this.connection.stop();
       this.isConnected = false;
-      console.log('Disconnected from SignalR');
+      console.log("Disconnected from SignalR");
     }
   }
 
   public async joinRoom(roomId: string, seat: number): Promise<boolean> {
     if (!this.connection || !this.isConnected) {
-      console.error('Cannot join room: not connected to SignalR');
+      console.error("Cannot join room: not connected to SignalR");
       return false;
     }
 
     try {
-      const result = (await this.connection.invoke('JoinRoom', roomId, seat)) as any;
-
-      if (!result || !result.success) {
-        console.error('JoinRoom failed:', result?.message || 'Unknown error');
-        return false;
-      }
-
+      await this.connection.invoke("JoinRoom", roomId, seat);
       this.currentRoomId = roomId;
       this.myPlayerSlot = seat;
-      console.log(
-        `✅ Joined room ${roomId} at seat ${seat} - waiting for first StateDelta before initializing gameplay`,
-      );
-
-      // Initialize transaction ledger with starting balance
-      if (this.playerAuth) {
-        const ledger = TransactionLedger.getInstance();
-        ledger.clear(); // Clear any previous session data
-        ledger.setInitialBalance(this.playerAuth.credits);
-      }
-
-      // DO NOT call onRoomJoined here - wait for first StateDelta to arrive
-      // This ensures the SignalR connection is stable and receiving server updates
-
+      console.log(`Joined room ${roomId} at seat ${seat}`);
       return true;
     } catch (error) {
-      console.error('Failed to join room:', error);
+      console.error("Failed to join room:", error);
       return false;
     }
+  }
+
+  public reset() {
+    this.fish.clear();
+    this.bullets.clear();
+    this.players.clear();
+    this.currentTick = 0;
+    this.myPlayerSlot = null;
+    this.currentRoomId = null;
+    this.fishPathManager.clear();
   }
 
   private setupSignalRHandlers() {
@@ -239,110 +168,28 @@ export class GameState {
       return;
     }
 
-    this.connection.on('StateDelta', (update: StateDelta) => {
-      const tick = update[0];
-      const players = update[4];
-      const fish = update[5];
-      const projectiles = update[6];
-      const payoutEvents = update[9];
+    this.connection.on("StateDelta", (update: StateDelta) => {
+      if (update.tick !== undefined) {
+        this.lastServerTick = update.tick;
+        this.tickDrift = update.tick - this.currentTick;
 
-      if (tick !== undefined) {
-        this.lastServerTick = tick;
-        this.tickDrift = tick - this.currentTick;
-
-        if (!this.isSynced) {
-          this.currentTick = tick;
-          this.isSynced = true;
-          this.tickDrift = 0;
-          if (this.onTickSnapped) {
-            this.onTickSnapped();
-          }
-          debugLog(
-            'stateDelta',
-            `✅ FIRST SYNC: Tick snapped to server tick ${this.currentTick}, accumulator will be reset`,
-          );
-
-          // Trigger room joined callback on first StateDelta (connection is stable)
-          if (this.myPlayerSlot !== null) {
-            if (this.onRoomJoined) {
-              console.log(
-                '🎮 GameState: First StateDelta received - triggering onRoomJoined callback',
-              );
-              this.onRoomJoined();
-            }
-
-            // Resolve waiting promise for join completion
-            if (this.roomJoinResolve) {
-              this.roomJoinResolve();
-              this.roomJoinResolve = null;
-              this.roomJoinPromise = null;
-            }
-          }
-        } else if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
-          this.currentTick = tick;
-          this.tickDrift = 0;
-          if (this.onTickSnapped) {
-            this.onTickSnapped();
-          }
-          debugLog(
-            'stateDelta',
-            `✅ TICK SNAP: Large drift corrected, tick=${this.currentTick}, accumulator will be reset`,
-          );
-        }
-
-        // Apply gentle drift correction AFTER snap check
-        if (this.isSynced && Math.abs(this.tickDrift) <= 5) {
-          const driftMs = this.tickDrift * (1000 / 30);
-          this.accumulatorAdjustment = driftMs * 0.2;
-        } else {
-          this.accumulatorAdjustment = 0;
-        }
-      }
-
-      // CRITICAL: Process payout events BEFORE fish removals
-      // This ensures reward animations can capture fish positions before sprites are destroyed
-      if (payoutEvents && payoutEvents.length > 0) {
-        console.log(`📥 [GameState] Received ${payoutEvents.length} PayoutEvents from server`);
-        for (const event of payoutEvents) {
-          // MessagePack sends PayoutEvent as array: [fishId, payout, playerSlot]
-          const fishId = event[0];
-          const payout = event[1];
-          const playerSlot = event[2];
-          const isOwnKill = playerSlot === this.myPlayerSlot;
-          
+        if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
+          const adjustment =
+            Math.sign(this.tickDrift) * Math.ceil(Math.abs(this.tickDrift) / 2);
+          this.currentTick += adjustment;
+          this.tickDrift = update.tick - this.currentTick;
           console.log(
-            `💰 [GameState] Processing PayoutEvent: fishId=${fishId}, payout=${payout}, playerSlot=${playerSlot}, isOwnKill=${isOwnKill}`,
+            `Tick sync: drift=${this.tickDrift}, adjusted client tick by ${adjustment} to ${this.currentTick}`,
           );
-
-          if (this.onPayoutEvent) {
-            console.log(`   → Calling onPayoutEvent callback`);
-            this.onPayoutEvent(fishId, payout, playerSlot, isOwnKill);
-          } else {
-            console.warn(`   ⚠️ onPayoutEvent callback not set!`);
-          }
-
-          if (isOwnKill) {
-            // Record kill in ledger
-            const fishData = this.fish.get(fishId);
-            const fishType = fishData ? fishData[1] : 0; // Type is at index 1
-            const ledger = TransactionLedger.getInstance();
-            ledger.recordKill(fishId, fishType, payout, 1.0); // TODO: Extract actual bonus multiplier
-            
-            if (this.onPayoutReceived) {
-              console.log(`   → Calling onPayoutReceived callback (own kill)`);
-              this.onPayoutReceived(fishId, payout);
-            }
-          }
         }
       }
 
-      if (fish && fish.length > 0) {
-        debugLog('stateDelta', `📦 Received ${fish.length} fish in StateDelta`);
+      if (update.fish) {
         const currentFishIds = new Set(this.fish.keys());
         const incomingFishIds = new Set<number>();
 
-        for (const fishData of fish) {
-          incomingFishIds.add(fishData[0]);
+        for (const fishData of update.fish) {
+          incomingFishIds.add(fishData.id);
           this.updateFish(fishData);
         }
 
@@ -356,41 +203,15 @@ export class GameState {
         }
       }
 
-      if (projectiles && projectiles.length > 0) {
-        const currentBulletIds = new Set(this.bullets.keys());
-        const incomingBulletIds = new Set<number>();
-
-        for (const bulletData of projectiles) {
-          incomingBulletIds.add(bulletData[0]);
-          const isNew = !this.bullets.has(bulletData[0]);
-
-          this.bullets.set(bulletData[0], bulletData);
-
-          if (isNew && this.onBulletSpawned) {
-            this.onBulletSpawned(bulletData);
-          }
-        }
-
-        for (const existingBulletId of currentBulletIds) {
-          if (!incomingBulletIds.has(existingBulletId)) {
-            this.bullets.delete(existingBulletId);
-            if (this.onBulletRemoved) {
-              this.onBulletRemoved(existingBulletId);
-            }
-          }
+      if (update.bullets) {
+        this.bullets.clear();
+        for (const bulletData of update.bullets) {
+          this.bullets.set(bulletData.id, bulletData);
         }
       }
 
-      if (players && players.length > 0) {
-        for (const serverPlayer of players) {
-          const playerData: PlayerData = {
-            slot: serverPlayer.PlayerSlot,
-            userId: serverPlayer.PlayerId,
-            name: serverPlayer.DisplayName,
-            credits: serverPlayer.Credits,
-            betValue: serverPlayer.BetValue,
-          };
-
+      if (update.players) {
+        for (const playerData of update.players) {
           this.players.set(playerData.slot, playerData);
 
           if (playerData.slot === this.myPlayerSlot && this.playerAuth) {
@@ -398,17 +219,19 @@ export class GameState {
             const newCredits = playerData.credits;
 
             if (oldCredits !== newCredits) {
-              console.log(
-                `💳 [GameState] Player credits updated: ${oldCredits} → ${newCredits} (${newCredits > oldCredits ? '+' : ''}${newCredits - oldCredits})`,
-              );
               this.playerAuth.credits = newCredits;
               if (this.onCreditsChanged) {
-                console.log(`   → Calling onCreditsChanged callback`);
                 this.onCreditsChanged();
-              } else {
-                console.warn(`   ⚠️ onCreditsChanged callback not set!`);
               }
             }
+          }
+        }
+      }
+
+      if (update.payoutEvents) {
+        for (const event of update.payoutEvents) {
+          if (event.playerSlot === this.myPlayerSlot && this.onPayoutReceived) {
+            this.onPayoutReceived(event.fishId, event.payout);
           }
         }
       }
@@ -416,50 +239,42 @@ export class GameState {
   }
 
   private updateFish(fishData: FishData) {
-    const isNew = !this.fish.has(fishData[0]);
-    debugLog(
-      'fishUpdates',
-      `🔄 Updating fish ${fishData[0]} (type ${fishData[1]}), isNew=${isNew}, hasPath=${!!fishData[4]}, pos=(${fishData[2]}, ${fishData[3]})`,
-    );
+    const isNew = !this.fish.has(fishData.id);
 
-    // Store fish data BEFORE triggering spawn callback
-    this.fish.set(fishData[0], fishData);
+    if (fishData.isNewSpawn && fishData.path) {
+      this.fishPathManager.registerFishPath(fishData.id, fishData.path);
+      console.log(
+        `Registered path for fish ${fishData.id}, type: ${fishData.path.pathType}`,
+      );
 
-    // Deserialize and register path if fish doesn't have one yet (prevents re-registration every tick)
-    if (fishData[4] && !this.fishPathManager.hasFishPath(fishData[0])) {
-      const pathData = deserializePathData(fishData[4]);
-      if (pathData) {
-        this.fishPathManager.registerFishPath(fishData[0], pathData);
-        debugLog(
-          'fishUpdates',
-          `Registered path for fish ${fishData[0]}, type: ${pathData.pathType}`,
-        );
-      } else {
-        console.error(`Failed to deserialize path for fish ${fishData[0]}`);
+      if (this.onFishSpawned && isNew) {
+        this.onFishSpawned(fishData.id, fishData.type);
       }
     }
 
-    if (isNew && this.onFishSpawned) {
-      debugLog(
-        'fishUpdates',
-        `🎯 Calling onFishSpawned for fish ${fishData[0]}, type ${fishData[1]}`,
-      );
-      this.onFishSpawned(fishData[0], fishData[1]);
-    } else if (isNew && !this.onFishSpawned) {
-      console.warn(`⚠️ New fish ${fishData[0]} but no onFishSpawned callback set!`);
-    }
+    this.fish.set(fishData.id, fishData);
   }
 
-  public getFishPosition(fishId: number, clientTick: number): [number, number] | null {
-    // Use ONLY client-driven tick for deterministic path computation
-    const pathPosition = this.fishPathManager.getFishPosition(fishId, clientTick);
+  public getFishPosition(
+    fishId: number,
+    clientTick: number,
+  ): [number, number] | null {
+    // Use client-driven tick for deterministic path computation
+    const pathPosition = this.fishPathManager.getFishPosition(
+      fishId,
+      clientTick,
+    );
 
     if (pathPosition) {
       return pathPosition;
     }
 
-    // No fallback - if no path, fish shouldn't be rendered
-    // This ensures 100% deterministic movement
+    // Fallback to server position if path not available
+    const fishData = this.fish.get(fishId);
+    if (fishData) {
+      return [fishData.x, fishData.y];
+    }
+
     return null;
   }
 
@@ -482,19 +297,5 @@ export class GameState {
       return true;
     }
     return false;
-  }
-
-  public deductShotCost(): void {
-    if (this.playerAuth) {
-      this.playerAuth.credits -= this.currentBet;
-      
-      // Record shot in ledger
-      const ledger = TransactionLedger.getInstance();
-      ledger.recordShot(this.currentBet);
-      
-      if (this.onCreditsChanged) {
-        this.onCreditsChanged();
-      }
-    }
   }
 }

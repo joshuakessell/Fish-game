@@ -1,7 +1,7 @@
 entrypoint = "main.cs"
 
 hidden = ["bin", "obj"]
-modules = ["dotnet-7.0", "dotnet-8.0", "postgresql-16", "nodejs-20", "python-3.11"]
+modules = ["dotnet-7.0", "dotnet-8.0", "postgresql-16", "nodejs-20"]
 
 [env]
 DOTNET_NOLOGO = "1"
@@ -13,7 +13,7 @@ requiredFiles = [".replit", "replit.nix"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["freetype", "imagemagick", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "poppler_utils", "tcl", "tk", "zlib"]
+packages = ["poppler_utils"]
 
 [deployment]
 run = ["dotnet", "run"]
@@ -47,8 +47,8 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "dotnet run --project OceanKing.csproj --urls=http://0.0.0.0:8080"
-waitForPort = 8080
+args = "dotnet run --project OceanKing.csproj --urls=http://0.0.0.0:8000"
+waitForPort = 8000
 
 [[workflows.workflow]]
 name = "Phaser Frontend"
@@ -65,14 +65,6 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 8080
-externalPort = 8080
-
-[[ports]]
-localPort = 9999
-externalPort = 9000
 
 [[ports]]
 localPort = 32959

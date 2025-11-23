@@ -66,7 +66,7 @@ public class BezierPath : IPath
             Speed = _speed,
             ControlPoints = new[] { _p0, _p1, _p2, _p3 },
             Duration = arcLength / _speed,
-            Loop = false  // Fish should exit screen smoothly, not loop back
+            Loop = false
         };
     }
     

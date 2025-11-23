@@ -29,7 +29,63 @@ public class GameHub : Hub
         return (userId, name, credits);
     }
 
-    public void Fire(float x, float y, float directionX, float directionY, string clientNonce = "", int? targetFishId = null)
+    // DEPRECATED: Use JoinRoom or CreateSoloGame instead
+    // This method kept for backward compatibility but requires authentication
+    [Obsolete("Use JoinRoom or CreateSoloGame for proper lobby flow")]
+    public async Task<object> JoinMatch(string displayName)
+    {
+        try
+        {
+            var (userId, name, credits) = GetUserFromContext();
+            
+            // Use the actual name from JWT claims, not the passed displayName
+            var actualName = string.IsNullOrEmpty(name) ? displayName : name;
+            
+            var matchManager = _gameServer.GetMatchManager();
+            var match = matchManager.FindOrCreateMatch(Context.ConnectionId);
+
+            if (match == null)
+            {
+                return new { success = false, message = "No available matches" };
+            }
+
+            var player = match.AddPlayer(Context.ConnectionId, actualName, Context.ConnectionId);
+            
+            if (player == null)
+            {
+                return new { success = false, message = "Match is full" };
+            }
+            
+            // Sync credits from JWT to player state
+            player.Credits = credits;
+
+            _connectionToMatch[Context.ConnectionId] = match.MatchId;
+            _connectionToPlayer[Context.ConnectionId] = player.PlayerId;
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, match.MatchId);
+
+            var availableSlots = match.GetAvailableSlots();
+            
+            Console.WriteLine($"Player {actualName} (JWT user {userId}) joined match {match.MatchId} with {credits} credits");
+
+            return new
+            {
+                success = true,
+                matchId = match.MatchId,
+                playerId = player.PlayerId,
+                playerSlot = player.PlayerSlot,
+                credits = player.Credits,
+                availableSlots = availableSlots
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in JoinMatch: {ex.Message}");
+            return new { success = false, message = ex.Message };
+        }
+    }
+
+    public void Fire(float x, float y, float directionX, float directionY)
     {
         if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
             return;
@@ -49,9 +105,7 @@ public class GameHub : Hub
             X = x,
             Y = y,
             DirectionX = directionX,
-            DirectionY = directionY,
-            ClientNonce = clientNonce,
-            TargetFishId = targetFishId
+            DirectionY = directionY
         });
     }
 
@@ -156,39 +210,6 @@ public class GameHub : Hub
                 return new { success = false, message = "Invalid seat index. Must be 0-5." };
             }
             
-            // Auto-create match if it doesn't exist
-            var matchManager = _gameServer.GetMatchManager();
-            var existingMatch = matchManager.GetMatch(matchId);
-            
-            if (existingMatch == null)
-            {
-                Console.WriteLine($"[JoinRoom] Match {matchId} does not exist, creating it...");
-                existingMatch = matchManager.CreateMatchWithId(matchId);
-                
-                if (existingMatch == null)
-                {
-                    Console.WriteLine($"[JoinRoom] Failed to create match {matchId}");
-                    return new { success = false, message = "Failed to create match room" };
-                }
-            }
-            
-            // Remove stale connection if this user is already in the match (handles browser refresh/multiple tabs)
-            var allPlayers = existingMatch.GetAllPlayers();
-            var existingPlayer = allPlayers.FirstOrDefault(p => p.PlayerId == userId && p.ConnectionId != Context.ConnectionId);
-            if (existingPlayer != null)
-            {
-                Console.WriteLine($"[JoinRoom] Removing stale connection for user {userId} (player {existingPlayer.DisplayName}) before reconnecting");
-                existingMatch.RemovePlayer(existingPlayer.PlayerId);
-                
-                // Clean up old connection mappings
-                if (!string.IsNullOrEmpty(existingPlayer.ConnectionId))
-                {
-                    _connectionToMatch.Remove(existingPlayer.ConnectionId);
-                    _connectionToPlayer.Remove(existingPlayer.ConnectionId);
-                    await Groups.RemoveFromGroupAsync(existingPlayer.ConnectionId, matchId);
-                }
-            }
-            
             var lobbyManager = _gameServer.GetLobbyManager();
             var match = lobbyManager.JoinRoom(matchId, Context.ConnectionId, seatIndex);
             
@@ -284,108 +305,8 @@ public class GameHub : Hub
         }
     }
 
-    // Debug commands for testing fish spawning and lifecycle
-    public async Task<object> ToggleDebugMode()
-    {
-        if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
-            return new { success = false, message = "Not in a match" };
-        
-        var (userId, name, credits) = GetUserFromContext();
-        
-        // Toggle the debug flag
-        var debugEnabled = Server.Managers.FishManager.DEBUG_FISH_LIFECYCLE = !Server.Managers.FishManager.DEBUG_FISH_LIFECYCLE;
-        
-        Console.WriteLine($"[DEBUG] Fish lifecycle debugging {(debugEnabled ? "ENABLED" : "DISABLED")} by {name}");
-        
-        // Broadcast debug status to all clients in match
-        await Clients.Group(matchId).SendAsync("DebugModeChanged", new
-        {
-            enabled = debugEnabled,
-            message = $"Fish lifecycle debugging {(debugEnabled ? "enabled" : "disabled")} by {name}"
-        });
-        
-        return new { success = true, enabled = debugEnabled };
-    }
-    
-    public async Task<object> SpawnTestFish(int typeId, int count = 1)
-    {
-        if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
-            return new { success = false, message = "Not in a match" };
-
-        if (!_connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerId))
-            return new { success = false, message = "Player not found" };
-        
-        var matchManager = _gameServer.GetMatchManager();
-        var match = matchManager.GetMatch(matchId);
-        
-        if (match == null)
-            return new { success = false, message = "Match not found" };
-        
-        // Validate fish type
-        if (typeId < 0 || typeId > 21)
-            return new { success = false, message = "Invalid fish type ID (0-21)" };
-        
-        // Limit count to prevent spam
-        count = Math.Min(count, 10);
-        
-        var (userId, name, credits) = GetUserFromContext();
-        Console.WriteLine($"[DEBUG] Spawning {count} test fish of type {typeId} requested by {name}");
-        
-        // Enqueue command to spawn test fish
-        match.EnqueueCommand(new GameCommand
-        {
-            Type = CommandType.SpawnTestFish,
-            PlayerId = playerId,
-            TestFishTypeId = typeId,
-            TestFishCount = count
-        });
-        
-        // Notify all players in match
-        await Clients.Group(matchId).SendAsync("TestFishSpawned", new
-        {
-            typeId = typeId,
-            count = count,
-            requestedBy = name
-        });
-        
-        return new { success = true, typeId = typeId, count = count };
-    }
-    
-    public async Task<object> GetDebugInfo()
-    {
-        if (!_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
-            return new { success = false, message = "Not in a match" };
-        
-        var matchManager = _gameServer.GetMatchManager();
-        var match = matchManager.GetMatch(matchId);
-        
-        if (match == null)
-            return new { success = false, message = "Match not found" };
-        
-        // Get current fish count and debug status
-        var fishManager = match.GetFishManager();
-        var activeFish = fishManager?.GetActiveFish() ?? new List<Server.Entities.Fish>();
-        
-        var debugInfo = new
-        {
-            success = true,
-            debugEnabled = Server.Managers.FishManager.DEBUG_FISH_LIFECYCLE,
-            activeFishCount = activeFish.Count,
-            fishByType = activeFish.GroupBy(f => f.TypeId)
-                .Select(g => new { typeId = g.Key, count = g.Count() })
-                .OrderBy(x => x.typeId),
-            fishGroups = activeFish.GroupBy(f => f.GroupId)
-                .Where(g => g.Count() > 1)
-                .Select(g => new { groupId = g.Key, count = g.Count(), typeId = g.First().TypeId })
-        };
-        
-        return debugInfo;
-    }
-
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        Console.WriteLine($"[OnDisconnectedAsync] Connection {Context.ConnectionId} disconnected. Exception: {(exception != null ? exception.Message : "none")}");
-        
         if (_connectionToMatch.TryGetValue(Context.ConnectionId, out var matchId))
         {
             if (_connectionToPlayer.TryGetValue(Context.ConnectionId, out var playerId))

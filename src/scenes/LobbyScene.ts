@@ -1,5 +1,5 @@
-import Phaser from 'phaser';
-import { GameState } from '../systems/GameState';
+import Phaser from "phaser";
+import { GameState } from "../systems/GameState";
 
 export default class LobbyScene extends Phaser.Scene {
   private gameState: GameState;
@@ -10,12 +10,12 @@ export default class LobbyScene extends Phaser.Scene {
   private joinText!: Phaser.GameObjects.Text;
 
   constructor() {
-    super({ key: 'LobbyScene' });
+    super({ key: "LobbyScene" });
     this.gameState = GameState.getInstance();
   }
 
   create() {
-    console.log('LobbyScene: Creating lobby UI');
+    console.log("LobbyScene: Creating lobby UI");
 
     // Ocean gradient background
     const graphics = this.add.graphics();
@@ -23,16 +23,16 @@ export default class LobbyScene extends Phaser.Scene {
     graphics.fillRect(0, 0, 1800, 900);
 
     // Title
-    const title = this.add.text(900, 100, 'SELECT YOUR SEAT', {
-      fontSize: '56px',
-      color: '#FFD700',
-      fontStyle: 'bold',
+    const title = this.add.text(900, 100, "SELECT YOUR SEAT", {
+      fontSize: "56px",
+      color: "#FFD700",
+      fontStyle: "bold",
     });
     title.setOrigin(0.5);
 
-    const subtitle = this.add.text(900, 160, 'Room: match_1', {
-      fontSize: '28px',
-      color: '#FFFFFF',
+    const subtitle = this.add.text(900, 160, "Room: match_1", {
+      fontSize: "28px",
+      color: "#FFFFFF",
     });
     subtitle.setOrigin(0.5);
 
@@ -41,10 +41,10 @@ export default class LobbyScene extends Phaser.Scene {
 
     // Join button (initially disabled)
     this.joinButton = this.add.rectangle(900, 750, 400, 80, 0x666666);
-    this.joinText = this.add.text(900, 750, 'SELECT A SEAT', {
-      fontSize: '32px',
-      color: '#999999',
-      fontStyle: 'bold',
+    this.joinText = this.add.text(900, 750, "SELECT A SEAT", {
+      fontSize: "32px",
+      color: "#999999",
+      fontStyle: "bold",
     });
     this.joinText.setOrigin(0.5);
   }
@@ -52,12 +52,12 @@ export default class LobbyScene extends Phaser.Scene {
   private createSeatSelection() {
     // Seat positions matching game layout
     const seatPositions = [
-      { seat: 0, x: 0.12 * 1800, y: 550, label: 'Bottom Left' },
-      { seat: 1, x: 0.5 * 1800, y: 550, label: 'Bottom Center' },
-      { seat: 2, x: 0.88 * 1800, y: 550, label: 'Bottom Right' },
-      { seat: 3, x: 0.12 * 1800, y: 350, label: 'Top Left' },
-      { seat: 4, x: 0.5 * 1800, y: 350, label: 'Top Center' },
-      { seat: 5, x: 0.88 * 1800, y: 350, label: 'Top Right' },
+      { seat: 0, x: 0.12 * 1800, y: 550, label: "Bottom Left" },
+      { seat: 1, x: 0.5 * 1800, y: 550, label: "Bottom Center" },
+      { seat: 2, x: 0.88 * 1800, y: 550, label: "Bottom Right" },
+      { seat: 3, x: 0.12 * 1800, y: 350, label: "Top Left" },
+      { seat: 4, x: 0.5 * 1800, y: 350, label: "Top Center" },
+      { seat: 5, x: 0.88 * 1800, y: 350, label: "Top Right" },
     ];
 
     seatPositions.forEach(({ seat, x, y, label }) => {
@@ -77,44 +77,44 @@ export default class LobbyScene extends Phaser.Scene {
 
         seatBox.setInteractive({ useHandCursor: true });
 
-        seatBox.on('pointerover', () => {
+        seatBox.on("pointerover", () => {
           if (this.selectedSeat !== seat) {
             seatBox.setFillStyle(0x0088ff, 0.8);
           }
         });
 
-        seatBox.on('pointerout', () => {
+        seatBox.on("pointerout", () => {
           if (this.selectedSeat !== seat) {
             seatBox.setFillStyle(0x0066cc, 0.8);
           }
         });
 
-        seatBox.on('pointerdown', () => {
+        seatBox.on("pointerdown", () => {
           this.selectSeat(seat);
         });
       }
 
       // Seat number
       const seatNumber = this.add.text(x, y - 20, `SEAT ${seat}`, {
-        fontSize: '28px',
-        color: '#FFD700',
-        fontStyle: 'bold',
+        fontSize: "28px",
+        color: "#FFD700",
+        fontStyle: "bold",
       });
       seatNumber.setOrigin(0.5);
 
       // Status text
-      const statusText = isOccupied ? 'OCCUPIED' : 'AVAILABLE';
-      const statusColor = isOccupied ? '#FF6666' : '#66FF66';
+      const statusText = isOccupied ? "OCCUPIED" : "AVAILABLE";
+      const statusColor = isOccupied ? "#FF6666" : "#66FF66";
       const status = this.add.text(x, y + 20, statusText, {
-        fontSize: '18px',
+        fontSize: "18px",
         color: statusColor,
       });
       status.setOrigin(0.5);
 
       // Position label
       const posLabel = this.add.text(x, y + 45, label, {
-        fontSize: '14px',
-        color: '#AAAAAA',
+        fontSize: "14px",
+        color: "#AAAAAA",
       });
       posLabel.setOrigin(0.5);
     });
@@ -151,18 +151,18 @@ export default class LobbyScene extends Phaser.Scene {
       this.joinButton.removeInteractive();
       this.joinButton.setInteractive({ useHandCursor: true });
 
-      this.joinText.setText('JOIN GAME');
-      this.joinText.setColor('#FFFFFF');
+      this.joinText.setText("JOIN GAME");
+      this.joinText.setColor("#FFFFFF");
 
-      this.joinButton.on('pointerover', () => {
+      this.joinButton.on("pointerover", () => {
         this.joinButton.setFillStyle(0x00ff00);
       });
 
-      this.joinButton.on('pointerout', () => {
+      this.joinButton.on("pointerout", () => {
         this.joinButton.setFillStyle(0x00cc00);
       });
 
-      this.joinButton.on('pointerdown', () => {
+      this.joinButton.on("pointerdown", () => {
         this.handleJoinGame();
       });
     }
@@ -170,22 +170,22 @@ export default class LobbyScene extends Phaser.Scene {
 
   private async handleJoinGame() {
     if (this.selectedSeat === null) {
-      console.error('LobbyScene: No seat selected');
+      console.error("LobbyScene: No seat selected");
       return;
     }
 
     console.log(`LobbyScene: Joining game at seat ${this.selectedSeat}...`);
 
-    const roomId = 'match_1';
+    const roomId = "match_1";
     const joined = await this.gameState.joinRoom(roomId, this.selectedSeat);
 
     if (!joined) {
-      console.error('LobbyScene: Failed to join room');
+      console.error("LobbyScene: Failed to join room");
       return;
     }
 
-    console.log('LobbyScene: Successfully joined room, starting game');
-    this.scene.start('GameScene');
-    this.scene.launch('UIScene');
+    console.log("LobbyScene: Successfully joined room, starting game");
+    this.scene.start("GameScene");
+    this.scene.launch("UIScene");
   }
 }

@@ -50,7 +50,7 @@ public class LinearPath : IPath
             Speed = _speed,
             ControlPoints = new[] { _start, _end },
             Duration = distance / _speed,
-            Loop = false  // Fish should exit screen smoothly, not loop back
+            Loop = false
         };
     }
 }

@@ -5,22 +5,19 @@ namespace OceanKing.Server.Managers;
 public class ProjectileManager
 {
     private readonly Dictionary<string, Projectile> _activeProjectiles = new();
-    private static int _nextProjectileId = 1;
 
     public void AddProjectile(Projectile projectile)
     {
-        projectile.NumericId = _nextProjectileId++;
         _activeProjectiles[projectile.ProjectileId] = projectile;
-        Console.WriteLine($"[PROJECTILE] Added projectile at ({projectile.X:F1}, {projectile.Y:F1}) with direction ({projectile.DirectionX:F1}, {projectile.DirectionY:F1}), TargetFish: {projectile.TargetFishId}");
     }
 
-    public void UpdateProjectiles(float deltaTime, List<Fish>? activeFish = null)
+    public void UpdateProjectiles(float deltaTime)
     {
         var projectilesToRemove = new List<string>();
 
         foreach (var projectile in _activeProjectiles.Values)
         {
-            projectile.UpdatePosition(deltaTime, activeFish);
+            projectile.UpdatePosition(deltaTime);
 
             if (projectile.ShouldRemove())
             {

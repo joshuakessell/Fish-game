@@ -1,3 +1,4 @@
+using OceanKing.Server.Data;
 using OceanKing.Server.Models;
 using OceanKing.Server.Entities;
 
@@ -12,301 +13,49 @@ public class PathGenerator
     private const float CANVAS_HEIGHT = 900f;
     private static int _seedCounter = 0;
     
-    // Cache for shared group parameters - key is unique group ID (tick + edge + counter)
-    private static readonly Dictionary<long, SharedGroupParameters> _groupParametersCache = new();
-    private static readonly object _cacheLock = new object();
-    private static long _groupCounter = 0; // Ensures unique group IDs even for same tick/edge
-    
-    private enum PathType { Linear, Sine, Parabola }
-    
-    private class SharedGroupParameters
-    {
-        public PathType PathType { get; set; }
-        public float Amplitude { get; set; }
-        public float Frequency { get; set; }
-        public float BonusAmplitude { get; set; }
-        public float BonusFrequency { get; set; }
-        public float BezierP1OffsetX { get; set; }
-        public float BezierP1OffsetY { get; set; }
-        public float BezierP2OffsetX { get; set; }
-        public float BezierP2OffsetY { get; set; }
-        public long CreatedTick { get; set; } // For cache cleanup
-        
-        // Pre-computed BASE anchor coordinates that all fish in group share
-        public float[] BaseAnchorStart { get; set; } = null!;
-        public float[] BaseAnchorEnd { get; set; } = null!;
-        public int StartEdge { get; set; }  // Which edge the group spawns from
-        public int EndEdge { get; set; }    // Which edge the group exits to
-    }
-    
     /// <summary>
     /// Generate a path for a fish based on its type
     /// </summary>
-    public static IPath GeneratePathForFish(int fishId, FishDefinition fishType, int currentTick, int spawnEdge = -1, int lateralIndex = 0, int trailingRank = 0, long groupId = 0)
+    public static IPath GeneratePathForFish(int fishId, FishDefinition fishType, int currentTick)
     {
-        // Generate unique seed for this fish, incorporating spawn edge and trailing rank for variation
-        int seed = GenerateSeed(fishId, currentTick, spawnEdge, trailingRank);
+        // Generate unique seed for this fish
+        int seed = GenerateSeed(fishId, currentTick);
         var rng = new SeededRandom(seed);
-        
-        // Generate group-level anchor seed using ONLY shared components (tick + edge)
-        // This ensures all fish in the same group share the same base position
-        int groupAnchorSeed = GenerateGroupAnchorSeed(currentTick, spawnEdge);
-        
-        // Get or create shared parameters for this group (cached by unique groupId)
-        SharedGroupParameters sharedParams;
-        lock (_cacheLock)
-        {
-            if (!_groupParametersCache.TryGetValue(groupId, out sharedParams!))
-            {
-                // First fish in group - create and cache shared parameters
-                var groupRng = new SeededRandom(groupAnchorSeed);
-                
-                // Pre-compute base anchor points that all fish in group will share
-                var (baseStart, baseEnd, startEdge, endEdge) = ComputeBaseAnchorPoints(groupRng, spawnEdge);
-                
-                // Determine path type with balanced distribution
-                PathType pathType;
-                float typeRoll = groupRng.NextFloat();
-                if (typeRoll > 0.7f)
-                    pathType = PathType.Sine;
-                else if (typeRoll > 0.4f)
-                    pathType = PathType.Linear;
-                else
-                    pathType = PathType.Parabola;
-                
-                sharedParams = new SharedGroupParameters
-                {
-                    PathType = pathType,
-                    Amplitude = groupRng.NextFloat(3f, 12f),  // Reduced vertical amplitude to prevent flipping
-                    Frequency = groupRng.NextFloat(1.5f, 7f),
-                    BonusAmplitude = groupRng.NextFloat(8f, 20f),  // Reduced bonus amplitude
-                    BonusFrequency = groupRng.NextFloat(2f, 8f),
-                    BezierP1OffsetX = groupRng.NextFloat(-400f, 400f),
-                    BezierP1OffsetY = groupRng.NextFloat(-150f, 150f),  // Reduced vertical offset to prevent steep angles
-                    BezierP2OffsetX = groupRng.NextFloat(-400f, 400f),
-                    BezierP2OffsetY = groupRng.NextFloat(-150f, 150f),  // Reduced vertical offset to prevent steep angles
-                    CreatedTick = currentTick,
-                    BaseAnchorStart = baseStart,
-                    BaseAnchorEnd = baseEnd,
-                    StartEdge = startEdge,
-                    EndEdge = endEdge
-                };
-                _groupParametersCache[groupId] = sharedParams;
-                
-                // Cleanup old cache entries (older than 5 seconds = 150 ticks at 30 TPS)
-                CleanupOldCacheEntries(currentTick);
-            }
-        }
         
         // Determine path type based on fish category
         return fishType.Category switch
         {
-            FishCategory.SmallFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams),
-            FishCategory.MediumFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams),
-            FishCategory.LargeFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams),
-            FishCategory.BonusFish => GenerateSinePath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams),
-            _ => GenerateLinearPath(fishId, seed, currentTick, fishType, rng, spawnEdge, lateralIndex, trailingRank, groupAnchorSeed, sharedParams)
+            FishCategory.SmallFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.MediumFish => GenerateLinearOrSinePath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.LargeFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.HighValueFish => GenerateBezierPath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.SpecialItems => GenerateCircularOrComplexPath(fishId, seed, currentTick, fishType, rng),
+            FishCategory.BossFish => GenerateBossPath(fishId, seed, currentTick, fishType, rng),
+            _ => GenerateLinearPath(fishId, seed, currentTick, fishType, rng)
         };
     }
     
-    private static void CleanupOldCacheEntries(long currentTick)
+    private static int GenerateSeed(int fishId, int tick)
     {
-        // Remove entries older than 450 ticks (15 seconds at 30 TPS)
-        var keysToRemove = _groupParametersCache
-            .Where(kvp => currentTick - kvp.Value.CreatedTick > 450)
-            .Select(kvp => kvp.Key)
-            .ToList();
-        
-        foreach (var key in keysToRemove)
-        {
-            _groupParametersCache.Remove(key);
-        }
-    }
-    
-    /// <summary>
-    /// Compute base anchor points for the entire group (before formation offsets)
-    /// </summary>
-    private static (float[] baseStart, float[] baseEnd, int startEdge, int endEdge) ComputeBaseAnchorPoints(SeededRandom groupRng, int spawnEdge)
-    {
-        // Spawn slightly outside boundaries to prevent fish from getting stuck at edges
-        const float SPAWN_OFFSET = -10f;
-        
-        // If no spawn edge specified, use random edge
-        if (spawnEdge < 0 || spawnEdge > 11)
-        {
-            int startEdge = groupRng.NextInt(0, 4);
-            int endEdge = (startEdge + 2) % 4;
-            float[] start = GeneratePointOnEdge(startEdge, groupRng);
-            float[] end = GeneratePointOnEdge(endEdge, groupRng);
-            return (start, end, startEdge, endEdge);
-        }
-        
-        // Map spawn direction to edge and generate base anchor points
-        int computedStartEdge;
-        float[] baseStart;
-        
-        switch (spawnEdge)
-        {
-            case 0: // From left edge
-                computedStartEdge = 0;
-                baseStart = new[] { SPAWN_OFFSET, groupRng.NextFloat(200f, CANVAS_HEIGHT - 200f) };
-                break;
-            case 1: // From right edge
-                computedStartEdge = 1;
-                baseStart = new[] { CANVAS_WIDTH - SPAWN_OFFSET, groupRng.NextFloat(200f, CANVAS_HEIGHT - 200f) };
-                break;
-            case 2: // From top edge
-                computedStartEdge = 2;
-                baseStart = new[] { groupRng.NextFloat(200f, CANVAS_WIDTH - 200f), SPAWN_OFFSET };
-                break;
-            case 3: // From bottom edge
-                computedStartEdge = 3;
-                baseStart = new[] { groupRng.NextFloat(200f, CANVAS_WIDTH - 200f), CANVAS_HEIGHT - SPAWN_OFFSET };
-                break;
-            case 4: // From left-top corner
-                computedStartEdge = groupRng.NextFloat() > 0.5f ? 0 : 2;
-                if (computedStartEdge == 0)
-                {
-                    baseStart = new[] { SPAWN_OFFSET, groupRng.NextFloat(50f, 200f) };
-                }
-                else
-                {
-                    baseStart = new[] { groupRng.NextFloat(50f, 200f), SPAWN_OFFSET };
-                }
-                break;
-            case 5: // From right-top corner
-                computedStartEdge = groupRng.NextFloat() > 0.5f ? 1 : 2;
-                if (computedStartEdge == 1)
-                {
-                    baseStart = new[] { CANVAS_WIDTH - SPAWN_OFFSET, groupRng.NextFloat(50f, 200f) };
-                }
-                else
-                {
-                    baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH - 50f), SPAWN_OFFSET };
-                }
-                break;
-            case 6: // From left-bottom corner
-                computedStartEdge = groupRng.NextFloat() > 0.5f ? 0 : 3;
-                if (computedStartEdge == 0)
-                {
-                    baseStart = new[] { SPAWN_OFFSET, groupRng.NextFloat(CANVAS_HEIGHT - 200f, CANVAS_HEIGHT - 50f) };
-                }
-                else
-                {
-                    baseStart = new[] { groupRng.NextFloat(50f, 200f), CANVAS_HEIGHT - SPAWN_OFFSET };
-                }
-                break;
-            case 7: // From right-bottom corner
-                computedStartEdge = groupRng.NextFloat() > 0.5f ? 1 : 3;
-                if (computedStartEdge == 1)
-                {
-                    baseStart = new[] { CANVAS_WIDTH - SPAWN_OFFSET, groupRng.NextFloat(CANVAS_HEIGHT - 200f, CANVAS_HEIGHT - 50f) };
-                }
-                else
-                {
-                    baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH - 200f, CANVAS_WIDTH - 50f), CANVAS_HEIGHT - SPAWN_OFFSET };
-                }
-                break;
-            case 8: // From top-center (middle 40% of top edge)
-                computedStartEdge = 2;
-                baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH * 0.3f, CANVAS_WIDTH * 0.7f), SPAWN_OFFSET };
-                break;
-            case 9: // From bottom-center (middle 40% of bottom edge)
-                computedStartEdge = 3;
-                baseStart = new[] { groupRng.NextFloat(CANVAS_WIDTH * 0.3f, CANVAS_WIDTH * 0.7f), CANVAS_HEIGHT - SPAWN_OFFSET };
-                break;
-            case 10: // From left-center (middle 40% of left edge)
-                computedStartEdge = 0;
-                baseStart = new[] { SPAWN_OFFSET, groupRng.NextFloat(CANVAS_HEIGHT * 0.3f, CANVAS_HEIGHT * 0.7f) };
-                break;
-            case 11: // From right-center (middle 40% of right edge)
-                computedStartEdge = 1;
-                baseStart = new[] { CANVAS_WIDTH - SPAWN_OFFSET, groupRng.NextFloat(CANVAS_HEIGHT * 0.3f, CANVAS_HEIGHT * 0.7f) };
-                break;
-            default:
-                computedStartEdge = 0;
-                baseStart = new[] { SPAWN_OFFSET, CANVAS_HEIGHT / 2f };
-                break;
-        }
-        
-        // Compute end edge and base end point
-        int computedEndEdge = spawnEdge < 4 ? (computedStartEdge + 2) % 4 : ((computedStartEdge + 1 + groupRng.NextInt(0, 2)) % 4);
-        float[] baseEnd = GeneratePointOnEdge(computedEndEdge, groupRng);
-        
-        return (baseStart, baseEnd, computedStartEdge, computedEndEdge);
-    }
-    
-    private static int GenerateGroupAnchorSeed(int tick, int spawnEdge)
-    {
-        // Use only shared group properties to create consistent anchor across all fish in group
-        long combined = ((long)tick * 31L + (long)spawnEdge * 17L);
-        return (int)(combined % int.MaxValue);
-    }
-    
-    private static int GenerateSeed(int fishId, int tick, int spawnEdge, int groupIndex)
-    {
-        // Combine fish ID, tick, spawn edge, group index for deterministic seed
+        // Combine fish ID, tick, and counter for unique seed
         // Use 64-bit arithmetic to prevent overflow before modulo
-        // Note: Removed _seedCounter to ensure deterministic behavior for testing
-        long combined = ((long)fishId * 31L + (long)tick * 17L + (long)spawnEdge * 13L + (long)groupIndex * 7L);
+        long combined = ((long)fishId * 31L + (long)tick * 17L + _seedCounter++);
         return (int)(combined % int.MaxValue);
     }
     
-    /// <summary>
-    /// Check if a coordinate point is off-screen (outside visible 0-1800 x 0-900 area)
-    /// Requires minimum buffer: X <= -5 or X >= 1805, Y <= -5 or Y >= 905
-    /// This ensures fish are clearly off-screen even after formation offsets
-    /// </summary>
-    private static bool IsOffScreen(float[] point)
+    private static IPath GenerateLinearOrSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
     {
-        const float MIN_BUFFER = 5f; // Minimum pixels off-screen to account for formation offsets
-        return point[0] <= -MIN_BUFFER || point[0] >= CANVAS_WIDTH + MIN_BUFFER || 
-               point[1] <= -MIN_BUFFER || point[1] >= CANVAS_HEIGHT + MIN_BUFFER;
-    }
-    
-    /// <summary>
-    /// Validate that both start and end points of a path are off-screen
-    /// Throws an exception if validation fails to prevent invalid paths from being created
-    /// </summary>
-    private static void ValidatePathEndpoints(float[] start, float[] end, string pathType, int fishId)
-    {
-        bool startOffScreen = IsOffScreen(start);
-        bool endOffScreen = IsOffScreen(end);
+        // 50% chance for linear, 50% for sine wave
+        bool useSine = rng.NextFloat() > 0.5f;
         
-        if (!startOffScreen || !endOffScreen)
-        {
-            string errorMsg = 
-                $"❌ [PATH_VALIDATION_FAILED] Fish {fishId} | Type: {pathType} | " +
-                $"Start: ({start[0]:F1}, {start[1]:F1}) OffScreen={startOffScreen} | " +
-                $"End: ({end[0]:F1}, {end[1]:F1}) OffScreen={endOffScreen}";
-            
-            Console.WriteLine(errorMsg);
-            throw new InvalidOperationException(
-                $"Path validation failed: Fish {fishId} has on-screen endpoint(s). " +
-                $"Start=({start[0]:F1},{start[1]:F1}) OffScreen={startOffScreen}, " +
-                $"End=({end[0]:F1},{end[1]:F1}) OffScreen={endOffScreen}"
-            );
-        }
-    }
-    
-    private static IPath GenerateLinearOrSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, int groupAnchorSeed, SharedGroupParameters sharedParams)
-    {
-        // Generate entry and exit points based on spawn edge using pre-computed base anchors
-        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, lateralIndex, trailingRank, sharedParams);
+        // Generate random entry and exit points on opposite edges
+        var (start, end) = GenerateEdgeToEdgePoints(rng);
         
-        // Validate endpoints before creating path
-        ValidatePathEndpoints(start, end, sharedParams.PathType.ToString(), fishId);
-        
-        // Use pre-computed shared parameters for the group
-        if (sharedParams.PathType == PathType.Sine)
+        if (useSine)
         {
-            return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, sharedParams.BaseAnchorStart, sharedParams.BaseAnchorEnd, sharedParams.Amplitude, sharedParams.Frequency);
-        }
-        else if (sharedParams.PathType == PathType.Parabola)
-        {
-            // Parabola: start from edge, arc to opposite side, return to same edge area
-            // Pass the computed end point for formation offsets
-            return GenerateParabolaPath(fishId, seed, startTick, fishType, rng, start, end, sharedParams);
+            float amplitude = rng.NextFloat(20f, 50f);
+            float frequency = rng.NextFloat(2f, 5f);
+            return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, amplitude, frequency);
         }
         else
         {
@@ -314,121 +63,75 @@ public class PathGenerator
         }
     }
     
-    private static IPath GenerateLinearPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, int groupAnchorSeed, SharedGroupParameters sharedParams)
+    private static IPath GenerateLinearPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
     {
-        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, lateralIndex, trailingRank, sharedParams);
-        
-        // Validate endpoints before creating path
-        ValidatePathEndpoints(start, end, "Linear", fishId);
-        
+        var (start, end) = GenerateEdgeToEdgePoints(rng);
         return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, end);
     }
     
-    private static IPath GenerateSinePath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, int groupAnchorSeed, SharedGroupParameters sharedParams)
+    private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
     {
-        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, lateralIndex, trailingRank, sharedParams);
+        // Generate start and end points on edges
+        var (start, end) = GenerateEdgeToEdgePoints(rng);
         
-        // Validate endpoints before creating path
-        ValidatePathEndpoints(start, end, "Sine", fishId);
-        
-        // Use pre-computed shared parameters for bonus fish sine waves
-        return new SinePath(fishId, seed, startTick, fishType.BaseSpeed, start, end, sharedParams.BaseAnchorStart, sharedParams.BaseAnchorEnd, sharedParams.BonusAmplitude, sharedParams.BonusFrequency);
-    }
-    
-    /// <summary>
-    /// Generate a parabola path that arcs across screen and returns to same edge area
-    /// RESTRICTION: Only starts and ends on top or bottom edges (not sides)
-    /// </summary>
-    private static IPath GenerateParabolaPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, float[] start, float[] precomputedEnd, SharedGroupParameters sharedParams)
-    {
-        // Parabola: fish arcs out horizontally and returns to same edge (top or bottom only)
-        // If spawned from side edges, fall back to linear path USING PROVIDED START/END POINTS
-        if (sharedParams.StartEdge == 0 || sharedParams.StartEdge == 1)
-        {
-            // Started from left or right edge - parabola not allowed, use linear instead
-            // IMPORTANT: Reuse the provided 'start' and 'precomputedEnd' points to maintain deterministic spawning
-            // This preserves formation offsets (lateralIndex, trailingRank) applied by GenerateEdgeToEdgePointsFromSpawnEdge
-            
-            // Validate endpoints before creating path
-            ValidatePathEndpoints(start, precomputedEnd, "Parabola->Linear", fishId);
-            
-            return new LinearPath(fishId, seed, startTick, fishType.BaseSpeed, start, precomputedEnd);
-        }
-        
-        // Top or bottom edge: create horizontal parabola that arcs out and returns to same edge off-screen
-        const float SPAWN_OFFSET = -10f;
-        float horizontalOffset = rng.NextFloat(-500f, 500f);
-        
-        // Return to same Y position (off-screen) but different X position
-        float endY = sharedParams.StartEdge == 2 ? SPAWN_OFFSET : CANVAS_HEIGHT - SPAWN_OFFSET;
-        float endX = start[0] + horizontalOffset;
-        
-        // Clamp X to ensure reasonable horizontal movement but still allow off-screen positioning
-        endX = MathF.Max(100f, MathF.Min(CANVAS_WIDTH - 100f, endX));
-        
-        float[] parabolaEnd = new[] { endX, endY };
-        
-        // Validate parabola endpoints before creating path
-        ValidatePathEndpoints(start, parabolaEnd, "Parabola", fishId);
-        
-        // Make the arc go deeper into the playfield
-        float arcDepth = sharedParams.StartEdge == 2 ? 
-            CANVAS_HEIGHT * 0.6f :  // Top edge: arc down 60% into screen
-            CANVAS_HEIGHT * 0.4f;    // Bottom edge: arc up 60% into screen
-        
+        // Generate control points for smooth curve
         float[] p1 = new[]
         {
-            start[0] + (parabolaEnd[0] - start[0]) * 0.33f,
-            arcDepth
+            start[0] + rng.NextFloat(-200f, 200f),
+            start[1] + rng.NextFloat(-200f, 200f)
         };
         
         float[] p2 = new[]
         {
-            start[0] + (parabolaEnd[0] - start[0]) * 0.67f,
-            arcDepth
-        };
-        
-        return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, parabolaEnd, p1, p2);
-    }
-    
-    /// <summary>
-    /// Generate a sine wave path with specific start and end points (for Wave Rider bonus fish)
-    /// Smoother and less bouncy with reduced amplitude and frequency
-    /// </summary>
-    public static IPath GenerateSinePathWithPoints(int fishId, int seed, int startTick, float speed, float[] start, float[] end)
-    {
-        // Validate endpoints before creating path
-        ValidatePathEndpoints(start, end, "SineWithPoints", fishId);
-        
-        // Reduced amplitude (20-35 instead of 40-80) for smoother motion
-        float amplitude = 20f + ((seed % 16) * (35f - 20f) / 15f);
-        // Reduced frequency (2-4 instead of 3-6) for less bouncy motion
-        float frequency = 2f + ((seed % 3) * (4f - 2f) / 2f);
-        return new SinePath(fishId, seed, startTick, speed, start, end, start, end, amplitude, frequency);
-    }
-    
-    private static IPath GenerateBezierPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, int groupAnchorSeed, SharedGroupParameters sharedParams)
-    {
-        // Generate start and end points based on spawn edge using pre-computed base anchors
-        var (start, end) = GenerateEdgeToEdgePointsFromSpawnEdge(rng, spawnEdge, lateralIndex, trailingRank, sharedParams);
-        
-        // Validate endpoints before creating path
-        ValidatePathEndpoints(start, end, "Bezier", fishId);
-        
-        // Apply pre-computed shared control point offsets to this fish's start/end points
-        float[] p1 = new[]
-        {
-            MathF.Max(100f, MathF.Min(CANVAS_WIDTH - 100f, start[0] + sharedParams.BezierP1OffsetX)),
-            MathF.Max(100f, MathF.Min(CANVAS_HEIGHT - 100f, start[1] + sharedParams.BezierP1OffsetY))
-        };
-        
-        float[] p2 = new[]
-        {
-            MathF.Max(100f, MathF.Min(CANVAS_WIDTH - 100f, end[0] + sharedParams.BezierP2OffsetX)),
-            MathF.Max(100f, MathF.Min(CANVAS_HEIGHT - 100f, end[1] + sharedParams.BezierP2OffsetY))
+            end[0] + rng.NextFloat(-200f, 200f),
+            end[1] + rng.NextFloat(-200f, 200f)
         };
         
         return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed, start, p1, p2, end);
+    }
+    
+    private static IPath GenerateCircularOrComplexPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
+    {
+        // 70% Bezier, 30% Circular for variety
+        if (rng.NextFloat() > 0.3f)
+        {
+            return GenerateBezierPath(fishId, seed, startTick, fishType, rng);
+        }
+        
+        // Circular path
+        float[] center = new[]
+        {
+            rng.NextFloat(300f, CANVAS_WIDTH - 300f),
+            rng.NextFloat(200f, CANVAS_HEIGHT - 200f)
+        };
+        
+        float radiusX = rng.NextFloat(100f, 250f);
+        float radiusY = rng.NextFloat(80f, 200f);
+        float startAngle = rng.NextFloat(0f, MathF.PI * 2);
+        bool clockwise = rng.NextFloat() > 0.5f;
+        
+        return new CircularPath(fishId, seed, startTick, fishType.BaseSpeed, center, radiusX, radiusY, startAngle, clockwise);
+    }
+    
+    private static IPath GenerateBossPath(int fishId, int seed, int startTick, FishDefinition fishType, SeededRandom rng)
+    {
+        // Bosses get dramatic curved paths
+        var (start, end) = GenerateEdgeToEdgePoints(rng);
+        
+        // Large, sweeping Bezier curves
+        float[] p1 = new[]
+        {
+            rng.NextFloat(300f, CANVAS_WIDTH - 300f),
+            rng.NextFloat(100f, CANVAS_HEIGHT - 100f)
+        };
+        
+        float[] p2 = new[]
+        {
+            rng.NextFloat(300f, CANVAS_WIDTH - 300f),
+            rng.NextFloat(100f, CANVAS_HEIGHT - 100f)
+        };
+        
+        return new BezierPath(fishId, seed, startTick, fishType.BaseSpeed * 0.7f, start, p1, p2, end);
     }
     
     /// <summary>
@@ -445,106 +148,15 @@ public class PathGenerator
         return (start, end);
     }
     
-    /// <summary>
-    /// Generate start and end points based on specified spawn edge
-    /// Uses pre-computed base anchors from SharedGroupParameters and applies formation offsets
-    /// in LOCAL movement space (perpendicular and parallel to direction vector)
-    /// </summary>
-    private static (float[] start, float[] end) GenerateEdgeToEdgePointsFromSpawnEdge(SeededRandom rng, int spawnEdge, int lateralIndex, int trailingRank, SharedGroupParameters sharedParams)
-    {
-        // If no spawn edge specified, use random edge
-        if (spawnEdge < 0 || spawnEdge > 11)
-        {
-            return GenerateEdgeToEdgePoints(rng);
-        }
-        
-        // Use pre-computed base anchors from SharedGroupParameters
-        float[] baseStart = sharedParams.BaseAnchorStart;
-        float[] baseEnd = sharedParams.BaseAnchorEnd;
-        
-        // Compute movement direction vector (normalized)
-        float dx = baseEnd[0] - baseStart[0];
-        float dy = baseEnd[1] - baseStart[1];
-        float distance = MathF.Sqrt(dx * dx + dy * dy);
-        
-        // Avoid division by zero
-        if (distance < 0.001f)
-        {
-            return (baseStart, baseEnd);
-        }
-        
-        float dirX = dx / distance;
-        float dirY = dy / distance;
-        
-        // Compute perpendicular vector (rotate direction by 90 degrees)
-        // For 2D: perpendicular of (x, y) is (-y, x)
-        float perpX = -dirY;
-        float perpY = dirX;
-        
-        // Calculate formation offsets in LOCAL movement space
-        // FORMATION BEHAVIOR: Fish can be positioned both laterally (side-by-side) and longitudinally (trailing)
-        // lateralIndex controls perpendicular offset for row formations
-        // trailingRank controls parallel offset for line formations (all fish trail behind leader)
-        float lateralOffset = lateralIndex * 80f;  // Lateral spacing for side-by-side formations
-        float longitudinalOffset = -trailingRank * 120f;  // Trailing spacing - all fish trail behind leader
-        
-        // Apply offsets to start position in LOCAL space
-        float[] start = new float[2];
-        start[0] = baseStart[0] + (perpX * lateralOffset) + (dirX * longitudinalOffset);
-        start[1] = baseStart[1] + (perpY * lateralOffset) + (dirY * longitudinalOffset);
-        
-        // Apply SAME offsets to end position in LOCAL space (maintains formation)
-        float[] end = new float[2];
-        end[0] = baseEnd[0] + (perpX * lateralOffset) + (dirX * longitudinalOffset);
-        end[1] = baseEnd[1] + (perpY * lateralOffset) + (dirY * longitudinalOffset);
-        
-        // Clamp edge coordinates to ensure they stay off-screen after formation offsets
-        // Formation offsets (especially lateral) can shift spawn points toward the playfield
-        const float SPAWN_OFFSET = -10f;
-        
-        // Determine which edge we're spawning from based on base anchor positions and clamp accordingly
-        // If baseStart X is off-screen (left or right edge), clamp X coordinates
-        if (baseStart[0] <= 0)
-        {
-            // Left edge spawn - ensure X stays off-screen (≤ -10)
-            start[0] = MathF.Min(start[0], SPAWN_OFFSET);
-            end[0] = MathF.Min(end[0], SPAWN_OFFSET);
-        }
-        else if (baseStart[0] >= CANVAS_WIDTH)
-        {
-            // Right edge spawn - ensure X stays off-screen (≥ 1810)
-            start[0] = MathF.Max(start[0], CANVAS_WIDTH - SPAWN_OFFSET);
-            end[0] = MathF.Max(end[0], CANVAS_WIDTH - SPAWN_OFFSET);
-        }
-        
-        // If baseStart Y is off-screen (top or bottom edge), clamp Y coordinates
-        if (baseStart[1] <= 0)
-        {
-            // Top edge spawn - ensure Y stays off-screen (≤ -10)
-            start[1] = MathF.Min(start[1], SPAWN_OFFSET);
-            end[1] = MathF.Min(end[1], SPAWN_OFFSET);
-        }
-        else if (baseStart[1] >= CANVAS_HEIGHT)
-        {
-            // Bottom edge spawn - ensure Y stays off-screen (≥ 910)
-            start[1] = MathF.Max(start[1], CANVAS_HEIGHT - SPAWN_OFFSET);
-            end[1] = MathF.Max(end[1], CANVAS_HEIGHT - SPAWN_OFFSET);
-        }
-        
-        return (start, end);
-    }
-    
     private static float[] GeneratePointOnEdge(int edge, SeededRandom rng)
     {
-        // Spawn slightly outside boundaries to prevent fish from getting stuck at edges
-        const float SPAWN_OFFSET = -10f; // Start slightly off-screen
         return edge switch
         {
-            0 => new[] { SPAWN_OFFSET, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Left - spawn slightly outside
-            1 => new[] { CANVAS_WIDTH - SPAWN_OFFSET, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Right - spawn slightly outside
-            2 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), SPAWN_OFFSET }, // Top - spawn slightly outside
-            3 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), CANVAS_HEIGHT - SPAWN_OFFSET }, // Bottom - spawn slightly outside
-            _ => new[] { SPAWN_OFFSET, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) } // Default to left edge off-screen (never center!)
+            0 => new[] { -50f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Left
+            1 => new[] { CANVAS_WIDTH + 50f, rng.NextFloat(100f, CANVAS_HEIGHT - 100f) }, // Right
+            2 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), -50f }, // Top
+            3 => new[] { rng.NextFloat(100f, CANVAS_WIDTH - 100f), CANVAS_HEIGHT + 50f }, // Bottom
+            _ => new[] { 0f, 0f }
         };
     }
 }

@@ -1,12 +1,34 @@
 using OceanKing.Server;
-using OceanKing.Server.Managers;
+using OceanKing.Server.Data;
+using OceanKing.Server.Services;
 using OceanKing.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add Database Context (optional - used for registered users only, not guests)
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+if (!string.IsNullOrEmpty(connectionString))
+{
+    try
+    {
+        builder.Services.AddDbContext<OceanKingDbContext>(options =>
+            options.UseNpgsql(connectionString));
+        Console.WriteLine("Database connected successfully");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database connection warning: {ex.Message}. Guest mode will work without database.");
+    }
+}
+else
+{
+    Console.WriteLine("DATABASE_URL not set. Running in guest-only mode (no user registration).");
+}
 
 // Configure JWT Authentication
 var jwtSecretKey = builder.Configuration["JwtSettings:SecretKey"] ?? "OceanKing3SecretKey2025MinLength32Chars!";
@@ -53,14 +75,16 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
+// Register JWT token service
+builder.Services.AddSingleton<JwtTokenService>();
+
 // Add SignalR with optimizations for performance
 builder.Services.AddSignalR(options =>
 {
     options.EnableDetailedErrors = true; // Enable for debugging
     options.MaximumReceiveMessageSize = 32768; // 32KB default
     options.StatefulReconnectBufferSize = 100000; // Enable stateful reconnect for mobile
-})
-.AddMessagePackProtocol();
+});
 
 // Register game server as singleton
 builder.Services.AddSingleton<GameServerHost>();

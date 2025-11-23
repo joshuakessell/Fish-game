@@ -29,30 +29,26 @@ public class BossDefinition
 
 public static class BossCatalog
 {
-    // BALANCED RTP: Increased RTP_FACTOR to 6.0 with REVERTED BaseValue multipliers
-    // This gives target DestructionOdds: 3-5% for mid-bosses, 0.5-1.5% for ultra-rares
-    // Formula: DestructionOdds = 6.0 / (BaseValue × 1.74)
-    // Combined with HotColdCycleManager multipliers for dynamic difficulty
-    private const float RTP_FACTOR = 6.0f;
+    private const float RTP = 0.97f;
     private const float AVG_MULTIPLIER = 1.74f;
 
     private static float CalculateDestructionOdds(decimal baseValue)
     {
-        return RTP_FACTOR / ((float)baseValue * AVG_MULTIPLIER);
+        return RTP / ((float)baseValue * AVG_MULTIPLIER);
     }
 
     public static readonly Dictionary<int, BossDefinition> AllBosses = new()
     {
         // ===== RARE MID-BOSSES (for rotation) =====
-        // REVERTED to original BaseValue for balanced DestructionOdds with RTP_FACTOR=6.0
+        // These appear more frequently but are still valuable targets
         
         [2] = new BossDefinition // Large Fish (existing)
         {
             TypeId = 2,
             Name = "Giant Tuna",
-            BaseValue = 70m,
-            DestructionOdds = CalculateDestructionOdds(70m),
-            HitboxRadius = 75f,  // Greatly increased for easier targeting
+            BaseValue = 50m,
+            DestructionOdds = CalculateDestructionOdds(50m),
+            HitboxRadius = 50f,
             BaseSpeed = 80f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.ExplosionRing,
@@ -64,9 +60,9 @@ public static class BossCatalog
         {
             TypeId = 3,
             Name = "Dragon Turtle",
-            BaseValue = 700m,
-            DestructionOdds = CalculateDestructionOdds(700m),
-            HitboxRadius = 120f,  // Greatly increased for easier targeting
+            BaseValue = 500m,
+            DestructionOdds = CalculateDestructionOdds(500m),
+            HitboxRadius = 80f,
             BaseSpeed = 60f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.SectorBlast,
@@ -78,9 +74,9 @@ public static class BossCatalog
         {
             TypeId = 4,
             Name = "Bomb Crab",
-            BaseValue = 280m,
-            DestructionOdds = CalculateDestructionOdds(280m),
-            HitboxRadius = 85f,  // Greatly increased for easier targeting
+            BaseValue = 200m,
+            DestructionOdds = CalculateDestructionOdds(200m),
+            HitboxRadius = 55f,
             BaseSpeed = 50f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.ExplosionRing,
@@ -92,9 +88,9 @@ public static class BossCatalog
         {
             TypeId = 5,
             Name = "Lightning Eel",
-            BaseValue = 210m,
-            DestructionOdds = CalculateDestructionOdds(210m),
-            HitboxRadius = 75f,  // Greatly increased for easier targeting
+            BaseValue = 150m,
+            DestructionOdds = CalculateDestructionOdds(150m),
+            HitboxRadius = 48f,
             BaseSpeed = 90f,
             MovementPatternId = 2,
             DeathEffect = BossDeathEffect.ChainLightning,
@@ -106,9 +102,9 @@ public static class BossCatalog
         {
             TypeId = 6,
             Name = "Vortex Starfish",
-            BaseValue = 420m,
-            DestructionOdds = CalculateDestructionOdds(420m),
-            HitboxRadius = 90f,  // Greatly increased for easier targeting
+            BaseValue = 300m,
+            DestructionOdds = CalculateDestructionOdds(300m),
+            HitboxRadius = 60f,
             BaseSpeed = 40f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.VortexPull,
@@ -117,15 +113,15 @@ public static class BossCatalog
         },
 
         // ===== ULTRA-RARE JACKPOT BOSSES (types 9-19) =====
-        // REVERTED to original BaseValue for balanced DestructionOdds with RTP_FACTOR=6.0
+        // These are the legendary bosses with massive payouts and spectacular effects
         
         [9] = new BossDefinition // Kaiju Megalodon - INTERACTIVE
         {
             TypeId = 9,
             Name = "Kaiju Megalodon",
-            BaseValue = 7500m,
-            DestructionOdds = CalculateDestructionOdds(7500m),
-            HitboxRadius = 170f,  // Greatly increased for easier targeting
+            BaseValue = 5000m,
+            DestructionOdds = CalculateDestructionOdds(5000m),
+            HitboxRadius = 120f,
             BaseSpeed = 70f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.ScreenWipe,
@@ -138,9 +134,9 @@ public static class BossCatalog
         {
             TypeId = 10,
             Name = "Emperor Kraken",
-            BaseValue = 12000m,
-            DestructionOdds = CalculateDestructionOdds(12000m),
-            HitboxRadius = 195f,  // Greatly increased for easier targeting
+            BaseValue = 8000m,
+            DestructionOdds = CalculateDestructionOdds(8000m),
+            HitboxRadius = 140f,
             BaseSpeed = 50f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.VortexPull,
@@ -153,9 +149,9 @@ public static class BossCatalog
         {
             TypeId = 11,
             Name = "Cosmic Leviathan",
-            BaseValue = 15000m,
-            DestructionOdds = CalculateDestructionOdds(15000m),
-            HitboxRadius = 210f,  // Greatly increased for easier targeting
+            BaseValue = 10000m,
+            DestructionOdds = CalculateDestructionOdds(10000m),
+            HitboxRadius = 150f,
             BaseSpeed = 60f,
             MovementPatternId = 2,
             DeathEffect = BossDeathEffect.ScreenWipe,
@@ -167,9 +163,9 @@ public static class BossCatalog
         {
             TypeId = 12,
             Name = "Samurai Swordfish",
-            BaseValue = 9000m,
-            DestructionOdds = CalculateDestructionOdds(9000m),
-            HitboxRadius = 155f,  // Greatly increased for easier targeting
+            BaseValue = 6000m,
+            DestructionOdds = CalculateDestructionOdds(6000m),
+            HitboxRadius = 110f,
             BaseSpeed = 120f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.LineClear,
@@ -181,9 +177,9 @@ public static class BossCatalog
         {
             TypeId = 13,
             Name = "Carnival King Crab",
-            BaseValue = 10500m,
-            DestructionOdds = CalculateDestructionOdds(10500m),
-            HitboxRadius = 180f,  // Greatly increased for easier targeting
+            BaseValue = 7000m,
+            DestructionOdds = CalculateDestructionOdds(7000m),
+            HitboxRadius = 130f,
             BaseSpeed = 45f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.LootDrop,
@@ -195,9 +191,9 @@ public static class BossCatalog
         {
             TypeId = 14,
             Name = "Wizard Octopus",
-            BaseValue = 13500m,
-            DestructionOdds = CalculateDestructionOdds(13500m),
-            HitboxRadius = 175f,  // Greatly increased for easier targeting
+            BaseValue = 9000m,
+            DestructionOdds = CalculateDestructionOdds(9000m),
+            HitboxRadius = 125f,
             BaseSpeed = 55f,
             MovementPatternId = 2,
             DeathEffect = BossDeathEffect.TimeFreeze,
@@ -209,9 +205,9 @@ public static class BossCatalog
         {
             TypeId = 15,
             Name = "Rocket Hammerhead",
-            BaseValue = 8250m,
-            DestructionOdds = CalculateDestructionOdds(8250m),
-            HitboxRadius = 140f,  // Greatly increased for easier targeting
+            BaseValue = 5500m,
+            DestructionOdds = CalculateDestructionOdds(5500m),
+            HitboxRadius = 100f,
             BaseSpeed = 150f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.LineClear,
@@ -223,9 +219,9 @@ public static class BossCatalog
         {
             TypeId = 16,
             Name = "Pirate Captain Whale",
-            BaseValue = 18000m,
-            DestructionOdds = CalculateDestructionOdds(18000m),
-            HitboxRadius = 225f,  // Greatly increased for easier targeting
+            BaseValue = 12000m,
+            DestructionOdds = CalculateDestructionOdds(12000m),
+            HitboxRadius = 160f,
             BaseSpeed = 40f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.LootDrop,
@@ -237,9 +233,9 @@ public static class BossCatalog
         {
             TypeId = 17,
             Name = "Nuclear Submarine",
-            BaseValue = 22500m,
-            DestructionOdds = CalculateDestructionOdds(22500m),
-            HitboxRadius = 200f,  // Greatly increased for easier targeting
+            BaseValue = 15000m,
+            DestructionOdds = CalculateDestructionOdds(15000m),
+            HitboxRadius = 145f,
             BaseSpeed = 65f,
             MovementPatternId = 0,
             DeathEffect = BossDeathEffect.SectorBlast,
@@ -251,9 +247,9 @@ public static class BossCatalog
         {
             TypeId = 18,
             Name = "Phoenix Firebird",
-            BaseValue = 12750m,
-            DestructionOdds = CalculateDestructionOdds(12750m),
-            HitboxRadius = 160f,  // Greatly increased for easier targeting
+            BaseValue = 8500m,
+            DestructionOdds = CalculateDestructionOdds(8500m),
+            HitboxRadius = 115f,
             BaseSpeed = 140f,
             MovementPatternId = 2,
             DeathEffect = BossDeathEffect.ExplosionRing,
@@ -265,9 +261,9 @@ public static class BossCatalog
         {
             TypeId = 19,
             Name = "Alien Mothership",
-            BaseValue = 30000m,
-            DestructionOdds = CalculateDestructionOdds(30000m),
-            HitboxRadius = 240f,  // Greatly increased for easier targeting
+            BaseValue = 20000m,
+            DestructionOdds = CalculateDestructionOdds(20000m),
+            HitboxRadius = 170f,
             BaseSpeed = 35f,
             MovementPatternId = 1,
             DeathEffect = BossDeathEffect.ScreenWipe,
