@@ -95,6 +95,12 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - `src/entities/PlayersDisplayUI.ts`: Multi-player bank display with click handlers and access control
 - `Public/spectator.html`: Spectator dashboard with per-player ledger modals and bullet-count bet tracking
 
+## Recent Changes (2025-11-23)
+- **Redesigned Player Hub UI:** Completely revamped betting controls to match arcade reference photo with dimensional golden platform (520×95 ellipse with layered shadows, bevels, highlights), blue bet medallion (42px radius) centered with red "Bet: X Credits" label, blue +/- circles (34px radius) positioned at ±70px, bank display at -210px, and player name badge at +210px.
+- **Turret Repositioning:** Updated positioning logic so turrets appear ABOVE controls for bottom seats (0-2) and BELOW controls for top seats (3-5) using dedicated offset constants (turretOffsetY: ±70px).
+- **Removed Debug Overlay:** Eliminated debug stats box (FPS, tick info) and top-right credits display for cleaner production UI.
+- **Enhanced Button Interactions:** Implemented hover states and press feedback using redrawButton helper to preserve dimensional styling without visual artifacts.
+
 ## Recent Changes (2025-11-12)
 - **Migrated to Phaser 3:** Replaced vanilla Canvas with Phaser framework for better sprite/animation management.
 - **Implemented Parametric Path System:** Fish movement now uses deterministic path functions (Linear, Sine, Bezier, Circular).
