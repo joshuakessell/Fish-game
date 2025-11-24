@@ -432,7 +432,7 @@ public class MatchInstance
                     TypeId = f.TypeId,
                     X = f.X, // Legacy fallback - will remove once path system verified
                     Y = f.Y, // Legacy fallback - will remove once path system verified
-                    Path = isNewSpawn ? f.CachedPathData : null, // Only send path data on spawn
+                    Path = f.CachedPathData, // Always send path data so late-joining players can compute positions
                     IsNewSpawn = isNewSpawn
                 };
             }).ToList(),
