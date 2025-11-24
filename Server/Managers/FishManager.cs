@@ -4,7 +4,7 @@ namespace OceanKing.Server.Managers;
 
 public class FishManager
 {
-    private readonly Dictionary<string, Fish> _activeFish = new();
+    private readonly Dictionary<int, Fish> _activeFish = new();
     private const int MIN_FISH_COUNT = 5;   // Reduced for testing
     private const int MAX_FISH_COUNT = 15;  // Limited to 15 fish max
     private const int ARENA_WIDTH = 1800;
@@ -26,7 +26,7 @@ public class FishManager
 
     public void UpdateFish(float deltaTime, long currentTick)
     {
-        var fishToRemove = new List<string>();
+        var fishToRemove = new List<int>();
 
         foreach (var fish in _activeFish.Values)
         {
@@ -53,18 +53,14 @@ public class FishManager
         // DEBUG MODE: Only spawn small fish (types 0-2), max 15 fish
         // Disabled special items and boss fish for testing
         
-        Console.WriteLine($"[DEBUG] SpawnFishIfNeeded called. Fish count: {_activeFish.Count}, MIN: {MIN_FISH_COUNT}, MAX: {MAX_FISH_COUNT}");
-        
         // Regular spawning for normal fish (respect MAX_FISH_COUNT cap)
         if (_activeFish.Count < MIN_FISH_COUNT)
         {
-            Console.WriteLine($"[DEBUG] Below minimum fish count. Spawning to reach MIN_FISH_COUNT...");
             int spawned = 0;
             while (_activeFish.Count < MIN_FISH_COUNT && _activeFish.Count < MAX_FISH_COUNT)
             {
                 SpawnRandomFish(currentTick);
                 spawned++;
-                Console.WriteLine($"[DEBUG] Spawned fish #{spawned}. Total fish: {_activeFish.Count}");
                 if (spawned > 100) break; // Safety limit to prevent infinite loop
             }
             _lastSpawnTick = currentTick;
@@ -327,7 +323,7 @@ public class FishManager
         };
     }
 
-    public Fish? GetFish(string fishId)
+    public Fish? GetFish(int fishId)
     {
         _activeFish.TryGetValue(fishId, out var fish);
         return fish;
@@ -338,7 +334,7 @@ public class FishManager
         return _activeFish.Values.ToList();
     }
 
-    public void RemoveFish(string fishId)
+    public void RemoveFish(int fishId)
     {
         _activeFish.Remove(fishId);
     }

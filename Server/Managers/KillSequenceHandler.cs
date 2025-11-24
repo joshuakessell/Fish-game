@@ -11,7 +11,7 @@ public class BossKillSequence
     public BossDeathEffect EffectType { get; set; }
     public long StartTick { get; set; }
     public int CurrentStep { get; set; }
-    public List<string> AffectedFishIds { get; set; } = new();
+    public List<int> AffectedFishIds { get; set; } = new();
     public decimal PerformanceModifier { get; set; } = 1.0m;
     public bool IsInteractive { get; set; }
     public bool WaitingForInteraction { get; set; }
@@ -21,7 +21,7 @@ public class BossKillResult
 {
     public string KillerPlayerId { get; set; } = string.Empty;
     public decimal TotalPayout { get; set; }
-    public List<string> DestroyedFishIds { get; set; } = new();
+    public List<int> DestroyedFishIds { get; set; } = new();
     public BossDeathEffect EffectType { get; set; }
     public int EffectStep { get; set; }
 }

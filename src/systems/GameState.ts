@@ -346,7 +346,7 @@ export class GameState {
         const incomingFishIds = new Set<number>();
 
         for (const fishData of update.Fish) {
-          incomingFishIds.add(fishData.id);
+          incomingFishIds.add(fishData.fishId);
           this.updateFish(fishData);
         }
 
@@ -454,24 +454,24 @@ export class GameState {
   }
 
   private updateFish(fishData: FishData) {
-    const isNew = !this.fish.has(fishData.id);
+    const isNew = !this.fish.has(fishData.fishId);
 
     if (fishData.isNewSpawn && fishData.path) {
-      this.fishPathManager.registerFishPath(fishData.id, fishData.path);
+      this.fishPathManager.registerFishPath(fishData.fishId, fishData.path);
       console.log(
-        `Registered path for fish ${fishData.id}, type: ${fishData.path.pathType}`,
+        `Registered path for fish ${fishData.fishId}, type: ${fishData.path.pathType}`,
       );
 
       // Notify all listeners
       if (isNew) {
         if (this.onFishSpawned) {
-          this.onFishSpawned(fishData.id, fishData.type);
+          this.onFishSpawned(fishData.fishId, fishData.typeId);
         }
-        this.fishSpawnedListeners.forEach(listener => listener(fishData.id, fishData.type));
+        this.fishSpawnedListeners.forEach(listener => listener(fishData.fishId, fishData.typeId));
       }
     }
 
-    this.fish.set(fishData.id, fishData);
+    this.fish.set(fishData.fishId, fishData);
   }
 
   public getFishPosition(

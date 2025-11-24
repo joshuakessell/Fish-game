@@ -5,7 +5,9 @@ namespace OceanKing.Server.Entities;
 
 public class Fish
 {
-    public string FishId { get; set; } = Guid.NewGuid().ToString();
+    private static int _nextFishId = 1;
+    
+    public int FishId { get; set; }
     public int TypeId { get; set; } // 0=small, 1=medium, 2=large, 3=boss
     public decimal BaseValue { get; set; }
     public float DestructionOdds { get; set; } // Probability (0-1) that a bullet destroys this fish
@@ -54,13 +56,12 @@ public class Fish
             throw new ArgumentException($"Invalid fish type ID: {typeId}");
         }
         
-        // Generate stable fish ID hash for path generation
-        var fishIdGuid = Guid.NewGuid().ToString();
-        var fishIdHash = Math.Abs(fishIdGuid.GetHashCode());
+        // Generate auto-incrementing numeric fish ID
+        var fishId = System.Threading.Interlocked.Increment(ref _nextFishId);
         
         // Generate parametric path for this fish
         var path = PathGenerator.GeneratePathForFish(
-            fishIdHash,
+            fishId,
             fishDef,
             (int)currentTick
         );
@@ -73,7 +74,7 @@ public class Fish
         
         var fish = new Fish
         {
-            FishId = fishIdGuid,
+            FishId = fishId,
             TypeId = typeId,
             X = startPos[0],
             Y = startPos[1],

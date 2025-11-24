@@ -631,7 +631,7 @@ public class PlayerState
 public class FishState
 {
     [Key(0)]
-    public string FishId { get; set; } = string.Empty;
+    public int FishId { get; set; }
     
     [Key(1)]
     public int TypeId { get; set; }
@@ -670,7 +670,7 @@ public class ProjectileState
 
 public class KillEvent
 {
-    public string FishId { get; set; } = string.Empty;
+    public int FishId { get; set; }
     public string ProjectileId { get; set; } = string.Empty;
 }
 
@@ -678,7 +678,7 @@ public class KillEvent
 public class KillPayoutEvent
 {
     [Key(0)]
-    public string FishId { get; set; } = string.Empty;
+    public int FishId { get; set; }
     
     [Key(1)]
     public int Payout { get; set; }

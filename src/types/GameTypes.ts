@@ -1,8 +1,8 @@
 import { PathData } from "../systems/paths/PathData";
 
 export interface FishData {
-  id: number;
-  type: number;
+  fishId: number;  // Auto-incrementing numeric ID
+  typeId: number;
   x: number;
   y: number;
   path?: PathData;
