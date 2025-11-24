@@ -325,27 +325,28 @@ export class GameState {
       return;
     }
 
-    this.connection.on("StateDelta", (update: StateDelta) => {
-      if (update.TickId !== undefined) {
-        this.lastServerTick = update.TickId;
-        this.tickDrift = update.TickId - this.currentTick;
+    this.connection.on("StateDelta", (update: any) => {
+      // Use camelCase to match server's JSON serialization
+      if (update.tickId !== undefined) {
+        this.lastServerTick = update.tickId;
+        this.tickDrift = update.tickId - this.currentTick;
 
         if (Math.abs(this.tickDrift) > this.TICK_DRIFT_THRESHOLD) {
           const adjustment =
             Math.sign(this.tickDrift) * Math.ceil(Math.abs(this.tickDrift) / 2);
           this.currentTick += adjustment;
-          this.tickDrift = update.TickId - this.currentTick;
+          this.tickDrift = update.tickId - this.currentTick;
           console.log(
             `Tick sync: drift=${this.tickDrift}, adjusted client tick by ${adjustment} to ${this.currentTick}`,
           );
         }
       }
 
-      if (update.Fish) {
+      if (update.fish) {
         const currentFishIds = new Set(this.fish.keys());
         const incomingFishIds = new Set<number>();
 
-        for (const fishData of update.Fish) {
+        for (const fishData of update.fish) {
           incomingFishIds.add(fishData.fishId);
           this.updateFish(fishData);
         }
@@ -362,11 +363,11 @@ export class GameState {
         }
       }
 
-      if (update.Projectiles) {
+      if (update.projectiles) {
         // Track bullet count per player to detect new shots (bets)
         const currentBulletCounts = new Map<string, number>();
         
-        for (const bulletData of update.Projectiles) {
+        for (const bulletData of update.projectiles) {
           const playerId = bulletData.playerId;
           currentBulletCounts.set(
             playerId,
@@ -400,16 +401,16 @@ export class GameState {
         this.previousBulletCounts = currentBulletCounts;
         
         this.bullets.clear();
-        for (const bulletData of update.Projectiles) {
-          this.bullets.set(bulletData.id, bulletData);
+        for (const bulletData of update.projectiles) {
+          this.bullets.set(bulletData.projectileId, bulletData);
         }
       }
 
-      if (update.Players) {
-        for (const playerData of update.Players) {
-          this.players.set(playerData.slot, playerData);
+      if (update.players) {
+        for (const playerData of update.players) {
+          this.players.set(playerData.playerSlot, playerData);
 
-          if (playerData.slot === this.myPlayerSlot && this.playerAuth) {
+          if (playerData.playerSlot === this.myPlayerSlot && this.playerAuth) {
             const oldCredits = this.playerAuth.credits;
             const newCredits = playerData.credits;
 
@@ -425,28 +426,27 @@ export class GameState {
         }
       }
 
-      if (update.PayoutEvents) {
-        for (const event of update.PayoutEvents) {
+      if (update.payoutEvents) {
+        for (const event of update.payoutEvents) {
           // Record win transaction for ALL players (not just local player)
-          const player = this.players.get(event.PlayerSlot);
+          const player = this.players.get(event.playerSlot);
           if (player) {
             this.recordWinTransaction(
-              event.PlayerSlot,
-              event.Payout,
+              event.playerSlot,
+              event.payout,
               player.credits,
-              parseInt(event.FishId) || 0, // FishId is a string from server
+              event.fishId,
               0, // Fish type not available in payout event
             );
           }
 
           // Show payout animation only for local player
-          if (event.PlayerSlot === this.myPlayerSlot) {
+          if (event.playerSlot === this.myPlayerSlot) {
             // Notify all listeners
-            const fishIdNum = parseInt(event.FishId) || 0;
             if (this.onPayoutReceived) {
-              this.onPayoutReceived(fishIdNum, event.Payout);
+              this.onPayoutReceived(event.fishId, event.payout);
             }
-            this.payoutReceivedListeners.forEach(listener => listener(fishIdNum, event.Payout));
+            this.payoutReceivedListeners.forEach(listener => listener(event.fishId, event.payout));
           }
         }
       }

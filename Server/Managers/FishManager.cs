@@ -53,9 +53,12 @@ public class FishManager
         // DEBUG MODE: Only spawn small fish (types 0-2), max 15 fish
         // Disabled special items and boss fish for testing
         
+        Console.WriteLine($"[SPAWN_CHECK] Tick={currentTick}, FishCount={_activeFish.Count}, Min={MIN_FISH_COUNT}, Max={MAX_FISH_COUNT}");
+        
         // Regular spawning for normal fish (respect MAX_FISH_COUNT cap)
         if (_activeFish.Count < MIN_FISH_COUNT)
         {
+            Console.WriteLine($"[SPAWN_TRIGGER] Below MIN_FISH_COUNT, spawning up to {MIN_FISH_COUNT} fish...");
             int spawned = 0;
             while (_activeFish.Count < MIN_FISH_COUNT && _activeFish.Count < MAX_FISH_COUNT)
             {
@@ -64,6 +67,7 @@ public class FishManager
                 if (spawned > 100) break; // Safety limit to prevent infinite loop
             }
             _lastSpawnTick = currentTick;
+            Console.WriteLine($"[SPAWN_COMPLETE] Spawned {spawned} fish, total now: {_activeFish.Count}");
         }
         else if (_activeFish.Count < MAX_FISH_COUNT)
         {
