@@ -96,7 +96,7 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - `Public/spectator.html`: Spectator dashboard with per-player ledger modals and bullet-count bet tracking
 
 ## Recent Changes (2025-11-24)
-- **Fixed Critical Fish Spawning Bug:** Resolved issue where fish weren't appearing on client by converting server FishId from GUID strings to auto-incrementing numeric IDs. This fixed the property type mismatch between server (PascalCase) and client (camelCase) expectations, and eliminated lossy parseInt() conversions in the path registration system that were causing fish to disappear.
+- **Fixed Critical Fish Spawning Bug:** Resolved issue where fish weren't appearing on client by configuring SignalR JSON serialization to use camelCase property names (`PropertyNamingPolicy.CamelCase` in Program.cs). Previously, server sent PascalCase properties (FishId, TypeId) but client expected camelCase (fishId, typeId), causing fish data to be silently ignored. Also converted Fish.FishId from GUID strings to auto-incrementing numeric IDs throughout server codebase for type consistency.
 - **Removed "Bet: X Credits" Label:** Removed the red label below the blue bet control circles for cleaner UI appearance.
 - **Removed Old UI Elements:** Eliminated obsolete UIScene betting controls (red minus/green plus buttons) and top-right credits display that were replaced by BettingUI.
 - **Restored Debug Overlay:** Added debug diagnostics panel in top-left corner showing FPS, tick count, fish count, bullets, credits, and current bet for development testing.

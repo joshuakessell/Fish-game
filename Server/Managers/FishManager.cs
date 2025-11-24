@@ -146,6 +146,7 @@ public class FishManager
 
         var fish = Fish.CreateFish(typeId, x, y, currentTick, velocityX, velocityY);
         _activeFish[fish.FishId] = fish;
+        Console.WriteLine($"[FISH_SPAWNED] ID={fish.FishId}, Type={typeId}, Pos=({x:F0}, {y:F0}), Total={_activeFish.Count}");
     }
 
     private void SpawnRandomFish(long currentTick)
