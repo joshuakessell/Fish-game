@@ -41,33 +41,67 @@ export class BettingUI extends Phaser.GameObjects.Container {
   private createGoldenCircularContainer() {
     const container = this.scene.add.graphics();
 
-    // Bottom shadow layer for depth
-    container.fillStyle(0x8B6914, 0.7);
-    container.fillEllipse(0, 4, 520, 95);
+    // Total width: 700px (wider to accommodate bank and name)
+    // Left section: -320 to -110 (rounded rect for bank)
+    // Middle section: -110 to +110 (ellipse for bet controls)
+    // Right section: +110 to +320 (rounded rect for player name)
 
+    // Bottom shadow layer for depth (full width)
+    container.fillStyle(0x8B6914, 0.7);
+    container.fillRoundedRect(-320, 4 - 45, 640, 90, 20); // Shadow under entire platform
+
+    // LEFT SECTION - Rounded rectangle for bank
+    // Outer rim
+    container.fillStyle(0x996600, 1);
+    container.fillRoundedRect(-320, -45, 210, 90, { tl: 20, tr: 5, bl: 20, br: 5 });
+    
+    // Inner platform
+    container.fillStyle(0xFFAA00, 0.95);
+    container.fillRoundedRect(-315, -40, 200, 80, { tl: 18, tr: 4, bl: 18, br: 4 });
+
+    // Highlight
+    container.fillStyle(0xFFCC33, 0.3);
+    container.fillRoundedRect(-315, -48, 200, 70, { tl: 18, tr: 4, bl: 18, br: 4 });
+
+    // MIDDLE SECTION - Ellipse for bet controls
     // Outer dark golden rim
     container.fillStyle(0x996600, 1);
-    container.fillEllipse(0, 0, 520, 95);
+    container.fillEllipse(0, 0, 220, 95);
 
     // Mid-layer beveled edge
     container.fillStyle(0xCC8800, 1);
-    container.fillEllipse(0, 0, 505, 88);
+    container.fillEllipse(0, 0, 210, 88);
 
     // Inner golden platform
     container.fillStyle(0xFFAA00, 0.95);
-    container.fillEllipse(0, 0, 490, 82);
+    container.fillEllipse(0, 0, 200, 82);
 
     // Center highlight
     container.fillStyle(0xFFCC33, 0.3);
-    container.fillEllipse(0, -8, 460, 70);
+    container.fillEllipse(0, -8, 180, 70);
 
-    // Dark outline
+    // RIGHT SECTION - Rounded rectangle for player name
+    // Outer rim
+    container.fillStyle(0x996600, 1);
+    container.fillRoundedRect(110, -45, 210, 90, { tl: 5, tr: 20, bl: 5, br: 20 });
+    
+    // Inner platform
+    container.fillStyle(0xFFAA00, 0.95);
+    container.fillRoundedRect(115, -40, 200, 80, { tl: 4, tr: 18, bl: 4, br: 18 });
+
+    // Highlight
+    container.fillStyle(0xFFCC33, 0.3);
+    container.fillRoundedRect(115, -48, 200, 70, { tl: 4, tr: 18, bl: 4, br: 18 });
+
+    // Dark outline around entire platform
     container.lineStyle(3, 0x8B6914, 1);
-    container.strokeEllipse(0, 0, 520, 95);
+    container.strokeRoundedRect(-320, -45, 640, 90, 20);
 
-    // Light inner highlight
+    // Light inner highlights
     container.lineStyle(2, 0xFFDD77, 0.6);
-    container.strokeEllipse(0, -2, 470, 78);
+    container.strokeEllipse(0, -2, 190, 78); // Middle section
+    container.strokeRoundedRect(-315, -42, 200, 84, { tl: 18, tr: 4, bl: 18, br: 4 }); // Left section
+    container.strokeRoundedRect(115, -42, 200, 84, { tl: 4, tr: 18, bl: 4, br: 18 }); // Right section
 
     this.add(container);
   }
@@ -249,31 +283,37 @@ export class BettingUI extends Phaser.GameObjects.Container {
     const credits = this.gameState.playerAuth?.credits || 0;
     const formattedCredits = this.formatNumber(credits);
 
-    this.bankText = this.scene.add.text(-210, 0, formattedCredits, {
+    // Dark shadow/background behind bank text for readability
+    const bankBg = this.scene.add.graphics();
+    bankBg.fillStyle(0x000000, 0.6);
+    bankBg.fillRoundedRect(-290, -18, 140, 36, 8);
+
+    this.bankText = this.scene.add.text(-220, 0, formattedCredits, {
       fontSize: "28px",
       color: "#FFD700",
       fontStyle: "bold",
-      stroke: "#8B6914",
-      strokeThickness: 3,
+      stroke: "#000000",
+      strokeThickness: 4,
     });
     this.bankText.setOrigin(0.5, 0.5);
 
-    this.add(this.bankText);
+    this.add([bankBg, this.bankText]);
   }
 
   private createPlayerNameDisplay() {
     const playerName = this.gameState.playerAuth?.name || "Player";
 
+    // Dark background behind player name (integrated into right section)
     const nameBg = this.scene.add.graphics();
-    nameBg.fillStyle(0x8B4513, 0.9);
-    nameBg.fillRoundedRect(140, -20, 140, 40, 10);
-    nameBg.lineStyle(3, 0xFFAA00, 1);
-    nameBg.strokeRoundedRect(140, -20, 140, 40, 10);
+    nameBg.fillStyle(0x000000, 0.5);
+    nameBg.fillRoundedRect(130, -18, 170, 36, 8);
 
-    this.playerNameText = this.scene.add.text(210, 0, playerName, {
+    this.playerNameText = this.scene.add.text(215, 0, playerName, {
       fontSize: "22px",
       color: "#FFE4B5",
       fontStyle: "bold",
+      stroke: "#000000",
+      strokeThickness: 3,
     });
     this.playerNameText.setOrigin(0.5, 0.5);
 
