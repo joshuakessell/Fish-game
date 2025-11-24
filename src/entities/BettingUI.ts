@@ -9,7 +9,6 @@ export class BettingUI extends Phaser.GameObjects.Container {
   private plusButton!: Phaser.GameObjects.Graphics;
   private betCircle!: Phaser.GameObjects.Graphics;
   private betText!: Phaser.GameObjects.Text;
-  private betLabelText!: Phaser.GameObjects.Text;
   private bankText!: Phaser.GameObjects.Text;
   private playerNameText!: Phaser.GameObjects.Text;
 
@@ -189,21 +188,7 @@ export class BettingUI extends Phaser.GameObjects.Container {
     );
     this.betText.setOrigin(0.5, 0.5);
 
-    // Red "Bet: X Credits" label below the circle
-    const betLabelBg = this.scene.add.graphics();
-    betLabelBg.fillStyle(0xCC0000, 0.9);
-    betLabelBg.fillRoundedRect(-80, 48, 160, 28, 6);
-    betLabelBg.lineStyle(2, 0x880000, 1);
-    betLabelBg.strokeRoundedRect(-80, 48, 160, 28, 6);
-
-    this.betLabelText = this.scene.add.text(0, 62, `Bet: ${this.gameState.currentBet} Credits`, {
-      fontSize: "16px",
-      color: "#FFFFFF",
-      fontStyle: "bold",
-    });
-    this.betLabelText.setOrigin(0.5, 0.5);
-
-    this.add([this.betCircle, this.betText, betLabelBg, this.betLabelText]);
+    this.add([this.betCircle, this.betText]);
   }
 
   private createPlusButton() {
@@ -322,11 +307,6 @@ export class BettingUI extends Phaser.GameObjects.Container {
 
   private updateBetDisplay() {
     this.betText.setText(this.gameState.currentBet.toString());
-    
-    // Update the bet label text
-    if (this.betLabelText) {
-      this.betLabelText.setText(`Bet: ${this.gameState.currentBet} Credits`);
-    }
   }
 
   public updateBankDisplay() {
