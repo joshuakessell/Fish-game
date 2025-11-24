@@ -146,7 +146,9 @@ export default class GameScene extends Phaser.Scene {
 
 
   private setupFishLifecycleCallbacks() {
+    console.log("[GAME_SCENE] Setting up fish lifecycle callbacks");
     this.gameState.onFishSpawned = (fishId: number, typeId: number) => {
+      console.log(`[GAME_SCENE] onFishSpawned callback triggered for fish ${fishId}, type ${typeId}`);
       this.fishSpriteManager.spawnFish(fishId, typeId);
     };
 
@@ -447,20 +449,21 @@ export default class GameScene extends Phaser.Scene {
       if (!this.clientBullets.has(bulletId)) {
         const graphics = this.add.graphics();
         graphics.lineStyle(0);
+        
         graphics.fillStyle(0x00FFFF, 1.0);
-        graphics.fillCircle(0, 0, 3);
+        graphics.fillEllipse(0, 0, 6, 2);
         graphics.fillStyle(0x00FFFF, 0.6);
-        graphics.fillCircle(0, 0, 6);
+        graphics.fillEllipse(0, 0, 12, 4);
         graphics.fillStyle(0x00FFFF, 0.3);
-        graphics.fillCircle(0, 0, 9);
+        graphics.fillEllipse(0, 0, 18, 6);
         graphics.setDepth(50);
 
         this.clientBullets.set(bulletId, {
           id: bulletId,
           x: bulletData.x,
           y: bulletData.y,
-          velocityX: 0,
-          velocityY: 0,
+          velocityX: bulletData.velocityX,
+          velocityY: bulletData.velocityY,
           graphics: graphics,
           createdAt: Date.now(),
         });
@@ -470,8 +473,10 @@ export default class GameScene extends Phaser.Scene {
       const bullet = this.clientBullets.get(bulletId)!;
       bullet.x = bulletData.x;
       bullet.y = bulletData.y;
+      bullet.velocityX = bulletData.velocityX;
+      bullet.velocityY = bulletData.velocityY;
 
-      const angle = Math.atan2(bulletData.directionY, bulletData.directionX);
+      const angle = Math.atan2(bulletData.velocityY, bulletData.velocityX);
       bullet.graphics.setPosition(bullet.x, bullet.y);
       bullet.graphics.setRotation(angle);
     });

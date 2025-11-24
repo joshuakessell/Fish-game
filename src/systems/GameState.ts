@@ -469,8 +469,12 @@ export class GameState {
 
     // Spawn sprite for any fish new to this client (late-joiners need sprites for existing fish)
     if (isNewToClient) {
+      console.log(`[SPAWN_CALLBACK] Fish ${fishData.fishId} is new, calling onFishSpawned (callback=${this.onFishSpawned ? 'SET' : 'NULL'})`);
       if (this.onFishSpawned) {
         this.onFishSpawned(fishData.fishId, fishData.typeId);
+        console.log(`[SPAWN_CALLBACK] Called onFishSpawned for fish ${fishData.fishId}`);
+      } else {
+        console.warn(`[SPAWN_CALLBACK] onFishSpawned callback is NULL! Fish ${fishData.fishId} won't be rendered!`);
       }
       this.fishSpawnedListeners.forEach(listener => listener(fishData.fishId, fishData.typeId));
     }
