@@ -5,8 +5,8 @@ namespace OceanKing.Server.Managers;
 public class FishManager
 {
     private readonly Dictionary<string, Fish> _activeFish = new();
-    private const int MIN_FISH_COUNT = 30;
-    private const int MAX_FISH_COUNT = 50;
+    private const int MIN_FISH_COUNT = 5;   // Reduced for testing
+    private const int MAX_FISH_COUNT = 15;  // Limited to 15 fish max
     private const int ARENA_WIDTH = 1800;
     private const int ARENA_HEIGHT = 900; // Billiards table proportions (2:1)
     
@@ -50,57 +50,9 @@ public class FishManager
 
     public void SpawnFishIfNeeded(long currentTick, List<int>? eligibleBosses = null)
     {
-        // CRITICAL: Always maintain exactly 1 Special Item (types 21-24) and 1 Boss Fish (types 25-28)
-        int specialItemCount = _activeFish.Values.Count(f => f.TypeId >= 21 && f.TypeId <= 24);
-        int bossFishCount = _activeFish.Values.Count(f => f.TypeId >= 25 && f.TypeId <= 28);
+        // DEBUG MODE: Only spawn small fish (types 0-2), max 15 fish
+        // Disabled special items and boss fish for testing
         
-        // Spawn Special Item if missing AND enough time has passed
-        if (specialItemCount == 0 && (currentTick - _lastSpecialSpawnTick >= MIN_TICKS_BETWEEN_SPECIAL_SPAWNS || _lastSpecialSpawnTick == 0))
-        {
-            if (_activeFish.Count >= MAX_FISH_COUNT)
-            {
-                // Make room by removing lowest-value non-special/non-boss fish
-                var lowestValueFish = _activeFish.Values
-                    .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
-                    .OrderBy(f => f.BaseValue)
-                    .FirstOrDefault();
-                    
-                if (lowestValueFish != null)
-                {
-                    _activeFish.Remove(lowestValueFish.FishId);
-                    Console.WriteLine($"[SPECIAL] Removed low-value fish to make room for Special Item");
-                }
-            }
-            
-            // Spawn random Special Item (21-24)
-            int specialTypeId = Random.Shared.Next(21, 25);
-            SpawnSingleFish(specialTypeId, currentTick);
-            _lastSpecialSpawnTick = currentTick;
-        }
-        
-        // Spawn Boss Fish if missing AND enough time has passed
-        if (bossFishCount == 0 && (currentTick - _lastBossSpawnTick >= MIN_TICKS_BETWEEN_BOSS_SPAWNS || _lastBossSpawnTick == 0))
-        {
-            if (_activeFish.Count >= MAX_FISH_COUNT)
-            {
-                // Make room by removing lowest-value non-special/non-boss fish
-                var lowestValueFish = _activeFish.Values
-                    .Where(f => f.TypeId < 21) // Only remove regular fish (0-20)
-                    .OrderBy(f => f.BaseValue)
-                    .FirstOrDefault();
-                    
-                if (lowestValueFish != null)
-                {
-                    _activeFish.Remove(lowestValueFish.FishId);
-                }
-            }
-            
-            // Spawn random Boss Fish (25-28)
-            int bossTypeId = Random.Shared.Next(25, 29);
-            SpawnSingleFish(bossTypeId, currentTick);
-            _lastBossSpawnTick = currentTick;
-        }
-            
         // Regular spawning for normal fish (respect MAX_FISH_COUNT cap)
         if (_activeFish.Count < MIN_FISH_COUNT)
         {
@@ -198,48 +150,14 @@ public class FishManager
 
     private void SpawnRandomFish(long currentTick)
     {
-        // Use weight-based spawning for regular fish (types 0-20)
-        // Special Items (21-24) and Boss Fish (25-28) are handled separately
+        // DEBUG MODE: Only spawn 3 small fish types (0-2)
+        // Type 0: Small fish #1, Type 1: Small fish #2, Type 2: Small fish #3
         
-        // Build weighted list from catalog (only regular fish: Small, Medium, Large, High-Value)
-        var spawnableFish = new List<(int typeId, int weight)>();
-        int totalWeight = 0;
+        // Randomly pick one of the 3 small fish types
+        int selectedTypeId = Random.Shared.Next(0, 3);
         
-        for (int typeId = 0; typeId <= 20; typeId++)
-        {
-            var fishDef = Entities.FishCatalog.GetFish(typeId);
-            if (fishDef != null)
-            {
-                spawnableFish.Add((typeId, fishDef.SpawnWeight));
-                totalWeight += fishDef.SpawnWeight;
-            }
-        }
-        
-        // Pick random fish based on weights
-        int randomValue = Random.Shared.Next(totalWeight);
-        int cumulativeWeight = 0;
-        int selectedTypeId = 0;
-        
-        foreach (var (typeId, weight) in spawnableFish)
-        {
-            cumulativeWeight += weight;
-            if (randomValue < cumulativeWeight)
-            {
-                selectedTypeId = typeId;
-                break;
-            }
-        }
-        
-        // Small fish (types 0-5) spawn in groups
-        if (selectedTypeId <= 5)
-        {
-            SpawnFishGroup(selectedTypeId, currentTick, 3, 6);
-        }
-        else
-        {
-            // Medium, Large, and High-Value fish spawn solo
-            SpawnSingleFish(selectedTypeId, currentTick);
-        }
+        // Spawn in groups of 3-6
+        SpawnFishGroup(selectedTypeId, currentTick, 3, 6);
     }
 
     private void SpawnFishGroup(int typeId, long currentTick, int minCount = -1, int maxCount = -1)
