@@ -327,6 +327,7 @@ export class GameState {
 
     this.connection.on("StateDelta", (update: any) => {
       // Use camelCase to match server's JSON serialization
+      console.log(`[StateDelta] Received update with keys:`, Object.keys(update));
       if (update.tickId !== undefined) {
         this.lastServerTick = update.tickId;
         this.tickDrift = update.tickId - this.currentTick;
@@ -343,11 +344,13 @@ export class GameState {
       }
 
       if (update.fish) {
+        console.log(`[FISH_RECEIVED] Got ${update.fish.length} fish in StateDelta`);
         const currentFishIds = new Set(this.fish.keys());
         const incomingFishIds = new Set<number>();
 
         for (const fishData of update.fish) {
           incomingFishIds.add(fishData.fishId);
+          console.log(`[FISH_UPDATE] FishID=${fishData.fishId}, Type=${fishData.typeId}, Pos=(${fishData.x}, ${fishData.y}), IsNew=${fishData.isNewSpawn}`);
           this.updateFish(fishData);
         }
 
