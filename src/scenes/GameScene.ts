@@ -36,6 +36,9 @@ export default class GameScene extends Phaser.Scene {
   private readonly MAX_BULLETS_PER_PLAYER = 30;
   private readonly BULLET_TIMEOUT_MS = 60000;
 
+  // Debug overlay
+  private debugText!: Phaser.GameObjects.Text;
+
   constructor() {
     super({ key: "GameScene" });
     this.gameState = GameState.getInstance();
@@ -77,7 +80,44 @@ export default class GameScene extends Phaser.Scene {
     // Start the ledger scene (but hidden)
     this.scene.launch("LedgerScene");
 
+    // Create debug overlay
+    this.createDebugOverlay();
+
     console.log("GameScene: Initialization complete");
+  }
+
+  private createDebugOverlay() {
+    this.debugText = this.add.text(10, 10, "", {
+      fontSize: "14px",
+      color: "#00FF00",
+      backgroundColor: "#000000",
+      padding: { x: 8, y: 6 },
+    });
+    this.debugText.setDepth(1000);
+  }
+
+  private updateDebugOverlay() {
+    const fps = Math.round(this.game.loop.actualFps);
+    const fishCount = this.gameState.fish.size;
+    const bulletCount = this.clientBullets.size;
+    const tickId = this.gameState.currentTick;
+    
+    // Get credits from my player data
+    let credits = 0;
+    if (this.gameState.myPlayerSlot !== null) {
+      const myPlayer = this.gameState.players.get(this.gameState.myPlayerSlot);
+      credits = myPlayer?.credits || 0;
+    }
+    const bet = this.gameState.currentBet;
+
+    this.debugText.setText([
+      `FPS: ${fps}`,
+      `Tick: ${tickId}`,
+      `Fish: ${fishCount}`,
+      `Bullets: ${bulletCount}`,
+      `Credits: ${credits}`,
+      `Bet: ${bet}`,
+    ]);
   }
 
   private generatePlaceholderFishGraphics() {
@@ -165,6 +205,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.fishSpriteManager.renderAllFish(tickProgress);
     this.updateBullets(delta);
+    this.updateDebugOverlay();
   }
 
   private fixedUpdate(tick: number) {
