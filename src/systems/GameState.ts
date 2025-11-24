@@ -457,21 +457,22 @@ export class GameState {
   }
 
   private updateFish(fishData: FishData) {
-    const isNew = !this.fish.has(fishData.fishId);
+    const isNewToClient = !this.fish.has(fishData.fishId);
 
-    if (fishData.isNewSpawn && fishData.path) {
+    // Register path for any fish with path data (new spawns or late-join hydration)
+    if (fishData.path) {
       this.fishPathManager.registerFishPath(fishData.fishId, fishData.path);
       console.log(
         `Registered path for fish ${fishData.fishId}, type: ${fishData.path.pathType}`,
       );
+    }
 
-      // Notify all listeners
-      if (isNew) {
-        if (this.onFishSpawned) {
-          this.onFishSpawned(fishData.fishId, fishData.typeId);
-        }
-        this.fishSpawnedListeners.forEach(listener => listener(fishData.fishId, fishData.typeId));
+    // Spawn sprite for any fish new to this client (late-joiners need sprites for existing fish)
+    if (isNewToClient) {
+      if (this.onFishSpawned) {
+        this.onFishSpawned(fishData.fishId, fishData.typeId);
       }
+      this.fishSpawnedListeners.forEach(listener => listener(fishData.fishId, fishData.typeId));
     }
 
     this.fish.set(fishData.fishId, fishData);

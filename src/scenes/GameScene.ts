@@ -436,34 +436,49 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private updateBullets(delta: number) {
-    const deltaSeconds = delta / 1000;
-    const now = Date.now();
+    // Render server-authoritative bullets
+    const serverBullets = this.gameState.bullets;
+    const currentBulletIds = new Set<number>();
 
-    this.clientBullets.forEach((bullet, id) => {
-      bullet.x += bullet.velocityX * deltaSeconds;
-      bullet.y += bullet.velocityY * deltaSeconds;
+    serverBullets.forEach((bulletData, bulletId) => {
+      currentBulletIds.add(bulletId);
 
-      if (bullet.x < 0) {
-        bullet.x = 0;
-        bullet.velocityX = Math.abs(bullet.velocityX);
-      } else if (bullet.x > 1800) {
-        bullet.x = 1800;
-        bullet.velocityX = -Math.abs(bullet.velocityX);
+      // Create graphics if this is a new bullet
+      if (!this.clientBullets.has(bulletId)) {
+        const graphics = this.add.graphics();
+        graphics.lineStyle(0);
+        graphics.fillStyle(0x00FFFF, 1.0);
+        graphics.fillCircle(0, 0, 3);
+        graphics.fillStyle(0x00FFFF, 0.6);
+        graphics.fillCircle(0, 0, 6);
+        graphics.fillStyle(0x00FFFF, 0.3);
+        graphics.fillCircle(0, 0, 9);
+        graphics.setDepth(50);
+
+        this.clientBullets.set(bulletId, {
+          id: bulletId,
+          x: bulletData.x,
+          y: bulletData.y,
+          velocityX: 0,
+          velocityY: 0,
+          graphics: graphics,
+          createdAt: Date.now(),
+        });
       }
 
-      if (bullet.y < 0) {
-        bullet.y = 0;
-        bullet.velocityY = Math.abs(bullet.velocityY);
-      } else if (bullet.y > 900) {
-        bullet.y = 900;
-        bullet.velocityY = -Math.abs(bullet.velocityY);
-      }
+      // Update bullet position from server data
+      const bullet = this.clientBullets.get(bulletId)!;
+      bullet.x = bulletData.x;
+      bullet.y = bulletData.y;
 
-      const angle = Math.atan2(bullet.velocityY, bullet.velocityX);
+      const angle = Math.atan2(bulletData.directionY, bulletData.directionX);
       bullet.graphics.setPosition(bullet.x, bullet.y);
       bullet.graphics.setRotation(angle);
+    });
 
-      if (now - bullet.createdAt > this.BULLET_TIMEOUT_MS) {
+    // Remove bullets that are no longer on server
+    this.clientBullets.forEach((bullet, id) => {
+      if (!currentBulletIds.has(id)) {
         bullet.graphics.destroy();
         this.clientBullets.delete(id);
       }
