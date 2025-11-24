@@ -95,10 +95,16 @@ The game follows a client-server architecture with ASP.NET Core 8 handling the s
 - `src/entities/PlayersDisplayUI.ts`: Multi-player bank display with click handlers and access control
 - `Public/spectator.html`: Spectator dashboard with per-player ledger modals and bullet-count bet tracking
 
+## Recent Changes (2025-11-24)
+- **Removed Old UI Elements:** Eliminated obsolete UIScene betting controls (red minus/green plus buttons) and top-right credits display that were replaced by BettingUI.
+- **Restored Debug Overlay:** Added debug diagnostics panel in top-left corner showing FPS, tick count, fish count, bullets, credits, and current bet for development testing.
+- **Limited Fish Spawning (Debug Mode):** Temporarily restricted fish spawning to only 3 small fish types (0-2) with max 15 fish on screen for incremental testing of fish movement and behavior.
+- **Redesigned Wider Hub Platform:** Expanded hub to 640px width with three distinct sections: left rounded rectangle (-320 to -110) for bank, center ellipse (-110 to +110) for bet controls, and right rounded rectangle (+110 to +320) for player name. Sides go straight back without visible curved edges underneath.
+- **Enhanced Text Readability:** Added dark semi-transparent backgrounds behind bank and player name text for improved visibility against the golden hub platform.
+
 ## Recent Changes (2025-11-23)
 - **Redesigned Player Hub UI:** Completely revamped betting controls to match arcade reference photo with dimensional golden platform (520×95 ellipse with layered shadows, bevels, highlights), blue bet medallion (42px radius) centered with red "Bet: X Credits" label, blue +/- circles (34px radius) positioned at ±70px, bank display at -210px, and player name badge at +210px.
 - **Turret Repositioning:** Updated positioning logic so turrets appear ABOVE controls for bottom seats (0-2) and BELOW controls for top seats (3-5) using dedicated offset constants (turretOffsetY: ±70px).
-- **Removed Debug Overlay:** Eliminated debug stats box (FPS, tick info) and top-right credits display for cleaner production UI.
 - **Enhanced Button Interactions:** Implemented hover states and press feedback using redrawButton helper to preserve dimensional styling without visual artifacts.
 
 ## Recent Changes (2025-11-12)
